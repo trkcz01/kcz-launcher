@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8">
-  <title>KÇZ Launcher</title>
+  <title>KCZ Launcher</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-tema="gri" data-saydam="1">
@@ -14,8 +14,8 @@
   <!-- ================= SOL: cam panel ================= -->
   <aside class="yan cam">
     <div class="yan-ust surukle">
-      <img src="logo.svg" class="logo" id="logoResim" alt="KÇZ">
-      <b class="logo-yazi" id="logoYazi">KÇZ</b>
+      <img src="logo.svg" class="logo" id="logoResim" alt="KCZ">
+      <b class="logo-yazi" id="logoYazi">KCZ</b>
       <button class="guncelle-btn" id="guncelleBtn" hidden title="Yeni sürüm var">
         <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
         <span id="guncelleYazi">Güncelle</span>
@@ -30,6 +30,16 @@
         <button class="sekme" data-sayfa="surumler" title="Sürümler" aria-label="Sürümler">
           <svg viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>
         </button>
+        <button class="sekme" data-sayfa="galeri" title="Ekran görüntüleri" aria-label="Ekran görüntüleri">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg>
+        </button>
+        <button class="sekme" data-sayfa="bildir" title="Öneri ve hata bildir" aria-label="Öneri ve hata bildir">
+          <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.3 1.1 2.2h5c0-.9.5-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg>
+        </button>
+        <button class="sekme" data-sayfa="yonetim" id="yonetimSekme" title="Yönetim paneli" aria-label="Yönetim paneli" hidden>
+          <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+          <i class="sekme-nokta" id="yonetimNokta" hidden></i>
+        </button>
         <button class="sekme" data-sayfa="ayarlar" title="Ayarlar ve tema" aria-label="Ayarlar">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
         </button>
@@ -40,6 +50,7 @@
       <div class="sol-sekmeler" id="solSekmeler">
         <button data-sol="profil" title="Kaydettiğin sürümler (Vanilla, Fabric, Forge…)">Profiller <span class="sayac" id="profilSayac">0</span></button>
         <button data-sol="sunucu" class="aktif">Sunucular <span class="sayac" id="sunucuSayac">0</span></button>
+        <button data-sol="arkadas" title="KCZ kullanan arkadaşların çevrimiçi mi, hangi sunucuda">Arkadaşlar <span class="sayac" id="arkadasSayac">0</span></button>
       </div>
       <button class="mini-ikon" id="yenileBtn" title="Sunucuları yenile" aria-label="Yenile">
         <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>
@@ -47,6 +58,12 @@
     </div>
     <div class="sunucular" id="sunucular"></div>
     <div class="sunucular" id="profiller" hidden></div>
+    <div class="sunucular" id="arkadaslar" hidden>
+      <div class="benim-id" id="benimIdKutu" hidden><span>Senin ID'n</span><b id="benimId">——————</b><button class="mini-ikon" id="benimIdKopyala" title="ID'ni kopyala" aria-label="ID'ni kopyala">⧉</button></div>
+      <div class="satir arkadas-ekle"><input id="arkadasAd" maxlength="6" inputmode="numeric" placeholder="Arkadaşının ID'si" spellcheck="false" autocomplete="off"><button class="birincil kucuk" id="arkadasEkle">İstek gönder</button></div>
+      <div id="arkadasListe"></div>
+      <small class="bos-yazi arkadas-not">Arkadaşın ID'sini sol alttaki profil kartında görür. İsteği kabul edince birbirinizi listede görürsünüz.</small>
+    </div>
 
     <!-- Profil ekle / düzenle -->
     <div class="sunucu-form profil-form cam" id="profilForm" hidden>
@@ -75,7 +92,7 @@
     <!-- Sunucu ekle -->
     <div class="sunucu-form cam" id="sunucuForm" hidden>
       <b>Sunucu ekle</b>
-      <label class="alan"><span>Ad</span><input id="sfAd" maxlength="64" placeholder="ör. KÇZ Survival"></label>
+      <label class="alan"><span>Ad</span><input id="sfAd" maxlength="64" placeholder="ör. KCZ Survival"></label>
       <label class="alan"><span>Adres</span><input id="sfAdres" maxlength="253" placeholder="ör. play.kcz.net"></label>
       <div class="satir"><button class="birincil kucuk" id="sfEkle">Ekle</button><button class="ikincil kucuk" id="sfIptal">Vazgeç</button></div>
       <button class="ikincil kucuk" id="sfAktar" hidden></button>
@@ -104,16 +121,20 @@
       <button id="hesapBtn" class="mini-ikon" title="Giriş yap" aria-label="Giriş yap">
         <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
       </button>
+      <div class="hesap-menu cam" id="hesapMenu" hidden>
+        <button class="hesap-satir profilim" id="profilimBtn"><span class="avatar avatar-yedek">☺</span><b>Profilim</b><small>ID, hakkında, oynama süresi</small></button>
+        <div class="acilir-baslik">Hesaplar</div>
+        <div id="hesapListe"></div>
+        <button class="hesap-satir ekle" id="hesapEkle"><span class="avatar avatar-yedek">+</span><b>Hesap ekle</b></button>
+      </div>
     </div>
     <!-- Çevrimdışı profil: giriş yapılmadığında görünür -->
-    <div class="cevrimdisi-panel" id="cevrimdisiPanel" hidden>
-      <div style="display:flex;gap:6px;align-items:center;width:100%;padding:0 12px;box-sizing:border-box">
-        <input type="text" id="cevrimdisiAdInput" placeholder="Kullanıcı adı gir…" maxlength="16"
-               spellcheck="false" autocomplete="off"
-               style="flex:1;padding:6px 8px;border-radius:5px;border:1px solid rgba(255,255,255,.15);
-                      background:rgba(0,0,0,.3);color:#fff;font-size:13px;outline:none;min-width:0">
-        <button class="birincil kucuk" id="cevrimdisiKaydetBtn" style="white-space:nowrap;font-size:12px">Kaydet</button>
-      </div>
+    <div id="cevrimdisiPanel" hidden style="display:flex;gap:6px;align-items:center;padding:4px 8px">
+      <input type="text" id="cevrimdisiAdInput" placeholder="Kullanıcı adı…" maxlength="16"
+             spellcheck="false" autocomplete="off"
+             style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.15);
+                    background:rgba(0,0,0,.3);color:#fff;font-size:13px;outline:none;min-width:0">
+      <button class="birincil kucuk" id="cevrimdisiKaydetBtn" style="white-space:nowrap;font-size:12px">Kaydet</button>
     </div>
 
     <!-- Sürüm seçici (seçili sunucu kartındaki "26.2 · Fabric ▾") -->
@@ -140,10 +161,10 @@
     <section class="sayfa aktif" id="sayfa-ana">
       <section class="sahne" id="sahne" aria-label="Skin vitrini">
         <div class="sahne-dekor" aria-hidden="true"></div>
-        <div class="dev-yazi" id="devYazi" aria-hidden="true">KÇZ</div>
+        <div class="dev-yazi" id="devYazi" aria-hidden="true">KCZ</div>
         <div class="sahne-bilgi surukle">
           <span class="ust-etiket" id="secEtiket">SEÇİLİ SUNUCU</span>
-          <b id="secAd">KÇZ</b>
+          <b id="secAd">KCZ</b>
           <span id="secDurum">Sunucu listesi yükleniyor…</span>
         </div>
         <div class="isik" aria-hidden="true"></div>
@@ -151,6 +172,7 @@
         <div class="tozlar" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="zemin" aria-hidden="true"></div>
         <div class="vitrin" id="vitrin"></div>
+        <div class="ust-duyuru cam" id="ustDuyuru" hidden role="status"><span class="ust-duyuru-ikon">📣</span><p id="ustDuyuruMetin"></p><button class="mini-ikon" id="ustDuyuruKapat" aria-label="Duyuruyu kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
 
         <div class="emote-cubuk cam" id="emoteler" aria-label="Animasyonlar">
           <button data-emote="salla" title="El salla"><svg viewBox="0 0 24 24"><path d="M7 11V6a1.5 1.5 0 0 1 3 0v4M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V12M16 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7L4.3 14a1.6 1.6 0 0 1 2.6-1.8L7 12.5"/></svg></button>
@@ -173,7 +195,10 @@
             <span class="ayrac"></span>
             <button class="ince-btn" id="inceBtn" title="Kol tipi: normal (Steve) ya da ince (Alex)">Normal kol</button>
             <button class="giy-btn" id="giyBtn">Giy</button>
-            <button class="ok-btn" id="skinKaldir" title="Vitrinden kaldır" aria-label="Vitrinden kaldır" hidden>
+            <button class="ok-btn" id="pelerinBtn" title="Pelerin" aria-label="Pelerin">
+              <svg viewBox="0 0 24 24"><path d="M7 3h10l2 18-7-3-7 3z"/></svg>
+            </button>
+            <button class="ok-btn" id="skinKaldir" title="Skini sil" aria-label="Skini sil" hidden>
               <svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
             </button>
             <button class="ok-btn" id="skinEkleBtn" title="Skin ekle" aria-label="Skin ekle">
@@ -182,8 +207,15 @@
           </div>
         </div>
 
+        <div class="skin-ekle cam pelerin-kutu" id="pelerinKutu" hidden>
+          <b>Pelerin</b>
+          <div class="pelerinler" id="pelerinler"></div>
+          <small>Minecraft hesabındaki resmi pelerinler. Taktığın pelerini herkes görür.</small>
+        </div>
+
         <div class="skin-ekle cam" id="skinEkle" hidden>
           <b>Skin ekle</b>
+          <button class="birincil kucuk genis-btn" id="skinYenileBtn">Hesabımdaki skini çek</button>
           <label class="alan">
             <span>Oyuncu adından</span>
             <span class="satir"><input id="skinIsim" maxlength="16" placeholder="Kullanıcı adı"><button class="birincil kucuk" id="skinIsimEkle">Ekle</button></span>
@@ -195,17 +227,12 @@
               <button class="ikincil kucuk" id="skinDosyaInce">İnce kol</button>
             </span>
           </div>
-          <small>Eklediğin skin vitrine gelir. "Giy"e basınca Minecraft hesabına takılır.</small>
+          <small>Eklediğin skin vitrine gelir ve giriş yaptıysan Minecraft hesabına hemen takılır.</small>
+          <button class="bag" id="skinGeriGetir">Kaldırılanları geri getir</button>
         </div>
       </section>
 
       <section class="ozet">
-        <div class="kutu duyuru" id="duyuru">
-          <span class="kutu-etiket vurgu-yazi"><i class="nokta"></i><span id="duyuruEtiket">SUNUCU MESAJI</span></span>
-          <b id="duyuruBaslik">—</b>
-          <span class="duyuru-metin" id="duyuruMetin"></span>
-          <span class="duyuru-alt"><span class="cip" id="duyuruCip">—</span></span>
-        </div>
         <div class="kutu">
           <span class="kutu-etiket"><span>SUNUCUDA</span><span class="vurgu-yazi" id="cevrimiciSayi"></span></span>
           <div class="cevrimici" id="cevrimici"></div>
@@ -225,7 +252,7 @@
       <div class="sayfa-baslik surukle">
         <div>
           <h2>Modlar</h2>
-          <p class="soluk">Modrinth'teki bütün modlar. Seçili sürüme ve yükleyiciye uyanlar gösterilir.</p>
+          <p class="soluk">Modrinth'teki modlar ve kaynak paketleri. Kurduğun kaynak paketi oyunda kendiliğinden açılır.</p>
         </div>
         <button class="profil-cip" id="modProfil" title="Sürümü ya da yükleyiciyi değiştir"></button>
       </div>
@@ -256,7 +283,6 @@
           </div>
           <div class="filtreler" id="modTurler">
             <button class="filtre aktif" data-tur="mod">Mod</button>
-            <button class="filtre" data-tur="shader">Shader</button>
             <button class="filtre" data-tur="paket">Kaynak paketi</button>
           </div>
           <select id="modSira" class="secim" aria-label="Sıralama">
@@ -268,6 +294,7 @@
           </select>
         </div>
         <div class="mod-uyari" id="modUyari" hidden></div>
+        <div class="hazir-paketler" id="hazirPaketler"></div>
         <div class="mod-izgara" id="modSonuclar"></div>
         <button class="ikincil daha" id="modDaha" hidden>Daha fazla göster</button>
       </div>
@@ -276,7 +303,6 @@
         <div class="mod-araclar">
           <div class="filtreler" id="yukluTurler">
             <button class="filtre aktif" data-tur="mod">Modlar</button>
-            <button class="filtre" data-tur="shader">Shader'lar</button>
             <button class="filtre" data-tur="paket">Kaynak paketleri</button>
           </div>
           <button class="ikincil" id="modKlasorBtn">Klasörü aç</button>
@@ -356,6 +382,7 @@
         <div class="ayar-kart dikey">
           <div class="ayar-yazi"><b>Hazır ayar</b><small>Görüş mesafesi, parçacıklar, uzak blok detayı ve RAM'i tek tıkla ayarlar. Oyunun içinden yine değiştirebilirsin.</small></div>
           <div class="seviyeler" id="seviyeler">
+            <button type="button" class="seviye" data-seviye="cokdusuk"><b>Çok düşük</b><small>Çok zayıf bilgisayarlar · görüş 8</small></button>
             <button type="button" class="seviye" data-seviye="dusuk"><b>Düşük</b><small>Zayıf bilgisayarlar · en yüksek FPS</small></button>
             <button type="button" class="seviye" data-seviye="orta"><b>Orta</b><small>Görüntü ve FPS dengeli</small></button>
             <button type="button" class="seviye" data-seviye="yuksek"><b>Yüksek</b><small>Güçlü bilgisayarlar · uzak görüş</small></button>
@@ -363,7 +390,7 @@
         </div>
 
         <label class="ayar-kart">
-          <div class="ayar-yazi"><b>KÇZ Optimizasyon</b><small>Görünmeyen yerleri (duvar arkası, mağaralar, gizli yaratıklar) çizmez, dünya ve bellek işlerini hızlandırır. Launcher'la birlikte gelir, arka planda kendini hazırlar ve günceller. Oynanış değişmez.</small></div>
+          <div class="ayar-yazi"><b>KCZ Optimizasyon</b><small>Görünmeyen yerleri (duvar arkası, mağaralar, gizli yaratıklar) çizmez, dünya ve bellek işlerini hızlandırır. Launcher'la birlikte gelir, arka planda kendini hazırlar ve günceller. Oynanış değişmez.</small></div>
           <input id="hafifSec" type="checkbox" class="anahtar">
         </label>
         <label class="ayar-kart">
@@ -385,31 +412,58 @@
       </div>
 
       <div class="ayar-blok">
-        <h3>KÇZ Client</h3>
+        <h3>KCZ Client</h3>
         <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Oyun içi KÇZ menüsü</b><small id="istemciAciklama">Oyunda <kbd>Esc</kbd> menüsündeki <b>KÇZ Menü</b> düğmesiyle açılır; bu sayfadaki ayarların aynısı orada da var ve launcher temasıyla aynı görünür.</small></div>
+          <div class="ayar-yazi"><b>Oyun içi KCZ menüsü</b><small id="istemciAciklama">Oyunda <kbd>Esc</kbd> menüsündeki <b>KCZ Menü</b> düğmesiyle açılır; bu sayfadaki ayarların aynısı orada da var ve launcher temasıyla aynı görünür.</small></div>
           <input id="istAcikSec" type="checkbox" class="anahtar">
         </label>
         <div class="ist-izgara" id="istAyarlar">
           <label class="ayar-kart"><div class="ayar-yazi"><b>Yakınlaştırma</b><small><kbd>C</kbd> basılı tut, tekerlekle ayarla</small></div><input data-ist="zoom" type="checkbox" class="anahtar"></label>
-          <div class="ayar-kart"><div class="ayar-yazi"><b>Zoom gücü</b><small>Ne kadar yakınlaşsın</small></div>
-            <select class="secim kucuk-secim" id="istZoomKat"><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="6">6x</option><option value="8">8x</option></select></div>
+          <div class="ayar-kart"><div class="ayar-yazi"><b>En fazla zoom</b><small>Tekerlekle en çok buraya kadar yaklaşılır</small></div>
+            <select class="secim kucuk-secim" id="istZoomKat"><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="6">6x</option><option value="8">8x</option><option value="16">16x</option><option value="32">32x</option><option value="64">64x</option><option value="128">128x</option></select></div>
+          <div class="ayar-kart"><div class="ayar-yazi"><b>İlk zoom</b><small>C'ye basınca ilk bu kadar yaklaşır, sonra tekerlekle ayarla</small></div>
+            <select class="secim kucuk-secim" id="istZoomBas"><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="6">6x</option><option value="8">8x</option></select></div>
           <label class="ayar-kart"><div class="ayar-yazi"><b>FPS göstergesi</b><small>Köşede saniyedeki kare</small></div><input data-ist="fps" type="checkbox" class="anahtar"></label>
           <label class="ayar-kart"><div class="ayar-yazi"><b>Ping göstergesi</b><small>Sunucuya gecikme</small></div><input data-ist="ping" type="checkbox" class="anahtar"></label>
           <label class="ayar-kart"><div class="ayar-yazi"><b>Tuş göstergesi</b><small>W A S D, fare ve zıplama</small></div><input data-ist="tuslar" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>CPS göstergesi</b><small>Saniyedeki sol | sağ tık</small></div><input data-ist="cps" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Koordinat ve yön</b><small>X Y Z ve baktığın yön</small></div><input data-ist="koordinat" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Zırh dayanıklılığı</b><small>Her parçanın kalan dayanıklılığı (%)</small></div><input data-ist="zirh" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>İksir süreleri</b><small>Etkideki iksirler ve kalan süre</small></div><input data-ist="iksir" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Eldeki eşyanın dayanıklılığı</b><small>Kılıç, kazma gibi elindeki eşyanın kalan dayanıklılığı</small></div><input data-ist="eldeki" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Ok sayısı</b><small>Envanterindeki toplam ok</small></div><input data-ist="okSayisi" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Totem sayısı</b><small>Envanterindeki ölümsüzlük totemleri</small></div><input data-ist="totem" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Hız göstergesi</b><small>Saniyede kaç blok gidiyorsun</small></div><input data-ist="hiz" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Gerçek saat</b><small>Oyundayken bilgisayarın saati</small></div><input data-ist="saat" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Arkadaşım oyuna girince bildir</b><small>Launcher'da ve oyunda küçük bir bildirim çıkar</small></div><input data-ist="arkadasBildirim" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Koşmayı açık tut</b><small>İleri gidince Ctrl'e basmadan koşarsın</small></div><input data-ist="surekliKos" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Eğilmeyi açık tut</b><small>Shift'e bir kere bas, tekrar basana kadar eğilirsin</small></div><input data-ist="egilmeTut" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Ekran görüntüsünü panoya kopyala</b><small>Oyunda F2'ye basınca görüntü panoya da gider; Discord'a Ctrl+V ile yapıştır</small></div><input data-ist="ssPanoya" type="checkbox" class="anahtar"></label>
           <label class="ayar-kart"><div class="ayar-yazi"><b>Esc menüsünde bulanıklık kapalı</b><small>Menü açılırken olan takılmayı azaltır</small></div><input data-ist="bulaniklikKapali" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Düşük sistem</b><small>Zayıf bilgisayar: FPS için kısılır. Ayrıntılar oyunda KCZ Menü'de ⋮</small></div><input data-ist="dusukSistem" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Güçlü sistem</b><small>Kenar yumuşatma, keskinlik, Hz'e göre FPS. Ayrıntılar KCZ Menü'de ⋮</small></div><input data-ist="gucluSistem" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Alt-Tab yapınca oyunu durdurma</b><small>Pencereden çıkınca Esc menüsü açılmaz, tek oyunculuda dünya kaydı başlamaz; geri dönünce donma olmaz</small></div><input data-ist="alttabDurdurmaKapali" type="checkbox" class="anahtar"></label>
+          <label class="ayar-kart"><div class="ayar-yazi"><b>Kenarlıksız tam ekran</b><small>F11 tam ekranı çerçevesiz pencere yapar; Alt-Tab'da ekran kararmaz, oyun donmaz</small></div><input data-ist="kenarliksiz" type="checkbox" class="anahtar"></label>
           <label class="ayar-kart"><div class="ayar-yazi"><b>Arka planda FPS düşür</b><small>Oyun penceresi arkadayken 15 FPS: daha az ısı ve pil</small></div><input data-ist="arkaplanFps" type="checkbox" class="anahtar"></label>
           <div class="ayar-kart"><div class="ayar-yazi"><b>Konum</b><small>Göstergeler nerede dursun</small></div>
             <select class="secim kucuk-secim" id="istKonum"><option value="sol-ust">Sol üst</option><option value="sag-ust">Sağ üst</option></select></div>
         </div>
         <h4 class="alt-baslik">Eklentiler</h4>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Shader (gerçekçi ışık ve gölge)</b><small id="shaderAciklama">Iris ve Complementary shader paketini kurup açar. Güçlü bir ekran kartı ister.</small></div>
-          <input data-ist="shader" type="checkbox" class="anahtar">
+                <label class="ayar-kart">
+          <div class="ayar-yazi"><b>KCZ sesli sohbet</b><small>Sunucuya hiçbir şey kurmadan yakındaki oyuncularla konuş: yaklaştıkça ses açılır, uzaklaşınca kısılır. Sadece KCZ Launcher kullananlar birbirini duyar. Oyunda konuşmak için B'yi basılı tut (Ayarlar > Kontroller'den değişir). Windows ve Linux'ta çalışır.</small></div>
+          <input data-ist="yakinSes" type="checkbox" class="anahtar">
         </label>
         <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Sesli sohbet</b><small>Simple Voice Chat: destekleyen sunucularda yakındaki oyuncularla konuş (varsayılan tuş: V).</small></div>
+          <div class="ayar-yazi"><b>Sesli sohbette sadece arkadaşlarım</b><small>Açıkken sadece arkadaşlarınla ses bağlantısı kurulur; arkadaşın olmayanlar seni duyamaz ve IP adresini göremez. Herkesle konuşmak için kapat.</small></div>
+          <input data-ist="sesSadeceArkadas" type="checkbox" class="anahtar">
+        </label>
+        <label class="ayar-kart">
+          <div class="ayar-yazi"><b>Simple Voice Chat</b><small>Simple Voice Chat: sadece sunucuda da Simple Voice Chat kuruluysa çalışır (varsayılan tuş: V).</small></div>
           <input data-ist="sesliSohbet" type="checkbox" class="anahtar">
+        </label>
+        <label class="ayar-kart">
+          <div class="ayar-yazi"><b>Uzak görüş</b><small>Bobby: sunucu görüş mesafesini kıssa bile daha uzağı görürsün. Gezdiğin yerler hatırlanır, görüş mesafesini oyunda KCZ Menü > Performans'tan ayarla. Güçlü bilgisayar önerilir.</small></div>
+          <input data-ist="uzakGorus" type="checkbox" class="anahtar">
         </label>
         <label class="ayar-kart">
           <div class="ayar-yazi"><b>Oyun kaydı (Flashback)</b><small>Oyunu kaydeder, sonra serbest kamerayla izleyip video çıkarırsın. Sadece Fabric.</small></div>
@@ -438,8 +492,24 @@
           <input id="gizleSec" type="checkbox" class="anahtar">
         </label>
         <label class="ayar-kart">
+          <div class="ayar-yazi"><b>Oyun açıkken launcher uyusun</b><small>Launcher penceresi tamamen kapanır, belleği oyuna kalır (daha çok FPS). Oyun kapanınca kendiliğinden geri açılır. Çok düşük, Düşük ve Orta ayar bunu açar.</small></div>
+          <input id="uyuSec" type="checkbox" class="anahtar">
+        </label>
+        <label class="ayar-kart">
           <div class="ayar-yazi"><b>Kapatınca sistem tepsisine küçült</b><small>Launcher saatin yanındaki simgede bekler; oradan tek tıkla açılır ya da oyun başlatılır.</small></div>
           <input id="tepsiSec" type="checkbox" class="anahtar">
+        </label>
+        <label class="ayar-kart">
+          <div class="ayar-yazi"><b>İsimsiz kullanım sayımı</b><small>Kaç kişinin launcher'ı kullandığını saymamıza yardım eder. Sadece rastgele bir kimlik, sürüm ve işletim sistemi gider; hesabın gönderilmez.</small></div>
+          <input id="istatistikSec" type="checkbox" class="anahtar">
+        </label>
+        <label class="ayar-kart">
+          <div class="ayar-yazi"><b>Arkadaşlarım durumumu görsün</b><small>Seni arkadaş olarak ekleyenler çevrimiçi olduğunu ve hangi sunucuda oynadığını görür.</small></div>
+          <input id="durumPaylasSec" type="checkbox" class="anahtar">
+        </label>
+        <label class="ayar-kart">
+          <div class="ayar-yazi"><b>Discord'da durum göster</b><small>Oyun açıkken arkadaşların Discord'da "KCZ oynuyor" görür. Discord açık olmalı.</small></div>
+          <input id="discordSec" type="checkbox" class="anahtar">
         </label>
         <div class="ayar-kart">
           <div class="ayar-yazi"><b>Otomatik dünya yedeği</b><small>Başka bir sürüm ya da yükleyiciyle açmadan önce dünyaların yedeklenir. Son 5 yedek saklanır.</small></div>
@@ -457,13 +527,111 @@
           <button type="button" class="ikincil" id="klasorBtn">Klasörü aç</button>
         </div>
         <div class="ayar-kart">
-          <div class="ayar-yazi"><b>KÇZ Launcher <span id="uygSurum"></span></b><small id="guncelleDurum">Güncellemeler otomatik denetlenir.</small></div>
+          <div class="ayar-yazi"><b>KCZ Launcher <span id="uygSurum"></span></b><small id="guncelleDurum">Güncellemeler otomatik denetlenir.</small></div>
           <button type="button" class="ikincil" id="denetleBtn">Güncellemeleri denetle</button>
         </div>
         <details class="kayit">
           <summary>Oyun kaydı (sorun olursa buraya bak)</summary>
           <pre id="log"></pre>
         </details>
+      </div>
+    </section>
+
+    <!-- EKRAN GÖRÜNTÜLERİ -->
+    <section class="sayfa" id="sayfa-galeri">
+      <div class="sayfa-baslik surukle">
+        <div><h2>Ekran görüntüleri</h2><p class="soluk">Oyunda <kbd>F2</kbd> ile aldıkların. Oyundayken aldığın görüntü panoya da kopyalanır; Discord'a direkt yapıştırabilirsin.</p></div>
+        <button class="ikincil kucuk" id="galeriKlasor">Klasörü aç</button>
+      </div>
+      <div class="galeri" id="galeri"></div>
+      <button class="ikincil daha" id="galeriDaha" hidden>Daha fazla göster</button>
+    </section>
+    <div class="perde galeri-buyuk" id="galeriPerde" hidden>
+      <img id="galeriResim" alt="">
+      <div class="galeri-arac cam">
+        <span id="galeriAd"></span>
+        <span class="galeri-gonder-kap">
+          <button class="birincil kucuk" id="galeriGonder">Arkadaşa gönder</button>
+          <div class="sohbet-menu galeri-gonder-menu" id="galeriGonderMenu" hidden></div>
+        </span>
+        <button class="ikincil kucuk" id="galeriKopyala">Kopyala</button>
+        <button class="ikincil kucuk" id="galeriSil">Sil</button>
+        <button class="mini-ikon" id="galeriKapat" aria-label="Kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+    </div>
+
+    <!-- ÖNERİ / HATA BİLDİR -->
+    <section class="sayfa" id="sayfa-bildir">
+      <div class="sayfa-baslik surukle"><div><h2>Öneri ve hata bildir</h2><p class="soluk">Aklına gelen bir fikri ya da karşılaştığın bir sorunu doğrudan bize yaz.</p></div></div>
+      <div class="ayar-blok">
+        <div class="filtreler" id="bildirTur">
+          <button class="filtre aktif" data-tur="oneri">💡 Öneri</button>
+          <button class="filtre" data-tur="hata">🐞 Hata</button>
+        </div>
+        <textarea id="bildirMetin" class="bildir-metin" maxlength="2000" placeholder="Ne eklenmesini istersin?"></textarea>
+        <div class="bildir-alt">
+          <input id="bildirIletisim" class="bildir-iletisim" maxlength="100" placeholder="Sana dönmemizi istersen Discord adın ya da e-postan (isteğe bağlı)">
+          <span class="bildir-sayac" id="bildirSayac">0 / 2000</span>
+          <button class="birincil" id="bildirGonder">Gönder</button>
+        </div>
+        <small class="bos-yazi">Yazdığınla birlikte sadece launcher sürümü ve işletim sistemi gönderilir. Minecraft hesabın gönderilmez.</small>
+      </div>
+      <div class="bildir-yonetici">
+        <button class="bag" id="yoneticiGirisAc">Yönetici girişi</button>
+        <div class="bildir-giris" id="yoneticiGiris" hidden>
+          <div class="satir" id="ygAdim1"><input id="ygEposta" type="email" placeholder="Gmail adresin" spellcheck="false"><button class="ikincil kucuk" id="ygKodIste">Giriş linki gönder</button></div>
+          <div class="satir" id="ygAdim2" hidden><input id="ygKod" inputmode="numeric" maxlength="10" placeholder="E-postadaki kod" spellcheck="false"><button class="birincil kucuk" id="ygGiris">Giriş</button><button class="bag" id="ygGeri">Geri</button></div>
+          <small class="bos-yazi" id="ygDurum"></small>
+        </div>
+      </div>
+    </section>
+
+    <!-- YÖNETİM PANELİ (sadece davetli yöneticiler) -->
+    <section class="sayfa" id="sayfa-yonetim">
+      <div class="sayfa-baslik surukle">
+        <div><h2>Yönetim paneli</h2><p class="soluk" id="ypHesap"></p></div>
+        <div class="satir"><button class="ikincil kucuk" id="ypYenile">Yenile</button><button class="bag" id="ypCikis">Çıkış yap</button></div>
+      </div>
+      <div class="yp-kutular">
+        <div class="yp-kutu canli"><small>Şu an aktif</small><b id="ypAktif">–</b></div>
+        <div class="yp-kutu"><small>Toplam indirme</small><b id="ypIndirme">–</b></div>
+        <div class="yp-kutu"><small>Kurulu launcher</small><b id="ypToplam">–</b></div>
+        <div class="yp-kutu"><small>Son 24 saat</small><b id="ypGun">–</b></div>
+        <div class="yp-kutu"><small>Son 7 gün</small><b id="ypHafta">–</b></div>
+        <div class="yp-kutu"><small>Bu hafta yeni</small><b id="ypYeni">–</b></div>
+      </div>
+      <div class="ayar-kart dikey">
+        <div class="ayar-yazi"><b>Son 14 gün</b><small>Her gün launcher'ı açan kurulum sayısı</small></div>
+        <div class="yp-grafik" id="ypGrafik"></div>
+        <div class="yp-dagilim" id="ypDagilim"></div>
+      </div>
+      <div class="ayar-blok">
+        <h3>Öneriler ve hatalar</h3>
+        <div class="filtreler" id="ypFiltre">
+          <button class="filtre aktif" data-f="yeni">Yeni <span class="sayac" id="ypYeniSayi">0</span></button>
+          <button class="filtre" data-f="hepsi">Hepsi</button>
+          <button class="filtre" data-f="hata">Hatalar</button>
+          <button class="filtre" data-f="oneri">Öneriler</button>
+          <button class="filtre" data-f="cozuldu">Çözülenler</button>
+        </div>
+        <div class="yp-liste" id="ypListe"></div>
+      </div>
+      <div class="ayar-blok">
+        <h3>Duyurular</h3>
+        <div class="ayar-kart dikey">
+          <div class="ayar-yazi"><b>Duyuru yayınla</b><small>Herkesin launcher'ında ana sayfada görünür. En yeni 3 duyuru gösterilir.</small></div>
+          <textarea id="ypDuyuruMetin" class="bildir-metin kisa" maxlength="300" placeholder="Örn: Sunucuda cumartesi 20:00'de etkinlik var!"></textarea>
+          <div class="satir"><select class="secim" id="ypDuyuruGun"><option value="1">1 gün</option><option value="3">3 gün</option><option value="7" selected>1 hafta</option><option value="30">1 ay</option><option value="0">Ben silene kadar</option></select><span style="flex:1"></span><button class="birincil kucuk" id="ypDuyuruEkle">Yayınla</button></div>
+          <div class="yp-yoneticiler" id="ypDuyurular"></div>
+        </div>
+      </div>
+      <div class="ayar-blok">
+        <h3>Yöneticiler</h3>
+        <div class="ayar-kart dikey">
+          <div class="ayar-yazi"><b>Davet gönder</b><small>Eklediğin Gmail yöneticilere eklenir; o kişi "Yönetici girişi"nden kendi mailine link isteyip girer. Sadece bu listedekiler paneli görebilir.</small></div>
+          <div class="satir"><input id="ypDavetEposta" type="email" placeholder="ornek@gmail.com" spellcheck="false"><button class="birincil kucuk" id="ypDavet">Davet et</button></div>
+          <div class="yp-yoneticiler" id="ypYoneticiler"></div>
+        </div>
       </div>
     </section>
   </main>
@@ -482,6 +650,40 @@
   </div>
 </div>
 
+<!-- Yeni neler var -->
+<div class="perde" id="yeniPerde" hidden>
+  <div class="giris-kart cam yeni-kart">
+    <span class="yeni-rozet" id="yeniSurum"></span>
+    <h2>Yeni neler var?</h2>
+    <ul class="yeni-liste" id="yeniListe"></ul>
+    <button class="birincil genis-btn" id="yeniTamam">Harika!</button>
+  </div>
+</div>
+
+<!-- Oyun çöktü -->
+<div class="perde" id="cokmePerde" hidden>
+  <div class="giris-kart cam cokme">
+    <h2>Oyun çöktü</h2>
+    <div class="cokme-kutu">
+      <b id="cokmeBaslik"></b>
+      <p id="cokmeAciklama"></p>
+      <p class="cokme-oneri" id="cokmeOneri"></p>
+    </div>
+    <textarea id="cokmeNot" class="bildir-metin kisa" maxlength="500" placeholder="Ne yapıyordun? (isteğe bağlı)"></textarea>
+    <button class="birincil genis-btn" id="cokmeBildir">Hatayı bildir</button>
+    <div class="satir"><button class="bag" id="cokmeRapor">Çökme raporunu aç</button><button class="bag" id="cokmeKapat">Kapat</button></div>
+    <small class="bos-yazi">Bildirince oyun kaydı da gönderilir; hesap bilgilerin gönderilmez.</small>
+  </div>
+</div>
+
+<!-- Panel: hata kaydı -->
+<div class="perde" id="kayitPerde" hidden>
+  <div class="giris-kart cam kayit-kart">
+    <div class="kayit-ust"><b>Oyun kaydı</b><span class="satir"><button class="ikincil kucuk" id="kayitKopyala">Kopyala</button><button class="mini-ikon" id="kayitKapat" aria-label="Kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span></div>
+    <pre id="kayitMetin"></pre>
+  </div>
+</div>
+
 <!-- Eksik mod hatası -->
 <div class="perde" id="modHataPerde" hidden>
   <div class="giris-kart cam mod-hata">
@@ -495,9 +697,92 @@
 </div>
 
 <!-- Açılış ekranı -->
+<!-- Profil (kendin ya da arkadaşın) -->
+<div class="perde" id="profilPerde" hidden>
+  <div class="profil-kart">
+    <button class="mini-ikon profil-kapat" id="profilKapat" aria-label="Kapat">×</button>
+    <div class="profil-ust">
+      <span class="ark-ikon-kap profil-kafa"><img id="profilKafa" class="ark-ikon" alt=""><i class="ark-nokta"></i></span>
+      <div class="profil-kim">
+        <b id="profilAd">Oyuncu</b>
+        <span class="profil-id">ID <span id="profilId">——————</span></span>
+        <small id="profilDurum">Çevrimdışı</small>
+      </div>
+    </div>
+    <div class="profil-hakkinda">
+      <span class="ark-baslik">Hakkında</span>
+      <p id="profilHakkinda" class="soluk">—</p>
+      <div id="profilDuzenle" hidden>
+        <textarea id="profilHakkindaGirdi" maxlength="120" rows="2" placeholder="Kendinden kısaca bahset (en fazla 120 karakter)"></textarea>
+        <div class="satir profil-duzen-alt"><small id="profilSayac">0/120</small><button class="birincil kucuk" id="profilKaydet">Kaydet</button></div>
+      </div>
+    </div>
+    <div class="profil-istatistik">
+      <div><b id="profilToplam">0 sa</b><small>Toplam oynama</small></div>
+      <div><b id="profilHafta">0 dk</b><small>Son 7 gün</small></div>
+      <div><b id="profilArkadas">0</b><small>Arkadaş</small></div>
+      <div><b id="profilKatilma">—</b><small>KCZ'ye katıldı</small></div>
+    </div>
+    <div class="profil-dugmeler" id="profilDugmeler">
+      <button class="birincil" id="profilMesaj">Mesaj gönder</button>
+      <button class="ikincil" id="profilKatil" hidden title="Arkadaşının oynadığı sunucuya katıl">Katıl</button>
+      <button class="ikincil" id="profilDavet" title="Seçili sunucuna çağır">Davet et</button>
+    </div>
+  </div>
+</div>
+
+<!-- Gelen sunucu daveti -->
+<div class="davet-kutu" id="davetKutu" hidden>
+  <span class="ark-ikon-kap"><img id="davetKafa" class="ark-ikon" alt=""></span>
+  <span class="davet-yazi"><b id="davetAd">Arkadaşın</b><small id="davetSunucu">seni çağırıyor</small></span>
+  <button class="ark-katil" id="davetKatil">Katıl</button>
+  <button class="mini-ikon" id="davetKapat" aria-label="Kapat">×</button>
+</div>
+
+<!-- Arkadaşla sohbet -->
+<aside class="sohbet" id="sohbet" hidden>
+  <header class="sohbet-ust">
+    <span class="ark-ikon-kap sohbet-kafa"><img id="sohbetKafa" class="ark-ikon" alt=""><i class="ark-nokta" id="sohbetNokta"></i></span>
+    <span class="sohbet-kim"><b id="sohbetAd">Arkadaş</b><small id="sohbetDurum">Çevrimdışı</small></span>
+    <button class="kucuk birincil" id="sohbetKatil" hidden>Sunucusuna katıl</button>
+    <button class="mini-ikon" id="sohbetMenuBtn" title="Diğer" aria-label="Diğer">⋮</button>
+    <button class="mini-ikon" id="sohbetKapat" title="Kapat" aria-label="Kapat">×</button>
+    <div class="sohbet-menu" id="sohbetMenu" hidden>
+      <button id="sohbetProfil">Profilini gör</button>
+      <button id="sohbetDavet">Sunucuma davet et</button>
+      <button id="sohbetIdKopyala">ID'sini kopyala</button>
+      <button id="sohbetCikar" class="tehlike">Arkadaşlıktan çıkar</button>
+    </div>
+  </header>
+  <div class="sohbet-akis" id="sohbetAkis"></div>
+  <div class="foto-sec" id="fotoSec" hidden>
+    <div class="foto-sec-ust"><b>Ekran görüntüsü gönder</b><small>Yazdığın mesaj not olarak eklenir</small></div>
+    <div class="foto-sec-liste" id="fotoSecListe"></div>
+  </div>
+  <form class="sohbet-yaz" id="sohbetForm" autocomplete="off">
+    <button class="ikincil" id="sohbetFoto" type="button" title="Ekran görüntüsü gönder" aria-label="Ekran görüntüsü gönder">
+      <svg viewBox="0 0 24 24"><path d="M9 4 7.5 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2.5L15 4H9zm3 5a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/></svg>
+    </button>
+    <input id="sohbetGirdi" maxlength="500" placeholder="Mesaj yaz…" spellcheck="false">
+    <button class="birincil" id="sohbetGonder" type="submit" aria-label="Gönder">
+      <svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z"/></svg>
+    </button>
+  </form>
+</aside>
+
+<div class="perde foto-perde" id="fotoPerde" hidden>
+  <img id="fotoResim" alt="">
+  <div class="foto-bilgi cam">
+    <div class="foto-yazi"><b id="fotoBaslik"></b><span id="fotoNot"></span><small id="fotoKonum"></small></div>
+    <button class="ikincil kucuk" id="fotoKoordinat" hidden>Koordinatı kopyala</button>
+    <button class="birincil kucuk" id="fotoKatil" hidden>Sunucuya katıl</button>
+    <button class="mini-ikon" id="fotoKapat" aria-label="Kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+</div>
+
 <div class="acilis" id="acilis">
   <img src="logo.svg" class="acilis-logo" alt="">
-  <div class="acilis-yazi">KÇZ LAUNCHER</div>
+  <div class="acilis-yazi">KCZ LAUNCHER</div>
   <div class="acilis-cubuk"><div></div></div>
   <div class="acilis-durum" id="acilisDurum">Yükleniyor…</div>
 </div>
@@ -509,25 +794,26 @@
     <h2>Hoş geldin!</h2>
     <div id="girisSecim" class="giris-adim">
       <p class="soluk">Oynamak için Minecraft Java olan Microsoft hesabınla giriş yap.</p>
-      <button class="birincil genis-btn" id="girisTarayiciBtn">Edge ile giriş yap</button>
-      <p class="kucuk-not">Windows'taki Microsoft hesabın Edge'de açıksa şifre yazmazsın, sadece hesabına tıklayıp izin verirsin.</p>
+      <button class="birincil genis-btn" id="girisTarayiciBtn">Tarayıcıyla giriş yap</button>
+      <p class="kucuk-not">Giriş sayfası varsayılan tarayıcında açılır. Microsoft hesabın orada açıksa şifre yazmazsın, sadece hesabına tıklayıp izin verirsin.</p>
       <button class="bag" id="girisBtn">Bunun yerine launcher penceresinde giriş yap</button>
       <button class="bag" id="gecBtn">Şimdilik geç, sadece etrafa bak</button>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,.12);margin:12px 0">
       <p class="soluk">İnternet yok mu? Kullanıcı adı girerek çevrimdışı oyna:</p>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="text" id="cevrimdisiAd" placeholder="Kullanıcı adı" maxlength="16"
+               spellcheck="false" autocomplete="off"
                style="flex:1;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.18);
                       background:rgba(0,0,0,.25);color:#fff;font-size:14px;outline:none">
         <button class="birincil" id="cevrimdisiBtn" style="white-space:nowrap">Çevrimdışı Oyna</button>
       </div>
     </div>
     <div id="girisKod" class="giris-adim" hidden>
-      <p class="soluk">Edge'de açılan sayfada hesabını seç ve <b>İzin ver</b>'e tıkla. Sayfa kod sorarsa bunu yaz:</p>
+      <p class="soluk">Tarayıcında açılan sayfada hesabını seç ve <b>İzin ver</b>'e tıkla. Sayfa kod sorarsa bunu yaz:</p>
       <div class="kod" id="kodYazi">—</div>
       <button class="ikincil kucuk" id="kodKopyala">Kodu kopyala</button>
       <div class="bekleniyor"><span class="donen"></span>Giriş bekleniyor…</div>
-      <p class="kucuk-not">Hata çıkarsa: <b>Edge</b>'de <b>microsoft.com/link</b> adresine git, bu kodu yaz.
+      <p class="kucuk-not">Hata çıkarsa: tarayıcında <b>microsoft.com/link</b> adresine git, bu kodu yaz.
         Microsoft parmak izi, Windows Hello ya da geçiş anahtarı isterse <b>"Diğer oturum açma yolları"</b>na
         tıklayıp şifre ya da Authenticator ile gir. Opera kullanıyorsan VPN'i kapat.</p>
       <button class="bag" id="tarayiciTekrarBtn">Sayfa açılmadı mı? Tekrar aç</button>
@@ -549,5 +835,6 @@
 <script src="ikonlar.js"></script>
 <script src="skin3d.js"></script>
 <script src="app.js"></script>
+<script src="ses.js"></script>
 </body>
 </html>
