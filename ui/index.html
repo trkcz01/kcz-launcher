@@ -789,26 +789,47 @@
 
 <!-- Giriş ekranı -->
 <div class="perde" id="girisPerde" hidden>
-  <div class="giris-kart cam">
-    <img src="logo.svg" class="giris-logo" alt="">
-    <h2>Hoş geldin!</h2>
-    <div id="girisSecim" class="giris-adim">
-      <p class="soluk">Oynamak için Minecraft Java olan Microsoft hesabınla giriş yap.</p>
-      <button class="birincil genis-btn" id="girisTarayiciBtn">Tarayıcıyla giriş yap</button>
-      <p class="kucuk-not">Giriş sayfası varsayılan tarayıcında açılır. Microsoft hesabın orada açıksa şifre yazmazsın, sadece hesabına tıklayıp izin verirsin.</p>
-      <button class="bag" id="girisBtn">Bunun yerine launcher penceresinde giriş yap</button>
-      <button class="bag" id="gecBtn">Şimdilik geç, sadece etrafa bak</button>
-      <hr style="border:none;border-top:1px solid rgba(255,255,255,.12);margin:12px 0">
-      <p class="soluk">İnternet yok mu? Kullanıcı adı girerek çevrimdışı oyna:</p>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="text" id="cevrimdisiAd" placeholder="Kullanıcı adı" maxlength="16"
-               spellcheck="false" autocomplete="off"
-               style="flex:1;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.18);
-                      background:rgba(0,0,0,.25);color:#fff;font-size:14px;outline:none">
-        <button class="birincil" id="cevrimdisiBtn" style="white-space:nowrap">Çevrimdışı Oyna</button>
+  <!-- Ana seçim ekranı: iki panel yan yana -->
+  <div id="girisSecim" class="giris-adim">
+    <div class="giris-ust">
+      <img src="logo.svg" class="giris-logo" alt="">
+      <p class="giris-baslik">Başlamak için bir hesap seç</p>
+      <p class="giris-aciklama">Microsoft hesabınla tüm sunuculara eriş veya bir oyuncu adı belirleyerek çevrimdışı sunucularda oynamaya başla.</p>
+    </div>
+    <div class="giris-paneller">
+      <!-- Sol panel: Microsoft -->
+      <div class="giris-panel cam">
+        <div class="giris-panel-baslik">
+          <span class="etiket etiket-premium">PREMIUM MINECRAFT</span>
+          <b>Microsoft ile gir</b>
+          <small>Premium ve çevrimdışı sunuculara erişim sağla.</small>
+        </div>
+        <button class="birincil genis-btn" id="girisTarayiciBtn">
+          <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right:6px;vertical-align:-2px"><path fill="#fff" d="M11.4 2H2v9.4h9.4V2zm10.6 0h-9.4v9.4H22V2zM11.4 12.6H2V22h9.4v-9.4zm10.6 0h-9.4V22H22v-9.4z"/></svg>
+          Microsoft hesabıyla devam et
+        </button>
+        <small class="giris-panel-not">Giriş Microsoft'un kendi sayfasında; şifreni KCZ görmez.</small>
+        <button class="bag" id="girisBtn">Launcher penceresinde giriş yap</button>
+      </div>
+      <!-- Sağ panel: Çevrimdışı ad -->
+      <div class="giris-panel cam">
+        <div class="giris-panel-baslik">
+          <b>Adla gir</b>
+          <small>Oyuncu adını belirle ve çevrimdışı sunucularda oynamaya başla. Oyuncu adın hatırlanır, skinin otomatik olarak yüklenir.</small>
+        </div>
+        <label class="giris-panel-label"><b>Oyuncu adı</b></label>
+        <input type="text" id="cevrimdisiAd" class="giris-panel-input" placeholder="ör. Oyuncu_42" maxlength="16"
+               spellcheck="false" autocomplete="off">
+        <small class="giris-panel-not">3-16 karakter; yalnız harf, rakam ve alt çizgi.</small>
+        <button class="birincil genis-btn cevrimdisi-btn" id="cevrimdisiBtn">+ Adla devam et</button>
       </div>
     </div>
-    <div id="girisKod" class="giris-adim" hidden>
+    <button class="bag giris-gec" id="gecBtn">Şimdilik geç, sadece etrafa bak →</button>
+  </div>
+  <!-- Kod bekleme ekranı -->
+  <div id="girisKod" class="giris-adim" hidden>
+    <div class="giris-kart cam">
+      <img src="logo.svg" class="giris-logo" alt="">
       <p class="soluk">Tarayıcında açılan sayfada hesabını seç ve <b>İzin ver</b>'e tıkla. Sayfa kod sorarsa bunu yaz:</p>
       <div class="kod" id="kodYazi">—</div>
       <button class="ikincil kucuk" id="kodKopyala">Kodu kopyala</button>
@@ -819,8 +840,8 @@
       <button class="bag" id="tarayiciTekrarBtn">Sayfa açılmadı mı? Tekrar aç</button>
       <button class="bag" id="kodIptalBtn">Vazgeç</button>
     </div>
-    <p class="hata" id="girisHata"></p>
   </div>
+  <p class="hata" id="girisHata"></p>
 </div>
 
 <div class="bildirim" id="bildirim" hidden></div>
