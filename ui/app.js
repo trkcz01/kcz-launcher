@@ -176,7 +176,7 @@ function hesabiGoster(d) {
   hesapAdi = girisli ? d.ad || 'Oyuncu' : '';
   if (girisli) {
     yaz('hesapAd', hesapAdi);
-    yaz('hesapTur', cevrimdisi ? 'Çevrimdışı · Bağlanmak için tıkla' : 'Microsoft hesabı · Çıkış için tıkla');
+    yaz('hesapTur', cevrimdisi ? 'Çevrimdışı Mod · ' + hesapAdi : 'Microsoft hesabı · Çıkış için tıkla');
     $('hesapBtn').title = cevrimdisi ? 'Tekrar bağlanmayı dene' : 'Çıkış yap';
     yaz('hesapHarf', hesapAdi[0].toUpperCase());
     if (d.uuid) {
@@ -185,13 +185,18 @@ function hesabiGoster(d) {
       img.onerror = () => { img.hidden = true; $('hesapHarf').hidden = false; };
       img.src = `https://mc-heads.net/avatar/${d.uuid}/68`;
     }
+    $('cevrimdisiPanel').hidden = true;
   } else {
-    yaz('hesapAd', 'Giriş yapılmadı');
-    yaz('hesapTur', 'Oynamak için giriş yap');
-    $('hesapBtn').title = 'Giriş yap';
+    // Giriş yapılmadı: çevrimdışı profil alanını göster
+    const kaydedilenAd = localStorage.getItem('kcz_cevrimdisi_ad') || '';
+    yaz('hesapAd', kaydedilenAd || 'Çevrimdışı Oyuncu');
+    yaz('hesapTur', kaydedilenAd ? 'Çevrimdışı Mod · Ad gir ve oyna' : 'Aşağıya kullanıcı adı gir');
+    $('hesapBtn').title = 'Microsoft ile giriş yap';
     $('hesapAvatar').hidden = true;
     $('hesapHarf').hidden = false;
-    yaz('hesapHarf', '?');
+    yaz('hesapHarf', kaydedilenAd ? kaydedilenAd[0].toUpperCase() : '?');
+    $('cevrimdisiPanel').hidden = false;
+    $('cevrimdisiAdInput').value = kaydedilenAd;
   }
   if (once !== girisli || onceCevrimdisi !== cevrimdisi) skinleriYukle();
   if (onceCevrimdisi && !cevrimdisi && girisli) bildirim('İnternet geldi, tekrar çevrimiçisin ✓');
@@ -263,6 +268,7 @@ $('cevrimdisiBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Giriş yapılıyor…';
   yaz('girisHata', '');
+  localStorage.setItem('kcz_cevrimdisi_ad', ad);
   const d = await api.cevrimdisiGiris(ad);
   btn.disabled = false;
   btn.textContent = 'Çevrimdışı Oyna';
@@ -270,6 +276,25 @@ $('cevrimdisiBtn').addEventListener('click', async () => {
 });
 $('cevrimdisiAd').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') $('cevrimdisiBtn').click();
+});
+
+// Alt paneldeki çevrimdışı ad kaydetme
+$('cevrimdisiKaydetBtn').addEventListener('click', async () => {
+  const ad = $('cevrimdisiAdInput').value.trim();
+  if (!ad) { bildirim('Kullanıcı adı gir.'); return; }
+  if (ad.length < 3 || ad.length > 16 || !/^[a-zA-Z0-9_]+$/.test(ad)) {
+    bildirim('Ad 3-16 karakter, sadece harf, rakam ve _ olmalı.');
+    return;
+  }
+  localStorage.setItem('kcz_cevrimdisi_ad', ad);
+  yaz('hesapAd', ad);
+  yaz('hesapHarf', ad[0].toUpperCase());
+  yaz('hesapTur', 'Çevrimdışı Mod · Ad gir ve oyna');
+  bildirim(`Çevrimdışı ad kaydedildi: ${ad}`);
+  oynaGuncelle();
+});
+$('cevrimdisiAdInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') $('cevrimdisiKaydetBtn').click();
 });
 $('hesapBtn').addEventListener('click', async () => {
   if (cevrimdisi) {
@@ -607,7 +632,20 @@ $('uygunSurumBtn').addEventListener('click', () => {
   if (s) oyunuAc(s.adres, s.ad, $('uygunSurumBtn').dataset.surum);
 });
 
-$('oynaBtn').addEventListener('click', () => {
+$('oynaBtn').addEventListener('click', async () => {
+  // Giriş yapılmamışsa: kaydedilmiş çevrimdışı ad varsa otomatik çevrimdışı giriş yap
+  if (!girisli) {
+    const ad = localStorage.getItem('kcz_cevrimdisi_ad') || '';
+    if (ad) {
+      const d = await api.cevrimdisiGiris(ad);
+      girisSonucu(d);
+      if (!d.girisli) return;
+      // Giriş başarılı, oyunu başlat
+    } else {
+      perdeyiAc();
+      return;
+    }
+  }
   if (profilAktif()) {
     const p = seciliProfil();
     oyunuAc(null, p.ad, p.surum, p.id);
@@ -1257,11 +1295,18 @@ function oynaGuncelle() {
     yazi.textContent = 'OYUN AÇIK';
     alt.textContent = `${v.id} oynanıyor · İyi oyunlar!`;
   } else if (!girisli) {
+    const kaydedilenAd = localStorage.getItem('kcz_cevrimdisi_ad') || '';
     btn.disabled = false;
-    btn.classList.add('giris');
-    dolgu.style.width = '0';
-    yazi.textContent = 'GİRİŞ YAP';
-    alt.textContent = 'Oynamak için Microsoft hesabınla giriş yap';
+    if (kaydedilenAd) {
+      dolgu.style.width = '0';
+      yazi.textContent = 'OYNA';
+      alt.textContent = 'Çevrimdışı · ' + kaydedilenAd;
+    } else {
+      btn.classList.add('giris');
+      dolgu.style.width = '0';
+      yazi.textContent = 'GİRİŞ YAP';
+      alt.textContent = 'Kullanıcı adı gir veya Microsoft ile giriş yap';
+    }
   } else {
     btn.disabled = false;
     dolgu.style.width = '0';
