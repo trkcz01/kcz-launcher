@@ -1,4 +1,4 @@
-// KÇZ Launcher arayüz mantığı
+// KCZ Launcher arayüz mantığı
 const $ = (id) => document.getElementById(id);
 const api = window.kcz;
 let LINUX = false; // istemci_bilgi gelince ayarlanır
@@ -6,7 +6,6 @@ let LINUX = false; // istemci_bilgi gelince ayarlanır
 let ayarlar = {};
 let girisli = false;
 let hesapAdi = '';
-let cevrimdisi = false;   // İnternet yok: son hesapla çevrimdışı oynanıyor
 let oyunDurumu = 'bosta';   // bosta | acik
 let is = null;              // devam eden iş: { tur: 'oyna' | 'yukle', surum, yuzde, metin }
 let sunucular = [];         // { ad, adres, ikon, veri? }
@@ -87,12 +86,58 @@ function kaydir(h, d) {
   return '#' + [f(hu + 1 / 3), f(hu), f(hu - 1 / 3)].map((x) => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
 }
 
+/* Oyuncu kafası: skin Mojang'dan alınır (yüz + şapka katmanı). Olmazsa mc-heads yedek. */
+function kafaKoy(img, kimlik, boyut = 68) {
+  if (!kimlik) return;
+  img.style.imageRendering = 'pixelated';
+  api.kafaDokusu(String(kimlik)).then((doku) => {
+    if (!doku) { img.src = `https://mc-heads.net/avatar/${encodeURIComponent(kimlik)}/${boyut}`; return; }
+    const r = new Image();
+    r.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = 8; c.height = 8;
+      const g = c.getContext('2d');
+      g.imageSmoothingEnabled = false;
+      g.drawImage(r, 8, 8, 8, 8, 0, 0, 8, 8);
+      g.drawImage(r, 40, 8, 8, 8, 0, 0, 8, 8);
+      img.src = c.toDataURL();
+    };
+    r.onerror = () => { img.src = `https://mc-heads.net/avatar/${encodeURIComponent(kimlik)}/${boyut}`; };
+    r.src = doku;
+  }).catch(() => { img.src = `https://mc-heads.net/avatar/${encodeURIComponent(kimlik)}/${boyut}`; });
+}
+
+/* Hafif mod: Performans teması ya da Düşük / Çok düşük ayar seçiliyse launcher'daki tüm
+   animasyonlar, bulanık cam ve süsler kapanır; skinler durur (zayıf bilgisayarda kasmasın). */
+if (window.__KCZ_DUZ) document.documentElement.classList.add('duz');
+function hafifMi() {
+  return ayarlar.tema === 'performans' || ['cokdusuk', 'dusuk'].includes(ayarlar.performansSeviye)
+    || (!ayarlar.performansSeviye && ayarlar.sistemZayif === true);
+}
+let hafifOnceki = null;
+function hafifUygula() {
+  const h = hafifMi();
+  document.body.classList.toggle('hafif', h);
+  // Pencerenin saydam/düz olması ancak launcher yeniden açılınca değişir
+  if (hafifOnceki !== null && h !== hafifOnceki && typeof window.__KCZ_DUZ === 'boolean' && h !== window.__KCZ_DUZ) {
+    bildirim(h ? 'Hafif mod açıldı. Pencere launcher yeniden açılınca tamamen hafifler.'
+      : 'Hafif mod kapandı. Saydam pencere launcher yeniden açılınca geri gelir.');
+  }
+  hafifOnceki = h;
+  if (h) { try { vitrinGuncelle(); } catch { /* vitrin henüz kurulmadı */ } }
+  if (h) document.querySelectorAll('.model3d').forEach((m) => {
+    m.classList.remove('takip'); delete m.dataset.emote;
+    m.style.setProperty('--bx', '0deg'); m.style.setProperty('--by', '0deg');
+  });
+}
+
 function temaUygula() {
   const t = TEMALAR[ayarlar.tema] || TEMALAR.gri;
   const v = ayarlar.vurgu || t.v;
   document.body.dataset.tema = ayarlar.tema || 'gri';
   // Performans teması: saydamlık ve efektler kapalı (en az işlemci ve ekran kartı kullanımı)
   document.body.dataset.saydam = ayarlar.tema === 'performans' ? '0' : String(ayarlar.saydamlik ?? 1);
+  hafifUygula();
   const kok = document.documentElement.style;
   kok.setProperty('--v', v);
   kok.setProperty('--v2', v.toLowerCase() === t.v ? t.v2 : kaydir(v, 50));
@@ -161,6 +206,9 @@ function sayfaAc(ad) {
   document.querySelectorAll('.sayfa').forEach((s) => s.classList.toggle('aktif', s.id === 'sayfa-' + ad));
   if (ad === 'surumler') surumListesiCiz();
   if (ad === 'modlar') modSayfasiAc();
+  if (ad === 'yonetim') panelYukle();
+  if (ad === 'galeri') galeriYukle(); else if (typeof galeriTemizle === 'function') galeriTemizle();
+  if (ad === 'bildir') setTimeout(() => $('bildirMetin').focus(), 50);
   acilirKapat();
 }
 document.querySelectorAll('.sekme').forEach((b) => b.addEventListener('click', () => sayfaAc(b.dataset.sayfa)));
@@ -170,43 +218,36 @@ document.querySelectorAll('.sekme').forEach((b) => b.addEventListener('click', (
    ========================================================= */
 function hesabiGoster(d) {
   const once = girisli;
-  const onceCevrimdisi = cevrimdisi;
   girisli = !!(d && d.girisli);
-  cevrimdisi = girisli && !!d.cevrimdisi;
   hesapAdi = girisli ? d.ad || 'Oyuncu' : '';
   if (girisli) {
     yaz('hesapAd', hesapAdi);
-    yaz('hesapTur', cevrimdisi ? 'Çevrimdışı Mod · ' + hesapAdi : 'Microsoft hesabı · Çıkış için tıkla');
-    $('hesapBtn').title = cevrimdisi ? 'Tekrar bağlanmayı dene' : 'Çıkış yap';
+    yaz('hesapTur', 'Microsoft hesabı · hesap değiştir');
+    setTimeout(() => { kimlikGoster(''); kimlikYukle(); }, 0);
+    $('hesapBtn').title = 'Hesaplar';
     yaz('hesapHarf', hesapAdi[0].toUpperCase());
     if (d.uuid) {
       const img = $('hesapAvatar');
       img.onload = () => { img.hidden = false; $('hesapHarf').hidden = true; };
       img.onerror = () => { img.hidden = true; $('hesapHarf').hidden = false; };
-      img.src = `https://mc-heads.net/avatar/${d.uuid}/68`;
+      kafaKoy(img, d.uuid);
     }
-    $('cevrimdisiPanel').hidden = true;
   } else {
-    // Giriş yapılmadı: çevrimdışı profil alanını göster
     const kaydedilenAd = localStorage.getItem('kcz_cevrimdisi_ad') || '';
-    yaz('hesapAd', kaydedilenAd || 'Çevrimdışı Oyuncu');
-    yaz('hesapTur', kaydedilenAd ? 'Çevrimdışı Mod · Ad gir ve oyna' : 'Aşağıya kullanıcı adı gir');
-    $('hesapBtn').title = 'Microsoft ile giriş yap';
+    yaz('hesapAd', kaydedilenAd || 'Giriş yapılmadı');
+    yaz('hesapTur', kaydedilenAd ? 'Çevrimdışı Mod · Oyna\'ya bas' : 'Ad gir veya Microsoft ile giriş yap');
+    $('hesapBtn').title = 'Giriş yap';
     $('hesapAvatar').hidden = true;
     $('hesapHarf').hidden = false;
     yaz('hesapHarf', kaydedilenAd ? kaydedilenAd[0].toUpperCase() : '?');
     $('cevrimdisiPanel').hidden = false;
+    $('cevrimdisiPanel').style.display = 'flex';
     $('cevrimdisiAdInput').value = kaydedilenAd;
   }
-  if (once !== girisli || onceCevrimdisi !== cevrimdisi) skinleriYukle();
-  if (onceCevrimdisi && !cevrimdisi && girisli) bildirim('İnternet geldi, tekrar çevrimiçisin ✓');
+  if ($('cevrimdisiPanel') && girisli) { $('cevrimdisiPanel').hidden = true; $('cevrimdisiPanel').style.display = 'none'; }
+  if (once !== girisli) skinleriYukle();
   oynaGuncelle();
 }
-
-// Çevrimdışıyken internet geldi mi diye arada bir bak
-setInterval(async () => {
-  if (cevrimdisi && oyunDurumu !== 'acik') hesabiGoster(await api.hesapDurumu());
-}, 60000);
 
 function girisEkrani(adim) {
   $('girisSecim').hidden = adim !== 'secim';
@@ -221,6 +262,7 @@ function girisSonucu(d) {
   if (d.girisli) {
     $('girisPerde').hidden = true;
     bildirim(`Giriş yapıldı: ${d.ad}`);
+    if (girisli) setTimeout(() => skinleriYukle(), 300); // başka hesap eklendiyse skinleri yenile
   } else {
     girisEkrani('secim');
     if (d.hata) yaz('girisHata', d.hata);
@@ -236,7 +278,7 @@ $('girisTarayiciBtn').addEventListener('click', async () => {
   yaz('girisHata', '');
   const r = await api.tarayiciGirisBaslat();
   btn.disabled = false;
-  btn.textContent = LINUX ? 'Tarayıcıyla giriş yap' : 'Edge ile giriş yap';
+  btn.textContent = 'Tarayıcıyla giriş yap';
   if (!r.ok) { yaz('girisHata', r.hata); return; }
   tarayiciAdresi = r.adres;
   yaz('kodYazi', r.kod);
@@ -261,6 +303,8 @@ $('girisBtn').addEventListener('click', async () => {
   girisSonucu(d);
 });
 $('gecBtn').addEventListener('click', () => { $('girisPerde').hidden = true; });
+
+/* ---------- Çevrimdışı giriş ---------- */
 $('cevrimdisiBtn').addEventListener('click', async () => {
   const ad = $('cevrimdisiAd').value.trim();
   if (!ad) { yaz('girisHata', 'Kullanıcı adı gir.'); return; }
@@ -279,7 +323,7 @@ $('cevrimdisiAd').addEventListener('keydown', (e) => {
 });
 
 // Alt paneldeki çevrimdışı ad kaydetme
-$('cevrimdisiKaydetBtn').addEventListener('click', async () => {
+$('cevrimdisiKaydetBtn').addEventListener('click', () => {
   const ad = $('cevrimdisiAdInput').value.trim();
   if (!ad) { bildirim('Kullanıcı adı gir.'); return; }
   if (ad.length < 3 || ad.length > 16 || !/^[a-zA-Z0-9_]+$/.test(ad)) {
@@ -289,30 +333,60 @@ $('cevrimdisiKaydetBtn').addEventListener('click', async () => {
   localStorage.setItem('kcz_cevrimdisi_ad', ad);
   yaz('hesapAd', ad);
   yaz('hesapHarf', ad[0].toUpperCase());
-  yaz('hesapTur', 'Çevrimdışı Mod · Ad gir ve oyna');
-  bildirim(`Çevrimdışı ad kaydedildi: ${ad}`);
+  yaz('hesapTur', 'Çevrimdışı Mod · Oyna\'ya bas');
+  bildirim('Çevrimdışı ad kaydedildi: ' + ad);
   oynaGuncelle();
 });
 $('cevrimdisiAdInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') $('cevrimdisiKaydetBtn').click();
 });
-$('hesapBtn').addEventListener('click', async () => {
-  if (cevrimdisi) {
-    const btn = $('hesapBtn');
-    btn.disabled = true;
-    yaz('hesapTur', 'Bağlanılıyor…');
-    const d = await api.hesapTekrarDene();
-    btn.disabled = false;
-    hesabiGoster(d);
-    if (d.cevrimdisi) bildirim('Hâlâ internet yok, çevrimdışı devam ediliyor.');
-    return;
-  }
-  if (girisli) {
-    hesabiGoster(await api.cikisYap());
-    bildirim('Çıkış yapıldı.');
-  }
-  perdeyiAc();
+
+/* ---------- Birden fazla hesap ---------- */
+async function hesapMenusuCiz() {
+  const d = await api.hesapListesi();
+  const k = $('hesapListe');
+  k.textContent = '';
+  (d.liste || []).forEach((h) => {
+    const aktif = h.uuid === d.aktif && girisli;
+    const s = el('div', 'hesap-satir' + (aktif ? ' aktif' : ''));
+    const img = el('img', 'avatar');
+    kafaKoy(img, h.uuid);
+    img.alt = '';
+    const ad = el('b', '', h.ad);
+    s.append(img, ad, el('small', '', aktif ? 'Açık' : 'Geç'));
+    const sil = el('button', 'mini-ikon', '×');
+    sil.title = 'Bu hesabı launcher\'dan kaldır';
+    sil.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!sil.classList.contains('emin')) { sil.classList.add('emin'); sil.textContent = '?'; sil.title = 'Kaldırmak için tekrar bas'; return; }
+      hesabiGoster(await api.hesapUnut(h.uuid));
+      bildirim(`${h.ad} launcher'dan kaldırıldı.`);
+      hesapMenusuCiz();
+    });
+    s.append(sil);
+    s.addEventListener('click', async () => {
+      if (aktif) return;
+      s.classList.add('bekliyor');
+      const r = await api.hesapGec(h.uuid);
+      hesabiGoster(r);
+      if (r.girisli) { bildirim(`${r.ad} hesabına geçildi.`); $('hesapMenu').hidden = true; skinleriYukle(); }
+      else { bildirim(r.hata || 'Hesaba geçilemedi, tekrar giriş yap.', true); hesapMenusuCiz(); }
+    });
+    k.append(s);
+  });
+}
+$('hesapBtn').addEventListener('click', async (e) => {
+  e.stopPropagation();
+  const liste = await api.hesapListesi();
+  // Hiç kayıtlı hesap yoksa doğrudan giriş
+  if (!girisli && !(liste.liste || []).length) { perdeyiAc(); return; }
+  const m = $('hesapMenu');
+  m.hidden = !m.hidden;
+  if (!m.hidden) hesapMenusuCiz();
 });
+$('hesapMenu').addEventListener('click', (e) => e.stopPropagation());
+document.addEventListener('click', () => { $('hesapMenu').hidden = true; });
+$('hesapEkle').addEventListener('click', () => { $('hesapMenu').hidden = true; perdeyiAc(); });
 
 /* =========================================================
    SUNUCULAR (oyunda eklenenler) ve sol kartlar
@@ -358,6 +432,18 @@ function sunucuKarti(s, sira, secili) {
   mod.title = sp ? `${s.ad} sunucusuna özel modlar (${sp.surum} · ${YUK_AD[sp.yukleyici]})` : `${s.ad} sunucusuna özel mod kur`;
   mod.addEventListener('click', (e) => { e.stopPropagation(); sunucuModlariniAc(s); });
   kart.append(mod);
+
+  // Masaüstü kısayolu: tek tıkla bu sunucuya bağlan
+  const kis = el('button', 'sk-kisayol');
+  kis.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>';
+  kis.title = 'Masaüstüne kısayol: tek tıkla bu sunucuya bağlan';
+  kis.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const r = await api.kisayolOlustur(s.adres, s.ad);
+    if (r.ok) bildirim(`Masaüstüne "${r.veri}" kısayolu eklendi. Tıklayınca launcher açılmadan ${s.ad} sunucusuna bağlanırsın.`);
+    else bildirim(r.hata, true);
+  });
+  kart.append(kis);
 
   const sil = el('button', 'sk-sil');
   sil.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
@@ -465,10 +551,577 @@ function solSekmeAc(ad, kaydet = true) {
   document.querySelectorAll('#solSekmeler button').forEach((b) => b.classList.toggle('aktif', b.dataset.sol === ad));
   $('sunucular').hidden = ad !== 'sunucu';
   $('profiller').hidden = ad !== 'profil';
-  $('yenileBtn').hidden = ad !== 'sunucu';
+  $('arkadaslar').hidden = ad !== 'arkadas';
+  if (ad === 'arkadas') arkadaslariYukle();
+  $('yenileBtn').hidden = ad === 'profil';
   if (kaydet) api.ayarlariKaydet({ solSekme: ad });
 }
 document.querySelectorAll('#solSekmeler button').forEach((b) => b.addEventListener('click', () => solSekmeAc(b.dataset.sol)));
+
+/* ---------- Masaüstü kısayolu ile açılış ---------- */
+// Launcher gizli açılır; sunucu listesi ve hesap hazır olunca seçili sunucuya bağlanır.
+// Bir sorun olursa (giriş yok, sunucu listede yok, oyun açılamadı) pencere gösterilir.
+async function kisayolOyna(adres) {
+  for (let i = 0; i < 40 && !sunucular.length; i++) await bekle(250);
+  const s = sunucular.find((x) => x.adres === adres) || sunucular.find((x) => x.adres.split(':')[0] === adres.split(':')[0]);
+  const goster = (mesaj) => { api.pencereyiGoster(); if (mesaj) bildirim(mesaj, true); };
+  if (oyunDurumu === 'acik') { bildirim('Oyun zaten açık.'); return; }
+  if (!s) { goster(`Kısayoldaki sunucu (${adres}) listende yok. Önce sunucuyu ekle.`); return; }
+  if (!girisli) { goster(); perdeyiAc(); return; }
+  await sunucuSec(s.adres);
+  $('oynaBtn').click();
+  // Oyun açılmazsa pencereyi göster (indirme sürüyorsa bekler)
+  const izle = setInterval(() => {
+    if (oyunDurumu === 'acik') { clearInterval(izle); return; }
+    if (!is) { clearInterval(izle); goster(sonHata || 'Oyun açılamadı.'); }
+  }, 3000);
+}
+api.kisayolDinle((adres) => kisayolOyna(adres));
+setTimeout(async () => {
+  const a = await api.kisayolBekleyen();
+  if (a) kisayolOyna(a);
+}, 1500);
+
+/* ---------- Arkadaşlar: kim çevrimiçi, hangi sunucuda ---------- */
+function zamanOnce(t) {
+  if (!t) return '';
+  const dk = Math.round((Date.now() - new Date(t).getTime()) / 60000);
+  if (dk < 60) return `${Math.max(1, dk)} dk önce`;
+  const sa = Math.round(dk / 60);
+  if (sa < 24) return `${sa} saat önce`;
+  return `${Math.round(sa / 24)} gün önce`;
+}
+/* Arkadaşlar: 6 haneli ID ile istek; kabul edilince iki taraf da birbirini görür.
+   Eskiden ada göre eklenenler de altta görünmeye devam eder. */
+let benimKod = '';
+function kimlikGoster(kod) {
+  benimKod = kod || '';
+  $('benimIdKutu').hidden = !benimKod;
+  yaz('benimId', benimKod);
+  if (girisli) yaz('hesapTur', benimKod ? `ID: ${benimKod} · hesap değiştir` : 'Microsoft hesabı · hesap değiştir');
+}
+async function kimlikYukle() {
+  if (!girisli) { kimlikGoster(''); return; }
+  try { const r = await api.kimlikKodu(); kimlikGoster(r.ok ? r.veri : ''); } catch { /* sunucu yok */ }
+}
+$('benimIdKopyala').addEventListener('click', async () => {
+  if (!benimKod) return;
+  try { await navigator.clipboard.writeText(benimKod); bildirim(`ID kopyalandı: ${benimKod}`); } catch { bildirim(benimKod); }
+});
+
+function arkSatir(a, sinif, durum, sag) {
+  const s = el('div', 'ark ' + sinif);
+  const kap = el('span', 'ark-ikon-kap');
+  const img = el('img', 'ark-ikon');
+  img.alt = '';
+  kafaKoy(img, a.mc_uuid || a.uuid || a.ad);
+  kap.append(img, el('i', 'ark-nokta'));
+  const bilgi = el('span', 'ark-bilgi');
+  bilgi.append(el('b', '', a.ad || 'Oyuncu'), el('small', '', durum));
+  s.append(kap, bilgi);
+  if (sag) s.append(sag);
+  return s;
+}
+function silDugmesi(baslik, isle, kalici) {
+  const sil = el('button', 'mini-ikon' + (kalici ? ' kalici' : ''), '×');
+  sil.title = baslik;
+  sil.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!sil.classList.contains('emin')) { sil.classList.add('emin'); sil.textContent = '?'; return; }
+    sil.disabled = true;
+    await isle();
+    arkadaslariYukle();
+  });
+  return sil;
+}
+function arkDurum(a) {
+  return a.oyunda ? (a.sunucu ? `Oyunda · ${a.sunucu}` : 'Oyunda')
+    : a.cevrimici ? 'Launcher açık'
+    : a.son ? `Çevrimdışı · ${zamanOnce(a.son)}` : 'Çevrimdışı';
+}
+
+let arkYukleniyor = false;
+let arkIlk = true;
+const arkOnceki = { gelen: new Set(), okunmamis: new Map(), oyunda: new Map() };
+let arkSon = []; // son arkadaş listesi (sohbet paneli de kullanır)
+
+function sunucuAdi(adres) {
+  const s = sunucular.find((x) => x.adres === adres);
+  return s ? s.ad : adres;
+}
+
+/** Arkadaşın sunucusuna katıl: listede yoksa önce eklenir, sonra oyun o sunucuya bağlanarak açılır */
+async function sunucuyaKatil(adres) {
+  if (!adres) return;
+  if (oyunDurumu === 'acik') { bildirim('Oyun zaten açık.'); return; }
+  if (!sunucular.some((x) => x.adres === adres)) {
+    const r = await api.sunucuEkle(adres.split(':')[0], adres);
+    if (!r.ok && !/zaten/i.test(r.hata || '')) { bildirim(r.hata, true); return; }
+    await sunuculariYukle();
+  }
+  bildirim(`${sunucuAdi(adres)} sunucusuna bağlanılıyor…`);
+  kisayolOyna(adres);
+}
+
+async function arkadaslariYukle() {
+  if (arkYukleniyor) return;
+  arkYukleniyor = true;
+  try {
+    const [yeni, eski] = await Promise.all([
+      girisli ? api.arkadasListesi().catch(() => null) : Promise.resolve(null),
+      (ayarlar.arkadaslar || []).length ? api.arkadasDurumlari().catch(() => null) : Promise.resolve(null),
+    ]);
+    if (yeni && yeni.ok) kimlikGoster(yeni.veri.kod);
+    const liste = yeni && yeni.ok && Array.isArray(yeni.veri.liste) ? yeni.veri.liste : [];
+    const gelen = liste.filter((x) => x.tur === 'gelen');
+    const giden = liste.filter((x) => x.tur === 'giden');
+    const arkadas = liste.filter((x) => x.tur === 'arkadas')
+      .sort((a, b) => (Number(b.okunmamis) - Number(a.okunmamis)) || (b.oyunda - a.oyunda) || (b.cevrimici - a.cevrimici)
+        || String(a.ad).localeCompare(String(b.ad)));
+    arkSon = arkadas;
+    const yeniAdlar = new Set(arkadas.map((x) => String(x.ad).toLowerCase()));
+    const eskiler = (eski && eski.ok && Array.isArray(eski.veri) ? eski.veri : [])
+      .filter((x) => !yeniAdlar.has(String(x.ad).toLowerCase()));
+
+    // Yeni istek ve mesajları bildir (ilk yüklemede değil)
+    if (!arkIlk) {
+      gelen.filter((x) => !arkOnceki.gelen.has(x.mc_uuid)).forEach((x) => bildirim(`${x.ad} sana arkadaşlık isteği gönderdi.`));
+      arkadas.forEach((x) => {
+        const n = Number(x.okunmamis) || 0;
+        const acik = sohbetKim && sohbetKim.mc_uuid === x.mc_uuid && !$('sohbet').hidden;
+        if (n > (arkOnceki.okunmamis.get(x.mc_uuid) || 0) && !acik) bildirim(`${x.ad} sana mesaj gönderdi.`);
+      });
+    }
+    // Arkadaş oyuna girdi
+    if (!arkIlk && (ayarlar.istemci || {}).arkadasBildirim !== false) {
+      arkadas.filter((x) => x.oyunda && arkOnceki.oyunda.get(x.mc_uuid) === false).forEach((x) =>
+        bildirim(x.sunucu ? `${x.ad} oyuna girdi · ${sunucuAdi(x.sunucu)}` : `${x.ad} oyuna girdi`));
+    }
+    arkOnceki.oyunda = new Map(arkadas.map((x) => [x.mc_uuid, !!x.oyunda]));
+    arkIlk = false;
+    arkOnceki.gelen = new Set(gelen.map((x) => x.mc_uuid));
+    arkOnceki.okunmamis = new Map(arkadas.map((x) => [x.mc_uuid, Number(x.okunmamis) || 0]));
+
+    const k = $('arkadasListe');
+    k.textContent = '';
+    if (gelen.length) {
+      k.append(el('div', 'ark-baslik', `Gelen istekler · ${gelen.length}`));
+      gelen.forEach((a) => {
+        const btn = el('span', 'ark-btnler');
+        const kabul = el('button', 'ark-onay', '✓');
+        const red = el('button', 'ark-red', '✕');
+        kabul.title = 'Kabul et'; red.title = 'Reddet';
+        const yanitla = async (e, evet) => {
+          e.stopPropagation();
+          kabul.disabled = red.disabled = true;
+          const r = await api.arkadasIstekYanit(a.mc_uuid, evet);
+          if (!r.ok) bildirim(r.hata, true); else if (evet) bildirim(`${a.ad} ile artık arkadaşsınız.`);
+          arkadaslariYukle();
+        };
+        kabul.addEventListener('click', (e) => yanitla(e, true));
+        red.addEventListener('click', (e) => yanitla(e, false));
+        btn.append(kabul, red);
+        k.append(arkSatir(a, 'istek', `ID ${a.kod} · seni eklemek istiyor`, btn));
+      });
+    }
+    if (arkadas.length || eskiler.length) {
+      const cevrimici = arkadas.filter((x) => x.cevrimici).length;
+      k.append(el('div', 'ark-baslik', `Arkadaşlar · ${cevrimici}/${arkadas.length} çevrimiçi`));
+    }
+    arkadas.forEach((a) => {
+      const sag = el('span', 'ark-btnler');
+      if (a.oyunda && a.sunucu) {
+        const katil = el('button', 'ark-katil', 'Katıl');
+        katil.title = `${sunucuAdi(a.sunucu)} sunucusuna katıl`;
+        katil.addEventListener('click', (e) => { e.stopPropagation(); sunucuyaKatil(a.sunucu); });
+        sag.append(katil);
+      }
+      const n = Number(a.okunmamis) || 0;
+      if (n) sag.append(el('span', 'ark-rozet', n > 9 ? '9+' : String(n)));
+      const durum = a.oyunda && a.sunucu ? `Oyunda · ${sunucuAdi(a.sunucu)}` : arkDurum(a);
+      const satir = arkSatir(a, (a.oyunda ? 'oyunda' : a.cevrimici ? 'cevrimici' : '')
+        + (sohbetKim && sohbetKim.mc_uuid === a.mc_uuid && !$('sohbet').hidden ? ' secili' : ''), durum, sag);
+      satir.title = 'Mesaj göndermek için tıkla';
+      satir.addEventListener('click', () => sohbetAc(a));
+      k.append(satir);
+    });
+    eskiler.forEach((a) => {
+      const durum = a.oyunda || a.cevrimici ? arkDurum(a) : 'Ada göre eklendi · ID ile yeniden ekle';
+      k.append(arkSatir(a, a.oyunda ? 'oyunda' : a.cevrimici ? 'cevrimici' : '', durum,
+        silDugmesi('Listeden kaldır', () => api.arkadasSil(a.ad))));
+    });
+    if (giden.length) {
+      k.append(el('div', 'ark-baslik', 'Gönderilen istekler'));
+      giden.forEach((a) => k.append(arkSatir(a, 'istek', `ID ${a.kod} · kabul etmesi bekleniyor`,
+        silDugmesi('İsteği geri al', () => api.arkadasCikar(a.mc_uuid), true))));
+    }
+    if (!k.childElementCount) {
+      const bos = el('div', 'ark-bos');
+      bos.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M17 8v6M14 11h6"/></svg>';
+      bos.append(el('b', '', !girisli ? 'Giriş yapmadın' : yeni && !yeni.ok ? 'Arkadaşlar yüklenemedi' : 'Henüz arkadaşın yok'),
+        el('span', '', !girisli ? 'Arkadaş eklemek için Microsoft hesabınla giriş yap.'
+          : yeni && !yeni.ok ? yeni.hata : 'Arkadaşının 6 haneli ID\'sini yukarıya yazıp istek gönder.'));
+      k.append(bos);
+    }
+    const okunmamis = arkadas.reduce((t, x) => t + (Number(x.okunmamis) || 0), 0);
+    const cevrimiciSayi = arkadas.filter((x) => x.cevrimici).length + eskiler.filter((x) => x.cevrimici).length;
+    const dikkat = gelen.length + okunmamis;
+    const sayi = dikkat || cevrimiciSayi;
+    yaz('arkadasSayac', String(sayi > 9 ? '9+' : sayi));
+    $('arkadasSayac').classList.toggle('canli', sayi > 0);
+    $('arkadasSayac').classList.toggle('istek-var', dikkat > 0);
+    $('arkadasSayac').title = dikkat ? `${gelen.length} istek, ${okunmamis} okunmamış mesaj` : '';
+    if (sohbetKim && !$('sohbet').hidden) sohbetUstGuncelle();
+  } finally {
+    arkYukleniyor = false;
+  }
+}
+
+
+/* ---------- Profil ---------- */
+let profilKim = null; // null: kendi profilim
+function sureYazi(dk) {
+  dk = Math.max(0, Math.round(Number(dk) || 0));
+  if (dk < 60) return `${dk} dk`;
+  const sa = Math.floor(dk / 60);
+  return sa < 100 ? `${sa} sa ${dk % 60} dk` : `${sa.toLocaleString('tr-TR')} sa`;
+}
+async function profilAc(uuid) {
+  if (!girisli) { bildirim('Önce Microsoft hesabınla giriş yap.', true); return; }
+  profilKim = uuid || null;
+  const ben = !uuid;
+  const p = $('profilPerde');
+  p.classList.remove('oyunda', 'cevrimici');
+  yaz('profilAd', ben ? hesapAdi : (arkSon.find((x) => x.mc_uuid === uuid) || {}).ad || 'Oyuncu');
+  yaz('profilId', '——————'); yaz('profilDurum', 'Yükleniyor…'); yaz('profilHakkinda', '');
+  ['profilToplam', 'profilHafta', 'profilArkadas', 'profilKatilma'].forEach((x) => yaz(x, '…'));
+  $('profilDuzenle').hidden = !ben;
+  $('profilHakkinda').hidden = ben;
+  $('profilDugmeler').hidden = ben;
+  $('profilHakkindaGirdi').value = '';
+  $('profilKafa').removeAttribute('src');
+  p.hidden = false;
+  const r = await api.profilAl(uuid || null);
+  if (profilKim !== (uuid || null) || p.hidden) return;
+  if (!r.ok) { yaz('profilDurum', r.hata); return; }
+  const d = r.veri;
+  kafaKoy($('profilKafa'), d.mc_uuid);
+  yaz('profilAd', d.ad || 'Oyuncu');
+  yaz('profilId', d.kod || '');
+  p.classList.toggle('oyunda', !!d.oyunda);
+  p.classList.toggle('cevrimici', !d.oyunda && !!d.cevrimici);
+  yaz('profilDurum', d.oyunda ? (d.sunucu ? `Oyunda · ${sunucuAdi(d.sunucu)}` : 'Oyunda')
+    : d.cevrimici ? 'Launcher açık' : d.son ? `Son görülme: ${zamanOnce(d.son)}` : 'Çevrimdışı');
+  if (ben) {
+    $('profilHakkindaGirdi').value = d.hakkinda || '';
+    yaz('profilSayac', `${(d.hakkinda || '').length}/120`);
+  } else {
+    yaz('profilHakkinda', d.hakkinda || 'Henüz bir şey yazmamış.');
+    $('profilKatil').hidden = !(d.oyunda && d.sunucu);
+    profilKim = d.mc_uuid;
+    $('profilKatil').dataset.sunucu = d.sunucu || '';
+  }
+  yaz('profilToplam', sureYazi(d.toplam_dk));
+  yaz('profilHafta', sureYazi(d.hafta_dk));
+  yaz('profilArkadas', String(d.arkadas_sayisi ?? 0));
+  yaz('profilKatilma', d.katilma ? new Date(d.katilma).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+}
+function profilKapat() { $('profilPerde').hidden = true; profilKim = null; }
+$('profilKapat').addEventListener('click', profilKapat);
+$('profilPerde').addEventListener('click', (e) => { if (e.target === $('profilPerde')) profilKapat(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('profilPerde').hidden) profilKapat(); });
+$('profilHakkindaGirdi').addEventListener('input', (e) => yaz('profilSayac', `${e.target.value.length}/120`));
+$('profilKaydet').addEventListener('click', async () => {
+  const b = $('profilKaydet');
+  b.disabled = true;
+  const r = await api.profilKaydet($('profilHakkindaGirdi').value);
+  b.disabled = false;
+  bildirim(r.ok ? 'Profilin kaydedildi ✓' : r.hata, !r.ok);
+});
+$('profilMesaj').addEventListener('click', () => {
+  const a = arkSon.find((x) => x.mc_uuid === profilKim);
+  profilKapat();
+  if (a) { solSekmeAc('arkadas'); sohbetAc(a); }
+});
+$('profilKatil').addEventListener('click', () => { const s = $('profilKatil').dataset.sunucu; profilKapat(); sunucuyaKatil(s); });
+$('profilDavet').addEventListener('click', () => davetEt(profilKim));
+$('profilimBtn').addEventListener('click', () => { $('hesapMenu').hidden = true; profilAc(null); });
+
+/* ---------- Sunucuya davet ---------- */
+async function davetEt(uuid) {
+  if (!uuid) return;
+  const sunucu = ayarlar.seciliSunucu;
+  if (!sunucu) { bildirim('Önce soldan bir sunucu seç, arkadaşın oraya çağrılır.', true); return; }
+  const r = await api.davetGonder(uuid, sunucu);
+  const a = arkSon.find((x) => x.mc_uuid === uuid);
+  bildirim(r.ok ? `${a ? a.ad : 'Arkadaşın'} ${sunucuAdi(r.veri)} sunucusuna davet edildi.` : r.hata, !r.ok);
+}
+let davetSira = [];
+function davetGoster() {
+  const d = davetSira[0];
+  if (!d) { $('davetKutu').hidden = true; return; }
+  kafaKoy($('davetKafa'), d.gonderen);
+  yaz('davetAd', d.ad);
+  yaz('davetSunucu', `seni ${sunucuAdi(d.sunucu)} sunucusuna çağırıyor`);
+  $('davetKutu').hidden = false;
+}
+$('davetKatil').addEventListener('click', () => { const d = davetSira.shift(); davetGoster(); if (d) sunucuyaKatil(d.sunucu); });
+$('davetKapat').addEventListener('click', () => { davetSira.shift(); davetGoster(); });
+async function davetleriKontrol() {
+  if (!girisli || oyunDurumu === 'acik') return;
+  try {
+    const r = await api.davetleriAl();
+    if (!r.ok || !Array.isArray(r.veri) || !r.veri.length) return;
+    davetSira.push(...r.veri);
+    davetGoster();
+    try { api.pencereyiGoster(); } catch { /* yok */ }
+  } catch { /* sunucu yok */ }
+}
+
+/* ---------- Sohbet ---------- */
+let sohbetKim = null;
+let sohbetSonId = 0;
+let sohbetSonGun = '';
+let sohbetZaman = null;
+let sohbetYukleniyor = false;
+
+function gunAdi(t) {
+  const g = new Date(t); const b = new Date();
+  const ayni = (x, y) => x.toDateString() === y.toDateString();
+  if (ayni(g, b)) return 'Bugün';
+  const d = new Date(b); d.setDate(b.getDate() - 1);
+  if (ayni(g, d)) return 'Dün';
+  return g.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+}
+function sohbetUstGuncelle() {
+  const guncel = arkSon.find((x) => x.mc_uuid === sohbetKim.mc_uuid);
+  if (guncel) sohbetKim = guncel;
+  const a = sohbetKim;
+  yaz('sohbetAd', a.ad || 'Oyuncu');
+  yaz('sohbetDurum', a.oyunda && a.sunucu ? `Oyunda · ${sunucuAdi(a.sunucu)}` : arkDurum(a));
+  $('sohbet').classList.toggle('oyunda', !!a.oyunda);
+  $('sohbet').classList.toggle('cevrimici', !a.oyunda && !!a.cevrimici);
+  $('sohbetKatil').hidden = !(a.oyunda && a.sunucu);
+}
+/* ---------- Konumlu anı (fotoğraf) ---------- */
+const fotoOnbellek = new Map(); // id -> Promise<{resim, bilgi}>
+function fotoIdBul(metin) { const e = /^\[foto:(\d+)\]$/.exec(metin || ''); return e ? Number(e[1]) : 0; }
+function fotoGetir(id) {
+  if (!fotoOnbellek.has(id)) {
+    const p = api.fotoAl(id).then((r) => { if (!r.ok) { fotoOnbellek.delete(id); throw new Error(r.hata); } return r.veri; });
+    fotoOnbellek.set(id, p);
+  }
+  return fotoOnbellek.get(id);
+}
+function boyutAdi(b) {
+  return ({ 'minecraft:overworld': 'Overworld', 'minecraft:the_nether': 'Nether', 'minecraft:the_end': 'End' })[b] || (b || '').replace(/^.*:/, '');
+}
+function konumYazi(b) {
+  if (!b || b.x == null) return '';
+  const s = `X ${b.x} · Y ${b.y} · Z ${b.z}` + (b.boyut ? ` · ${boyutAdi(b.boyut)}` : '');
+  return s + (b.sunucu ? ` · ${sunucuAdi(b.sunucu)}` : ' · tek oyunculu');
+}
+let fotoAcik = null;
+async function fotoAc(id, kimin) {
+  let v;
+  try { v = await fotoGetir(id); } catch (e) { bildirim(e.message || 'Fotoğraf açılamadı.', true); return; }
+  const b = v.bilgi || {};
+  fotoAcik = b;
+  $('fotoResim').src = v.resim;
+  yaz('fotoBaslik', b.benden ? 'Senin gönderdiğin' : `${kimin || 'Arkadaşının'} anısı`);
+  yaz('fotoNot', b.not ? `“${b.not}”` : '');
+  yaz('fotoKonum', konumYazi(b) || 'Konum eklenmemiş');
+  $('fotoKoordinat').hidden = b.x == null;
+  $('fotoKatil').hidden = !b.sunucu;
+  $('fotoPerde').hidden = false;
+}
+$('fotoKapat').addEventListener('click', () => { $('fotoPerde').hidden = true; });
+$('fotoPerde').addEventListener('click', (e) => { if (e.target === $('fotoPerde')) $('fotoPerde').hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('fotoPerde').hidden) { e.stopImmediatePropagation(); $('fotoPerde').hidden = true; } }, true);
+$('fotoKatil').addEventListener('click', () => { if (fotoAcik && fotoAcik.sunucu) { $('fotoPerde').hidden = true; sunucuyaKatil(fotoAcik.sunucu); } });
+$('fotoKoordinat').addEventListener('click', async () => {
+  if (!fotoAcik) return;
+  const t = `${fotoAcik.x} ${fotoAcik.y} ${fotoAcik.z}`;
+  try { await navigator.clipboard.writeText(t); bildirim(`Koordinat kopyalandı: ${t}`); } catch { bildirim(t); }
+});
+function fotoBalonu(b, id, benden) {
+  b.classList.add('foto');
+  const kap = el('button', 'foto-kap');
+  kap.type = 'button';
+  const img = document.createElement('img');
+  img.alt = '';
+  kap.append(img);
+  const alt = el('span', 'foto-alt', 'Yükleniyor…');
+  kap.append(alt);
+  b.append(kap);
+  kap.addEventListener('click', () => fotoAc(id, sohbetKim && !benden ? sohbetKim.ad : null));
+  fotoGetir(id).then((v) => {
+    img.src = v.resim;
+    const bi = v.bilgi || {};
+    alt.textContent = bi.not || (bi.x != null ? `📍 ${konumYazi(bi)}` : 'Fotoğraf');
+  }).catch((e) => { kap.classList.add('yok'); alt.textContent = e.message || 'Fotoğraf açılamadı'; });
+}
+async function fotoGonderBasla(uuid, dosya, not) {
+  const r = await api.fotoGonder(uuid, dosya, not || null);
+  if (!r.ok) { bildirim(r.hata, true); return false; }
+  return true;
+}
+// Sohbetten: son ekran görüntülerinden seç
+$('sohbetFoto').addEventListener('click', async (e) => {
+  e.stopPropagation();
+  const k = $('fotoSec');
+  if (!k.hidden) { k.hidden = true; return; }
+  const liste = (await api.ekranGoruntuleri()).slice(0, 12);
+  const l = $('fotoSecListe');
+  l.textContent = '';
+  if (!liste.length) l.append(el('div', 'bos', 'Henüz ekran görüntüsü yok. Oyunda F2\'ye bas.'));
+  for (const g of liste) {
+    const b = el('button', 'foto-sec-oge');
+    b.type = 'button';
+    const img = document.createElement('img');
+    img.alt = '';
+    resimAdresi(g.ad).then((u) => { img.src = u; }).catch(() => {});
+    b.append(img);
+    b.title = g.ad;
+    b.addEventListener('click', async () => {
+      if (!sohbetKim) return;
+      k.hidden = true;
+      const not = $('sohbetGirdi').value.trim();
+      $('sohbetGirdi').value = '';
+      $('sohbetAkis').querySelectorAll('.sohbet-bos').forEach((x) => x.remove());
+      const gecici = el('div', 'balon ben gidiyor', 'Fotoğraf gönderiliyor…');
+      $('sohbetAkis').append(gecici);
+      $('sohbetAkis').scrollTop = $('sohbetAkis').scrollHeight;
+      const ok = await fotoGonderBasla(sohbetKim.mc_uuid, g.ad, not);
+      if (!ok) { gecici.remove(); $('sohbetGirdi').value = not; return; }
+      sohbetYukle();
+    });
+    l.append(b);
+  }
+  k.hidden = false;
+});
+document.addEventListener('click', (e) => { if (!e.target.closest('#fotoSec, #sohbetFoto')) $('fotoSec').hidden = true; });
+
+function balonEkle(m) {
+  const gun = gunAdi(m.zaman);
+  if (gun !== sohbetSonGun) { $('sohbetAkis').append(el('div', 'sohbet-gun', gun)); sohbetSonGun = gun; }
+  const b = el('div', 'balon ' + (m.benden ? 'ben' : 'o'));
+  const fid = fotoIdBul(m.metin);
+  if (fid) fotoBalonu(b, fid, m.benden); else b.append(document.createTextNode(m.metin));
+  b.append(el('small', '', new Date(m.zaman).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })));
+  $('sohbetAkis').append(b);
+  return b;
+}
+async function sohbetYukle() {
+  if (!sohbetKim || sohbetYukleniyor) return;
+  sohbetYukleniyor = true;
+  const kim = sohbetKim.mc_uuid;
+  try {
+    const r = await api.mesajlariAl(kim, sohbetSonId);
+    if (!sohbetKim || sohbetKim.mc_uuid !== kim) return;
+    if (!r.ok) { if (!sohbetSonId) { $('sohbetAkis').textContent = ''; $('sohbetAkis').append(el('div', 'sohbet-bos', r.hata)); } return; }
+    const yeni = Array.isArray(r.veri) ? r.veri.filter((m) => m.id > sohbetSonId) : [];
+    if (!yeni.length) { if (!sohbetSonId && !$('sohbetAkis').querySelector('.balon')) { $('sohbetAkis').textContent = ''; $('sohbetAkis').append(el('div', 'sohbet-bos', `${sohbetKim.ad} ile henüz mesajlaşmadınız. İlk mesajı sen at!`)); } return; }
+    const akis = $('sohbetAkis');
+    const asagida = akis.scrollHeight - akis.scrollTop - akis.clientHeight < 60;
+    akis.querySelectorAll('.sohbet-bos, .balon.gidiyor').forEach((x) => x.remove());
+    yeni.forEach(balonEkle);
+    sohbetSonId = yeni[yeni.length - 1].id;
+    if (asagida || yeni.some((m) => m.benden)) akis.scrollTop = akis.scrollHeight;
+    // okundu oldu: rozetleri tazele
+    if (yeni.some((m) => !m.benden)) arkadaslariYukle();
+  } finally {
+    sohbetYukleniyor = false;
+  }
+}
+function sohbetAc(a) {
+  sohbetKim = a;
+  sohbetSonId = 0;
+  sohbetSonGun = '';
+  $('sohbetAkis').textContent = '';
+  $('sohbetAkis').append(el('div', 'sohbet-bos', 'Yükleniyor…'));
+  $('sohbetMenu').hidden = true;
+  $('sohbetCikar').classList.remove('emin'); $('sohbetCikar').textContent = 'Arkadaşlıktan çıkar';
+  kafaKoy($('sohbetKafa'), a.mc_uuid);
+  sohbetUstGuncelle();
+  $('sohbet').hidden = false;
+  document.querySelectorAll('#arkadasListe .ark').forEach((x) => x.classList.remove('secili'));
+  setTimeout(() => $('sohbetGirdi').focus(), 50);
+  sohbetYukle();
+  clearInterval(sohbetZaman);
+  sohbetZaman = setInterval(() => { if (!document.hidden && oyunDurumu !== 'acik') sohbetYukle(); }, 2500);
+}
+function sohbetKapat() {
+  $('sohbet').hidden = true;
+  clearInterval(sohbetZaman);
+  sohbetKim = null;
+  document.querySelectorAll('#arkadasListe .ark.secili').forEach((x) => x.classList.remove('secili'));
+}
+$('sohbetKapat').addEventListener('click', sohbetKapat);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('sohbet').hidden) sohbetKapat(); });
+$('sohbetKatil').addEventListener('click', () => { if (sohbetKim) sunucuyaKatil(sohbetKim.sunucu); });
+$('sohbetMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); $('sohbetMenu').hidden = !$('sohbetMenu').hidden; });
+$('sohbet').addEventListener('click', (e) => { if (!e.target.closest('#sohbetMenu, #sohbetMenuBtn')) $('sohbetMenu').hidden = true; });
+$('sohbetProfil').addEventListener('click', () => { $('sohbetMenu').hidden = true; if (sohbetKim) profilAc(sohbetKim.mc_uuid); });
+$('sohbetDavet').addEventListener('click', () => { $('sohbetMenu').hidden = true; if (sohbetKim) davetEt(sohbetKim.mc_uuid); });
+document.querySelectorAll('.sohbet-kafa, .sohbet-kim').forEach((x) => x.addEventListener('click', () => { if (sohbetKim) profilAc(sohbetKim.mc_uuid); }));
+$('sohbetIdKopyala').addEventListener('click', async () => {
+  if (!sohbetKim) return;
+  try { await navigator.clipboard.writeText(sohbetKim.kod); bildirim(`ID kopyalandı: ${sohbetKim.kod}`); } catch { bildirim(sohbetKim.kod); }
+  $('sohbetMenu').hidden = true;
+});
+$('sohbetCikar').addEventListener('click', async () => {
+  const b = $('sohbetCikar');
+  if (!sohbetKim) return;
+  if (!b.classList.contains('emin')) { b.classList.add('emin'); b.textContent = 'Emin misin? Tekrar bas'; return; }
+  const ad = sohbetKim.ad;
+  const r = await api.arkadasCikar(sohbetKim.mc_uuid);
+  if (!r.ok) { bildirim(r.hata, true); return; }
+  bildirim(`${ad} arkadaşlarından çıkarıldı.`);
+  sohbetKapat();
+  arkadaslariYukle();
+});
+$('sohbetForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const g = $('sohbetGirdi');
+  const metin = g.value.trim();
+  if (!metin || !sohbetKim) return;
+  g.value = '';
+  $('sohbetAkis').querySelectorAll('.sohbet-bos').forEach((x) => x.remove());
+  const gecici = balonEkle({ benden: true, metin, zaman: new Date().toISOString() });
+  gecici.classList.add('gidiyor');
+  $('sohbetAkis').scrollTop = $('sohbetAkis').scrollHeight;
+  const r = await api.mesajGonder(sohbetKim.mc_uuid, metin);
+  if (!r.ok) { gecici.remove(); g.value = metin; bildirim(r.hata, true); return; }
+  sohbetYukle();
+});
+$('arkadasAd').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); });
+$('arkadasEkle').addEventListener('click', async () => {
+  const kod = $('arkadasAd').value.trim();
+  if (kod.length !== 6) { bildirim('Arkadaşının 6 haneli ID\'sini yaz.', true); return; }
+  $('arkadasEkle').disabled = true;
+  const r = await api.arkadasIstekGonder(kod);
+  $('arkadasEkle').disabled = false;
+  if (!r.ok) { bildirim(r.hata, true); return; }
+  $('arkadasAd').value = '';
+  bildirim(r.veri === 'kabul' ? 'O da seni eklemişti: artık arkadaşsınız!' : 'İstek gönderildi. Kabul edince listende görünecek.');
+  arkadaslariYukle();
+});
+$('arkadasAd').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('arkadasEkle').click(); });
+// Açıkken dakikada bir tazele (oyun açıkken ya da launcher arkadayken bakılmaz)
+// İstek ve mesajlar beklemeden gelsin: launcher görünürken 5 sn'de bir, arkadayken dakikada bir bakılır
+// (oyun açıkken hiç bakılmaz). Her bakış tek, çok küçük bir istek.
+let arkSonBakis = 0;
+setInterval(() => {
+  if (oyunDurumu === 'acik' || !girisli) return;
+  const aralik = document.hidden ? 60000 : 5000;
+  if (Date.now() - arkSonBakis < aralik - 500) return;
+  arkSonBakis = Date.now();
+  arkadaslariYukle();
+  davetleriKontrol();
+}, 4000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && girisli && oyunDurumu !== 'acik') { arkSonBakis = Date.now(); arkadaslariYukle(); } });
+setTimeout(() => { kimlikYukle(); arkadaslariYukle(); }, 4000);
 
 /* ---------- Profil formu ---------- */
 let pfDuzenlenen = null;
@@ -633,14 +1286,12 @@ $('uygunSurumBtn').addEventListener('click', () => {
 });
 
 $('oynaBtn').addEventListener('click', async () => {
-  // Giriş yapılmamışsa: kaydedilmiş çevrimdışı ad varsa otomatik çevrimdışı giriş yap
   if (!girisli) {
     const ad = localStorage.getItem('kcz_cevrimdisi_ad') || '';
     if (ad) {
       const d = await api.cevrimdisiGiris(ad);
       girisSonucu(d);
       if (!d.girisli) return;
-      // Giriş başarılı, oyunu başlat
     } else {
       perdeyiAc();
       return;
@@ -682,7 +1333,7 @@ async function sunuculariYukle() {
   $('yenileBtn').classList.remove('donuyor');
   sunucuYukleniyor = false;
 }
-$('yenileBtn').addEventListener('click', sunuculariYukle);
+$('yenileBtn').addEventListener('click', () => { if (ayarlar.solSekme === 'arkadas') arkadaslariYukle(); else sunuculariYukle(); });
 api.sunucularDegisti(() => sunuculariYukle());
 
 /* ---------- Sahnenin üstündeki sunucu bilgisi ---------- */
@@ -700,7 +1351,7 @@ function sahneBilgisi() {
   if (!s) {
     yaz('secAd', 'Minecraft ' + ayarlar.mcSurum);
     yaz('secDurum', 'Henüz sunucu yok. Oyunda ekleyince burada görünür.');
-    yaz('devYazi', 'KÇZ');
+    yaz('devYazi', 'KCZ');
     return;
   }
   const d = s.veri;
@@ -714,13 +1365,6 @@ function sahneBilgisi() {
    ========================================================= */
 function ozetCiz() {
   if (profilAktif()) {
-    const p = seciliProfil();
-    yaz('duyuruEtiket', `PROFİL · ${p.ad}`);
-    yaz('duyuruBaslik', `${p.surum} · ${YUK_AD[p.yukleyici]}`);
-    yaz('duyuruMetin', p.yukleyici === 'vanilla'
-      ? 'Modsuz, temiz Minecraft. OYNA oyunu ana menüde açar.'
-      : 'Bu profilin kendi modları var. Sol taraftaki mod butonundan kurup yönetebilirsin.');
-    yaz('duyuruCip', surumBilgi(p.surum).yuklu ? 'Yüklü ✓' : 'İlk açılışta iner');
     const kap = $('cevrimici');
     kap.innerHTML = '';
     yaz('cevrimiciSayi', '');
@@ -729,27 +1373,6 @@ function ozetCiz() {
   }
   const s = seciliSunucu();
   const d = s && s.veri;
-  // Sunucu mesajı (MOTD)
-  yaz('duyuruEtiket', `SUNUCU MESAJI · ${s ? s.ad : 'KÇZ'}`);
-  if (!s) {
-    yaz('duyuruBaslik', 'Hoş geldin!');
-    yaz('duyuruMetin', 'Oyunu aç, Çok Oyunculu menüsünden sunucunu ekle. Sunucunun mesajları burada görünür.');
-    yaz('duyuruCip', 'İpucu');
-  } else if (!d) {
-    yaz('duyuruBaslik', s.ad);
-    yaz('duyuruMetin', 'Sunucuya bakılıyor…');
-    yaz('duyuruCip', '…');
-  } else if (d.durum === 'acik') {
-    const satirlar = (d.motd || '').split('\n').map((x) => x.trim()).filter(Boolean);
-    yaz('duyuruBaslik', satirlar[0] || 'Sunucu açık');
-    yaz('duyuruMetin', satirlar.slice(1).join(' ') || `${d.oyuncu}/${d.maks} oyuncu çevrimiçi. Sunucu sürümü: ${d.surum}.`);
-    yaz('duyuruCip', `Şimdi · ${d.gecikme} ms`);
-  } else {
-    yaz('duyuruBaslik', 'Sunucu kapalı');
-    yaz('duyuruMetin', 'Şu an ulaşılamıyor. Bakımda olabilir, biraz sonra tekrar dene.');
-    yaz('duyuruCip', 'Kapalı');
-  }
-
   // Sunucuda kimler var
   const kap = $('cevrimici');
   kap.innerHTML = '';
@@ -761,7 +1384,7 @@ function ozetCiz() {
   oyuncular.slice(0, 3).forEach((ad) => {
     const satir = el('div', 'oyuncu');
     const k = el('img');
-    k.src = `https://mc-heads.net/avatar/${encodeURIComponent(ad)}/56`;
+    kafaKoy(k, ad, 56);
     k.alt = '';
     const yazi = el('span');
     yazi.append(el('b', '', ad));
@@ -805,8 +1428,7 @@ async function haftayiCiz() {
 /* ---------- Öneri kartları (Modrinth) ---------- */
 const ONERILER = [
   { tur: 'mod', etiket: 'MOD', proje: 'jei', ad: 'JEI', alt: 'Tüm tarifleri oyunun içinde gör', harf: 'J' },
-  { tur: 'mod', etiket: 'MOD', proje: 'iris', ad: 'Iris', alt: 'Shader\'ları açmak için gerekli', harf: 'I' },
-  { tur: 'shader', etiket: 'SHADER', proje: 'complementary-reimagined', ad: 'Complementary', alt: 'Gerçekçi ışık, su ve gölgeler', harf: 'C' },
+  { tur: 'mod', etiket: 'MOD', proje: 'appleskin', ad: 'AppleSkin', alt: 'Açlık ve doygunluğu gör', harf: 'A' },
   { tur: 'mod', etiket: 'MOD', proje: 'modmenu', ad: 'Mod Menu', alt: 'Mod ayarlarını oyunun içinden aç', harf: 'M' }
 ];
 let oneriSira = 0;
@@ -826,6 +1448,7 @@ function oneriCiz() {
   kap.append(n);
 }
 setInterval(() => {
+  if (oyunDurumu === 'acik') return; // oyun açıkken launcher boşta beklesin
   if (document.querySelector('.oneri-kart button:hover')) return;
   oneriSira = (oneriSira + 1) % ONERILER.length;
   document.querySelectorAll('.oneri-kart').forEach((k, i) => k.classList.toggle('aktif', i === oneriSira));
@@ -838,12 +1461,13 @@ setInterval(() => {
 let skinler = [];
 let skinSecili = 0;
 // Vitrin yerleri: [x, y, z, ölçek]. Sahne büyüyünce hepsi orantılı büyür.
-const YERLER = { 0: [0, 0, 0, 0.8], '-1': [-200, -4, -300, 0.68], 1: [200, -4, -300, 0.68], '-2': [-350, -10, -650, 0.58], 2: [350, -10, -650, 0.58] };
+const YERLER = { 0: [0, 0, 0, 1.05], '-1': [-235, -4, -300, 0.7], 1: [235, -4, -300, 0.7], '-2': [-390, -10, -650, 0.6], 2: [390, -10, -650, 0.6] };
 function vitrinOlcegi() {
   const sahne = $('sahne');
   const h = sahne ? sahne.clientHeight : 470;
   const w = sahne ? sahne.clientWidth : 800;
-  return Math.max(0.85, Math.min(1.9, Math.min(h / 470, w / 790)));
+  // Boyu esas al: pencere daralınca skin küçülmesin, sadece taşacak kadar dar olursa küçülsün
+  return Math.max(1, Math.min(2.2, Math.min(h / 470, w / 600)));
 }
 function yerDonusumu(o) {
   const [x, y, z, olc] = YERLER[o];
@@ -855,10 +1479,16 @@ window.addEventListener('resize', () => { if (skinler.length) vitrinGuncelle(); 
 async function skinleriYukle(seciliTur) {
   let liste = [];
   try { liste = await api.skinListesi(); } catch { liste = []; }
+  const benim = liste.find((x) => x.tur === 'benim');
+  aktifPelerin = benim && benim.pelerin ? benim.pelerin : null;
   const bilgiler = await Promise.all(liste.map((s) => Skin3D.dokuBilgi(s.doku)));
   skinler = liste.filter((_, i) => bilgiler[i].ok).map((s, i) => ({ ...s, eski: bilgiler.filter((b) => b.ok)[i].eski }));
-  if (seciliTur === 'son') skinSecili = skinler.length - 1;
-  else skinSecili = 0;
+  if (seciliTur === 'son') {
+    // Yeni eklenen: listedeki son "ekli" skin (sondakiler hazır KCZ skinleri)
+    let i = -1;
+    skinler.forEach((x, j) => { if (x.tur === 'ekli') i = j; });
+    skinSecili = i >= 0 ? i : 0;
+  } else skinSecili = 0;
   vitrinKur();
 }
 
@@ -870,8 +1500,11 @@ function ofset(i) {
   return o;
 }
 
+/** Hesaptaki takılı pelerin: vitrindeki bütün karakterlerin sırtında görünür */
+let aktifPelerin = null;
+
 function modelYap(s, i) {
-  const model = Skin3D.karakter(s.doku, s.ince, s.eski);
+  const model = Skin3D.karakter(s.doku, s.ince, s.eski, aktifPelerin);
   model.querySelectorAll('.parca').forEach((p) => { p.style.animationDelay = `-${(i * 1.3).toFixed(1)}s`; });
   return model;
 }
@@ -915,6 +1548,10 @@ function vitrinGuncelle() {
     s.el.yer.hidden = !gorunur;
     if (!gorunur) return;
     s.el.yer.classList.toggle('on', o === 0);
+    if (o !== 0 && !s.el.duz && document.body.classList.contains('hafif')) {
+      s.el.duz = Skin3D.onResim(s.doku, s.ince, s.eski);
+      s.el.yer.querySelector('.skin-suzul').append(s.el.duz);
+    }
     s.el.yer.style.transform = yerDonusumu(o);
     s.el.yer.style.zIndex = String(10 - Math.abs(o));
     s.el.yer.style.setProperty('--k', [1, 0.55, 0.32][Math.abs(o)]);
@@ -941,7 +1578,8 @@ function vitrinGuncelle() {
   const ince = $('inceBtn');
   ince.textContent = s.ince ? 'İnce kol' : 'Normal kol';
   ince.classList.toggle('ince', !!s.ince);
-  $('skinKaldir').hidden = s.tur !== 'ekli';
+  $('skinKaldir').hidden = !(s.tur === 'ekli' || s.anahtar);
+  $('skinKaldir').title = s.tur === 'ekli' ? 'Skini sil' : 'Vitrinden kaldır';
   const secKafa = s.kafa;
   if (secKafa) secKafa.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
@@ -977,6 +1615,21 @@ let onAci = -22;
   const bitir = () => { if (aktif) aktif.classList.remove('ceviriliyor'); aktif = null; };
   $('vitrin').addEventListener('pointerup', bitir);
   $('vitrin').addEventListener('pointercancel', bitir);
+  // Yandaki skinlere tıklayınca ona geç. 3D dönüşümlü öğelerde tıklama her zaman doğru öğeye
+  // düşmediği için ekrandaki kutularına göre bulunur.
+  $('vitrin').addEventListener('click', (e) => {
+    if (e.target.closest('.skin-yer.on') || !skinler.length) return;
+    let en = -1, enUzak = Infinity;
+    skinler.forEach((x, i) => {
+      if (i === skinSecili || !x.el) return;
+      const r = x.el.yer.getBoundingClientRect();
+      if (!r.width) return;
+      const icinde = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      const uzak = Math.abs(e.clientX - (r.left + r.right) / 2) + (icinde ? -1000 : 0);
+      if (uzak < enUzak && (icinde || Math.abs(e.clientX - (r.left + r.right) / 2) < r.width)) { enUzak = uzak; en = i; }
+    });
+    if (en >= 0) skinSec(en);
+  });
   $('vitrin').addEventListener('dblclick', (e) => {
     if (!e.target.closest('.skin-yer.on')) return;
     onAci = -22;
@@ -985,7 +1638,13 @@ let onAci = -22;
 })();
 
 /* ---------- Kafa fareyi takip etsin ---------- */
+let takipKare = 0, takipOlay = null;
 $('sahne').addEventListener('mousemove', (e) => {
+  if (document.body.classList.contains('hafif')) return;
+  takipOlay = e;
+  if (!takipKare) takipKare = requestAnimationFrame(() => { takipKare = 0; kafaTakip(takipOlay); });
+});
+function kafaTakip(e) {
   const s = skinler[skinSecili];
   if (!s || s.el.yer.classList.contains('ceviriliyor')) return;
   const m = s.el.model;
@@ -996,7 +1655,7 @@ $('sahne').addEventListener('mousemove', (e) => {
   m.classList.add('takip');
   m.style.setProperty('--bx', bx.toFixed(1) + 'deg');
   m.style.setProperty('--by', by.toFixed(1) + 'deg');
-});
+}
 $('sahne').addEventListener('mouseleave', () => {
   const s = skinler[skinSecili];
   if (!s) return;
@@ -1035,7 +1694,8 @@ $('otoEmote').addEventListener('click', () => {
   bildirim(otoEmote ? 'Karakter ara ara kendi kendine hareket edecek.' : 'Kendi kendine hareket kapalı.');
 });
 setInterval(() => {
-  if (!otoEmote || !$('sayfa-ana').classList.contains('aktif')) return;
+  if (oyunDurumu === 'acik') return;
+  if (!otoEmote || hafifMi() || !$('sayfa-ana').classList.contains('aktif')) return;
   if (Date.now() - sonEtkilesim < 9000) return;
   const s = skinler[skinSecili];
   if (!s || s.el.model.dataset.emote || s.el.yer.classList.contains('ceviriliyor')) return;
@@ -1077,25 +1737,83 @@ $('giyBtn').addEventListener('click', async () => {
 });
 $('skinKaldir').addEventListener('click', async () => {
   const s = skinler[skinSecili];
-  if (!s || s.tur !== 'ekli') return;
-  await api.skinKaldir(s.sira);
+  if (!s || !(s.tur === 'ekli' || s.anahtar)) return;
+  const b = $('skinKaldir');
+  if (!b.classList.contains('emin')) {
+    b.classList.add('emin'); b.title = 'Silmek için tekrar bas';
+    bildirim(`"${s.ad}" silinsin mi? Silmek için çöp kutusuna tekrar bas.`);
+    setTimeout(() => { b.classList.remove('emin'); b.title = 'Skini sil'; }, 3000);
+    return;
+  }
+  b.classList.remove('emin');
+  if (s.tur === 'ekli') {
+    await api.skinKaldir(s.sira);
+    bildirim(`"${s.ad}" silindi.`);
+  } else {
+    await api.skinGizle(s.anahtar);
+    bildirim(`"${s.ad}" vitrinden kaldırıldı. Geri getirmek için + menüsündeki "Kaldırılanları geri getir"e bas.`);
+  }
   await skinleriYukle();
   ayarlar = await api.ayarlariGetir();
 });
 $('skinEkleBtn').addEventListener('click', (e) => {
   e.stopPropagation();
+  $('pelerinKutu').hidden = true;
   $('skinEkle').hidden = !$('skinEkle').hidden;
   if (!$('skinEkle').hidden) $('skinIsim').focus();
 });
 $('skinEkle').addEventListener('click', (e) => e.stopPropagation());
-document.addEventListener('click', () => { $('skinEkle').hidden = true; });
+$('pelerinKutu').addEventListener('click', (e) => e.stopPropagation());
+document.addEventListener('click', () => { $('skinEkle').hidden = true; $('pelerinKutu').hidden = true; });
+
+/* ---------- Pelerinler ---------- */
+async function pelerinleriCiz() {
+  const k = $('pelerinler');
+  k.textContent = '';
+  k.append(el('small', 'bos-yazi', 'Yükleniyor…'));
+  const r = await api.pelerinListe();
+  k.textContent = '';
+  if (!r.ok) { k.append(el('small', 'bos-yazi', r.hata || 'Pelerinler alınamadı.')); return; }
+  const liste = Array.isArray(r.veri) ? r.veri : [];
+  const herhangiAktif = liste.some((p) => p.aktif);
+  const oge = (ad, doku, aktif, id) => {
+    const b = el('button', 'pelerin' + (aktif ? ' aktif' : ''));
+    const res = el('span', 'pelerin-resim' + (doku ? '' : ' yok'));
+    if (doku) res.style.backgroundImage = `url("${doku}")`;
+    b.append(res, el('span', '', ad));
+    b.title = aktif ? `${ad} (takılı)` : `${ad} tak`;
+    b.addEventListener('click', async () => {
+      if (aktif) return;
+      k.querySelectorAll('.pelerin').forEach((x) => { x.disabled = true; });
+      const s = await api.pelerinTak(id);
+      if (s.ok) bildirim(id ? `${ad} pelerini takıldı.` : 'Pelerin çıkarıldı.'); else bildirim(s.hata, true);
+      pelerinleriCiz();
+      if (s.ok) { aktifPelerin = doku || null; const secili = skinSecili; vitrinKur(); skinSec(secili); }
+    });
+    k.append(b);
+  };
+  oge('Pelerinsiz', null, !herhangiAktif, '');
+  liste.forEach((p) => oge(p.ad || 'Pelerin', p.doku, p.aktif, p.id));
+  if (!liste.length) k.append(el('small', 'bos-yazi', 'Hesabında pelerin yok. Pelerinler Minecraft etkinliklerinden ve Minecraft Store\'dan kazanılıyor.'));
+}
+$('pelerinBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('skinEkle').hidden = true;
+  if (!girisli) { perdeyiAc(); return; }
+  const k = $('pelerinKutu');
+  k.hidden = !k.hidden;
+  if (!k.hidden) pelerinleriCiz();
+});
 
 async function skinEkleSonuc(r) {
   if (r.ok) {
     $('skinEkle').hidden = true;
     $('skinIsim').value = '';
     await skinleriYukle('son');
-    bildirim('Skin vitrine eklendi. Takmak için "Giy"e bas.');
+    // Giriş yapılmışsa eklenen skin hemen Minecraft hesabına takılır
+    const yeni = skinler[skinSecili];
+    if (girisli && yeni && yeni.tur === 'ekli' && !$('giyBtn').disabled) $('giyBtn').click();
+    else bildirim('Skin vitrine eklendi. Hesabına takmak için giriş yapıp "Giy"e bas.');
   } else if (r.hata) bildirim(r.hata, true);
 }
 $('skinIsimEkle').addEventListener('click', async () => {
@@ -1104,6 +1822,26 @@ $('skinIsimEkle').addEventListener('click', async () => {
   $('skinIsimEkle').disabled = true;
   skinEkleSonuc(await api.skinIsimEkle(isim));
   $('skinIsimEkle').disabled = false;
+});
+$('skinYenileBtn').addEventListener('click', async () => {
+  const b = $('skinYenileBtn');
+  b.disabled = true; b.textContent = 'Microsoft\'tan alınıyor…';
+  try {
+    const r = await api.skinYenile();
+    await skinleriYukle('benim');
+    api.hesapDurumu().then(hesabiGoster).catch(() => {});
+    $('skinEkle').hidden = true;
+    bildirim(r.ok ? r.mesaj : r.hata, !r.ok);
+  } finally {
+    b.disabled = false; b.textContent = 'Hesabımdaki skini çek';
+  }
+});
+$('skinGeriGetir').addEventListener('click', async () => {
+  await api.skinGizlenenleriGeri();
+  $('skinEkle').hidden = true;
+  await skinleriYukle();
+  ayarlar = await api.ayarlariGetir();
+  bildirim('Kaldırılan skinler vitrine geri geldi.');
 });
 $('skinIsim').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('skinIsimEkle').click(); });
 $('skinDosyaKlasik').addEventListener('click', async () => skinEkleSonuc(await api.skinDosyaEkle(false)));
@@ -1297,15 +2035,14 @@ function oynaGuncelle() {
   } else if (!girisli) {
     const kaydedilenAd = localStorage.getItem('kcz_cevrimdisi_ad') || '';
     btn.disabled = false;
+    dolgu.style.width = '0';
     if (kaydedilenAd) {
-      dolgu.style.width = '0';
       yazi.textContent = 'OYNA';
       alt.textContent = 'Çevrimdışı · ' + kaydedilenAd;
     } else {
       btn.classList.add('giris');
-      dolgu.style.width = '0';
       yazi.textContent = 'GİRİŞ YAP';
-      alt.textContent = 'Kullanıcı adı gir veya Microsoft ile giriş yap';
+      alt.textContent = 'Ad gir veya Microsoft ile giriş yap';
     }
   } else {
     btn.disabled = false;
@@ -1321,11 +2058,6 @@ function oynaGuncelle() {
       alt.textContent = `${s.ad} · ${sp.surum} ${YUK_AD[sp.yukleyici]} · ${n} modla bağlanır`;
     } else {
       alt.textContent = (s ? `${s.ad} sunucusuna bağlanır` : 'Oyun ana menüde açılır') + (v.yuklu ? '' : ' · önce sürüm iner');
-    }
-    if (cevrimdisi) {
-      const yuklu = profilAktif() ? surumBilgi(seciliProfil().surum).yuklu : v.yuklu;
-      alt.textContent = 'Çevrimdışı · ' + (!yuklu ? 'bu sürüm yüklü değil, internet gerekir'
-        : s && !profilAktif() ? 'internetteki sunuculara bağlanılamaz' : 'tek oyunculu ve LAN');
     }
   }
   if (sonHata && !is && oyunDurumu !== 'acik') { alt.textContent = sonHata; alt.classList.add('hata'); }
@@ -1375,13 +2107,16 @@ api.durumDinle((d) => {
   if (d.tur === 'acik') {
     is = null;
     oyunDurumu = 'acik';
-    bildirim(`${d.surum} açıldı. İyi oyunlar!`);
+    document.body.classList.add('oyun-acik');
+    if (!d.sessiz) bildirim(`${d.surum} açıldı. İyi oyunlar!`);
   } else if (d.tur === 'kapandi') {
     is = null;
     oyunDurumu = 'bosta';
+    document.body.classList.remove('oyun-acik');
     api.ayarlariGetir().then((a) => { ayarlar = a; oyunAyarlariniDoldur(); }).catch(() => {});
     if (d.kod && d.kod !== 0) sonHata = 'Oyun bir hatayla kapandı. Ayrıntılar: Ayarlar > Oyun kaydı.';
     if (d.modHatasi) modHatasiGoster(d.modHatasi);
+    else if (d.cokme) cokmeGoster(d.cokme);
     sunuculariYukle();
     haftayiCiz();
   }
@@ -1621,6 +2356,7 @@ function modKarti(m, sira) {
 
 async function modAra(ekle = false) {
   modUyarisi();
+  if (!ekle) hazirPaketleriCiz();
   const no = ++modIstek;
   const kap = $('modSonuclar');
   if (!ekle) { kap.innerHTML = ''; kap.append(el('div', 'bos', 'Modrinth\'te aranıyor…')); }
@@ -1646,6 +2382,43 @@ document.querySelectorAll('#modTurler .filtre').forEach((b) => b.addEventListene
   modSayfa = 0;
   modAra();
 }));
+
+/* ---------- Hazır mod paketleri: tek tıkla birkaç mod ---------- */
+const HAZIR_PAKETLER = [
+  { id: 'pvp', ad: '⚔️ PvP', aciklama: 'Açlık ve doygunluk göstergesi, hızlı envanter, mod ayarları.', modlar: ['appleskin', 'mouse-tweaks', 'shulkerboxtooltip', 'modmenu'] },
+  { id: 'survival', ad: '🌲 Survival+', aciklama: 'Tarifler, baktığın bloğun bilgisi, mini harita ve dünya haritası, envanter düzenleme.', modlar: ['jei', 'jade', 'appleskin', 'xaeros-minimap', 'xaeros-world-map', 'mouse-tweaks', 'modmenu'] },
+  { id: 'gorsel', ad: '✨ Görsel', aciklama: 'Elindeki meşale etrafı aydınlatır, birleşik camlar, 3D skin katmanları, düşen yapraklar ve daha canlı animasyonlar.', modlar: ['lambdynamiclights', 'continuity', '3dskinlayers', 'falling-leaves', 'eating-animation', 'not-enough-animations'] }
+];
+function hazirPaketleriCiz() {
+  const k = $('hazirPaketler');
+  k.textContent = '';
+  // Sadece mod sekmesinde ve aramadayken gösterilir
+  if (modTur !== 'mod' || $('modAra').value.trim() || kapsamProfili().yukleyici === 'vanilla') return;
+  HAZIR_PAKETLER.forEach((p) => {
+    const kart = el('div', 'hp ' + p.id);
+    const b = el('button', 'birincil kucuk', 'Paketi kur');
+    kart.append(el('b', '', p.ad), el('p', '', p.aciklama), el('small', '', `${p.modlar.length} mod · ${kapsamProfili().surum}`), b);
+    b.addEventListener('click', async () => {
+      if (oyunDurumu === 'acik') { bildirim('Oyun açıkken mod kurulamaz. Önce oyunu kapat.', true); return; }
+      b.disabled = true;
+      let tamam = 0;
+      const olmayan = [];
+      for (let i = 0; i < p.modlar.length; i++) {
+        b.textContent = `Kuruluyor ${i + 1}/${p.modlar.length}…`;
+        const r = await api.modYukle({ proje: p.modlar[i], tur: 'mod', sunucu: modKapsam });
+        if (r.ok) tamam++; else olmayan.push(p.modlar[i]);
+      }
+      b.disabled = false;
+      b.textContent = olmayan.length ? 'Tekrar dene' : 'Kuruldu ✓';
+      bildirim(olmayan.length
+        ? `${p.ad}: ${tamam} mod kuruldu. ${olmayan.length} mod bu sürüm için henüz yok (${olmayan.join(', ')}).`
+        : `${p.ad} paketi kuruldu ✓ Oyunu açınca hazır.`, !!olmayan.length && !tamam);
+      yukluSayisiniGuncelle();
+      if (modKapsam) { sunucuModlari = await api.sunucuModSayilari(); sunuculariCiz(); }
+    });
+    k.append(kart);
+  });
+}
 
 // Mod / shader / kaynak paketi kur (gerekli yan modlarla birlikte)
 async function icerikKur(proje, tur, btn) {
@@ -1785,10 +2558,14 @@ function oyunAyarlariniDoldur() {
   $('ramSec').value = ayarlar.ram;
   yaz('ramDeger', `${ayarlar.ram} GB`);
   $('gizleSec').checked = !!ayarlar.oyunAcilincaGizle;
+  $('uyuSec').checked = !!ayarlar.launcherUyusun;
   $('yukleyiciSec').value = ayarlar.yukleyici;
   performansDoldur();
   istemciDoldur();
   $('tepsiSec').checked = !!ayarlar.tepsiyeKucult;
+  $('istatistikSec').checked = ayarlar.istatistikGonder !== false;
+  $('discordSec').checked = ayarlar.discordDurum !== false;
+  $('durumPaylasSec').checked = ayarlar.durumPaylas !== false;
   $('yedekSec').checked = !!ayarlar.dunyaYedek;
 }
 let ramZaman = null;
@@ -1797,6 +2574,7 @@ $('ramSec').addEventListener('input', (e) => {
   clearTimeout(ramZaman);
   ramZaman = setTimeout(async () => { ayarlar = await api.ayarlariKaydet({ ram: e.target.value }); bildirim('Ayarlar kaydedildi ✓'); }, 350);
 });
+$('uyuSec').addEventListener('change', async (e) => { ayarlar = await api.ayarlariKaydet({ launcherUyusun: e.target.checked }); bildirim('Ayarlar kaydedildi ✓'); });
 $('gizleSec').addEventListener('change', async (e) => { ayarlar = await api.ayarlariKaydet({ oyunAcilincaGizle: e.target.checked }); bildirim('Ayarlar kaydedildi ✓'); });
 $('yukleyiciSec').addEventListener('change', (e) => yukleyiciSec(e.target.value));
 $('klasorBtn').addEventListener('click', () => api.klasoruAc());
@@ -1804,7 +2582,7 @@ $('klasorBtn').addEventListener('click', () => api.klasoruAc());
 /* =========================================================
    PERFORMANS
    ========================================================= */
-const SEVIYE_AD = { dusuk: 'Düşük', orta: 'Orta', yuksek: 'Yüksek' };
+const SEVIYE_AD = { cokdusuk: 'Çok düşük', dusuk: 'Düşük', orta: 'Orta', yuksek: 'Yüksek' };
 const PERFORMANS_ANAHTARLARI = [
   ['hafifSec', 'hafifMod'], ['ekranKartiSec', 'ekranKarti'], ['javaSec', 'javaAyar'],
   ['oncelikSec', 'oncelik'], ['gucSec', 'gucPlani'],
@@ -1857,12 +2635,28 @@ $('taraBtn').addEventListener('click', async () => {
     tarama = t;
     taramaGoster(t);
     performansDoldur();
+    ayarlar = await api.ayarlariKaydet({ sistemZayif: t.seviye === 'dusuk' || t.seviye === 'cokdusuk' });
+    hafifUygula();
   } catch (e) {
     bildirim('Sistem taranamadı.', true);
   } finally {
     b.disabled = false; b.textContent = 'Tekrar tara';
   }
 });
+
+// İlk açılış: hiç ayar seçilmemişse bilgisayarı bir kere tara; zayıfsa launcher kendiliğinden hafiflesin
+setTimeout(async () => {
+  if (ayarlar.performansSeviye || ayarlar.sistemZayif != null || oyunDurumu === 'acik') return;
+  try {
+    const t = await api.sistemiTara();
+    if (!t || !t.ok) return;
+    tarama = t;
+    const zayif = t.seviye === 'dusuk' || t.seviye === 'cokdusuk';
+    ayarlar = await api.ayarlariKaydet({ sistemZayif: zayif });
+    hafifUygula();
+    if (zayif) bildirim('Bilgisayarın zayıf görünüyor: launcher hafif moda geçti, bir sonraki açılışta tamamen hafifler. Ayarlar > Performans\'tan değiştirebilirsin.');
+  } catch { /* tarama olmadı, sonra tekrar denenir */ }
+}, 6000);
 
 async function seviyeUygula(seviye) {
   const butonlar = document.querySelectorAll('#seviyeler .seviye');
@@ -1872,6 +2666,7 @@ async function seviyeUygula(seviye) {
     if (!r || !r.ok) { bildirim((r && r.hata) || 'Ayar uygulanamadı.', true); return; }
     ayarlar = r.ayarlar;
     oyunAyarlariniDoldur();
+    hafifUygula();
     bildirim(`${SEVIYE_AD[seviye]} ayar uygulandı ✓`);
   } catch (e) {
     bildirim('Ayar uygulanamadı.', true);
@@ -1884,7 +2679,7 @@ document.querySelectorAll('#seviyeler .seviye').forEach((b) => {
 });
 
 /* =========================================================
-   KÇZ CLIENT (oyun içi menü) ve eklentiler
+   KCZ CLIENT (oyun içi menü) ve eklentiler
    ========================================================= */
 let istemciSurumleri = [];
 api.istemciBilgi().then((b) => {
@@ -1919,16 +2714,13 @@ function istemciDoldur() {
   $('istAcikSec').checked = !!i.acik;
   document.querySelectorAll('[data-ist]').forEach((x) => { x.checked = !!i[x.dataset.ist]; });
   $('istZoomKat').value = String(Math.round(i.zoomKat || 4));
+  $('istZoomBas').value = String(i.zoomBaslangic || 3);
   $('istKonum').value = i.konum === 'sag-ust' ? 'sag-ust' : 'sol-ust';
   $('istAyarlar').classList.toggle('kapali', !i.acik);
   const destek = istemciSurumleri.length
     ? `Minecraft ${istemciSurumleri.join(', ')} ve Fabric/Quilt (Vanilla dahil) ile çalışır.`
     : 'Bu derlemede oyun içi menü yok (derleme kaydına bak).';
-  $('istemciAciklama').textContent = `Oyunda Esc menüsündeki KÇZ Menü düğmesiyle açılır; buradaki ayarların aynısı orada da var ve launcher temasıyla aynı görünür. ${destek}`;
-  const zayif = tarama && tarama.seviye === 'dusuk';
-  $('shaderAciklama').textContent = zayif
-    ? '⚠ Sistem taraması bilgisayarını zayıf buldu: shader FPS\'i çok düşürebilir.'
-    : 'Iris ve Complementary shader paketini kurup açar. Güçlü bir ekran kartı ister.';
+  $('istemciAciklama').textContent = `Oyunda Esc menüsündeki KCZ Menü düğmesiyle açılır; buradaki ayarların aynısı orada da var ve launcher temasıyla aynı görünür. ${destek}`;
 }
 
 async function istemciKaydet(degisim) {
@@ -1938,15 +2730,23 @@ async function istemciKaydet(degisim) {
   bildirim('Ayarlar kaydedildi ✓');
 }
 $('istAcikSec').addEventListener('change', (e) => istemciKaydet({ acik: e.target.checked }));
+// Düşük sistem ve Güçlü sistem aynı anda açık olmaz
+async function sistemSec(ad, acik) {
+  const degisim = { [ad]: acik };
+  if (acik) degisim[ad === 'dusukSistem' ? 'gucluSistem' : 'dusukSistem'] = false;
+  await istemciKaydet(degisim);
+}
 document.querySelectorAll('[data-ist]').forEach((x) => {
   x.addEventListener('change', (e) => {
-    if (x.dataset.ist === 'shader' && e.target.checked && tarama && tarama.seviye === 'dusuk') {
+    if (x.dataset.ist === 'shader' && e.target.checked && tarama && (tarama.seviye === 'dusuk' || tarama.seviye === 'cokdusuk')) {
       bildirim('Uyarı: bilgisayarın shader için zayıf görünüyor, FPS düşebilir.', true);
     }
+    if (x.dataset.ist === 'dusukSistem' || x.dataset.ist === 'gucluSistem') { sistemSec(x.dataset.ist, e.target.checked); return; }
     istemciKaydet({ [x.dataset.ist]: e.target.checked });
   });
 });
 $('istZoomKat').addEventListener('change', (e) => istemciKaydet({ zoomKat: Number(e.target.value) }));
+$('istZoomBas').addEventListener('change', (e) => istemciKaydet({ zoomBaslangic: Number(e.target.value) }));
 $('istKonum').addEventListener('change', (e) => istemciKaydet({ konum: e.target.value }));
 
 /* ---------- Tepsi ve yedek ---------- */
@@ -2044,6 +2844,460 @@ $('guncelleBtn').addEventListener('click', async () => {
 });
 $('denetleBtn').addEventListener('click', () => api.guncellemeDenetle());
 
+/* =========================================================
+   ÖNERİ / HATA BİLDİR
+   ========================================================= */
+let bildirTur = 'oneri';
+const BILDIR_IPUCU = { oneri: 'Ne eklenmesini istersin?', hata: 'Ne oldu? Ne yapıyordun, ne olmasını bekliyordun?' };
+document.querySelectorAll('#bildirTur .filtre').forEach((b) => b.addEventListener('click', () => {
+  bildirTur = b.dataset.tur;
+  document.querySelectorAll('#bildirTur .filtre').forEach((x) => x.classList.toggle('aktif', x === b));
+  $('bildirMetin').placeholder = BILDIR_IPUCU[bildirTur];
+}));
+$('bildirMetin').addEventListener('input', () => yaz('bildirSayac', `${$('bildirMetin').value.length} / 2000`));
+$('bildirGonder').addEventListener('click', async () => {
+  const metin = $('bildirMetin').value.trim();
+  if (metin.length < 3) { bildirim('Biraz daha yaz.', true); return; }
+  const b = $('bildirGonder');
+  b.disabled = true; b.textContent = 'Gönderiliyor…';
+  const r = await api.oneriGonder(bildirTur, metin, $('bildirIletisim').value);
+  b.disabled = false; b.textContent = 'Gönder';
+  if (!r.ok) { bildirim(r.hata, true); return; }
+  $('bildirMetin').value = ''; yaz('bildirSayac', '0 / 2000');
+  bildirim(bildirTur === 'hata' ? 'Teşekkürler! Hatayı aldık, bakacağız.' : 'Teşekkürler! Önerin bize ulaştı.');
+});
+
+/* ---------- Yönetici girişi ---------- */
+let yonetici = null;
+function yoneticiGoster(d) {
+  yonetici = d && d.eposta !== undefined ? d : null;
+  $('yonetimSekme').hidden = !yonetici;
+  $('yoneticiGirisAc').textContent = yonetici ? 'Yönetim paneline git' : 'Yönetici girişi';
+  if (!yonetici && document.querySelector('#sayfa-yonetim.aktif')) sayfaAc('bildir');
+}
+$('yoneticiGirisAc').addEventListener('click', () => {
+  if (yonetici) { sayfaAc('yonetim'); return; }
+  $('yoneticiGiris').hidden = !$('yoneticiGiris').hidden;
+  if (!$('yoneticiGiris').hidden) $('ygEposta').focus();
+});
+function ygAdim(n) { $('ygAdim1').hidden = n !== 1; $('ygAdim2').hidden = n !== 2; if (n === 2) $('ygKod').focus(); }
+$('ygKodIste').addEventListener('click', async () => {
+  const e = $('ygEposta').value.trim();
+  if (!e.includes('@')) { yaz('ygDurum', 'E-posta adresini yaz.'); return; }
+  $('ygKodIste').disabled = true; yaz('ygDurum', 'Kod gönderiliyor…');
+  const r = await api.yoneticiKodIste(e);
+  $('ygKodIste').disabled = false;
+  if (!r.ok) { yaz('ygDurum', r.hata); return; }
+  yaz('ygDurum', `${e} adresine giriş linki gönderildi. Maili bu bilgisayarda aç ve linke tıkla; launcher girişi kendisi alır. Gelmediyse spam klasörüne bak.`);
+});
+api.yoneticiGirisDinle((r) => {
+  if (!r.ok) { yaz('ygDurum', r.hata); bildirim(r.hata, true); return; }
+  yaz('ygDurum', ''); $('yoneticiGiris').hidden = true;
+  yoneticiGoster(r.veri);
+  bildirim('Yönetim paneline giriş yapıldı.');
+  sayfaAc('yonetim');
+});
+$('ygGiris').addEventListener('click', async () => {
+  $('ygGiris').disabled = true; yaz('ygDurum', 'Kontrol ediliyor…');
+  const r = await api.yoneticiKodDogrula($('ygEposta').value, $('ygKod').value);
+  $('ygGiris').disabled = false;
+  if (!r.ok) { yaz('ygDurum', r.hata); return; }
+  yaz('ygDurum', ''); $('ygKod').value = ''; ygAdim(1); $('yoneticiGiris').hidden = true;
+  yoneticiGoster(r.veri);
+  sayfaAc('yonetim');
+});
+$('ygKod').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('ygGiris').click(); });
+$('ygEposta').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('ygKodIste').click(); });
+$('ygGeri').addEventListener('click', () => { ygAdim(1); yaz('ygDurum', ''); });
+
+/* ---------- Yönetim paneli ---------- */
+let ypOneriler = [];
+let ypFiltre = 'yeni';
+let ypZamanlayici = null;
+const ypSayi = (n) => (n == null ? "–" : Number(n).toLocaleString("tr-TR"));
+
+function panelHata(r) {
+  if (r.hata === 'OTURUM' || /Yetkin yok/.test(r.hata || '')) {
+    api.yoneticiCikis(); yoneticiGoster(null);
+    bildirim('Yönetici oturumu kapandı, tekrar giriş yap.', true);
+    return true;
+  }
+  bildirim(r.hata, true);
+  return false;
+}
+
+async function panelYukle() {
+  if (!yonetici) return;
+  yaz('ypHesap', yonetici.eposta ? `${yonetici.eposta} olarak giriş yaptın` : '');
+  const [ist, on, yon] = await Promise.all([api.yoneticiIstatistik(), api.yoneticiOneriler(), api.yoneticiListesi()]);
+  if (!ist.ok) { panelHata(ist); return; }
+  istatistikCiz(ist.veri || {});
+  if (on.ok) { ypOneriler = Array.isArray(on.veri) ? on.veri : []; onerileriCiz(); }
+  if (yon.ok) yoneticileriCiz(Array.isArray(yon.veri) ? yon.veri : []);
+  panelDuyurulariYukle();
+  // Panel açıkken aktif sayısı 30 sn'de bir tazelenir; sayfadan çıkınca durur
+  clearInterval(ypZamanlayici);
+  ypZamanlayici = setInterval(async () => {
+    if (!document.querySelector('#sayfa-yonetim.aktif') || document.hidden) { clearInterval(ypZamanlayici); return; }
+    const r = await api.yoneticiIstatistik();
+    if (r.ok) istatistikCiz(r.veri || {});
+  }, 30000);
+}
+
+function istatistikCiz(d) {
+  yaz('ypAktif', ypSayi(d.aktif));
+  yaz('ypIndirme', ypSayi(d.indirme));
+  yaz('ypToplam', ypSayi(d.toplam));
+  yaz('ypGun', ypSayi(d.gun));
+  yaz('ypHafta', ypSayi(d.hafta));
+  yaz('ypYeni', ypSayi(d.yeni_hafta));
+  yaz('ypYeniSayi', String(d.yeni_oneri || 0));
+  $('yonetimNokta').hidden = !(d.yeni_oneri > 0);
+
+  const g = $('ypGrafik'); g.textContent = '';
+  const gunler = Array.isArray(d.gunluk) ? d.gunluk : [];
+  const enCok = Math.max(1, ...gunler.map((x) => x.n || 0));
+  gunler.forEach((x) => {
+    const c = el('div', 'yp-cubuk');
+    c.title = `${tarihYaz(x.gun)}: ${x.n} kişi`;
+    c.append(el('em', '', String(x.n || 0)));
+    const i = el('i'); i.style.height = `${Math.round(((x.n || 0) / enCok) * 100)}%`;
+    c.append(i, el('span', '', String(new Date(x.gun).getDate())));
+    g.append(c);
+  });
+
+  const dg = $('ypDagilim'); dg.textContent = '';
+  const ekle = (onEk, nesne) => Object.entries(nesne || {}).sort((a, b) => b[1] - a[1]).forEach(([k, n]) => {
+    const s = el('span', '', `${onEk}${k} `); s.append(el('b', '', String(n))); dg.append(s);
+  });
+  ekle('', d.sistemler);
+  ekle('v', d.surumler);
+}
+
+function onerileriCiz() {
+  const l = $('ypListe'); l.textContent = '';
+  const liste = ypOneriler.filter((o) => ({
+    yeni: o.durum === 'yeni', hepsi: true, hata: o.tur === 'hata', oneri: o.tur === 'oneri', cozuldu: o.durum === 'cozuldu',
+  })[ypFiltre]);
+  if (!liste.length) { l.append(el('div', 'bos', ypFiltre === 'yeni' ? 'Yeni bildirim yok.' : 'Burada bir şey yok.')); return; }
+  liste.forEach((o) => {
+    const k = el('div', `yp-oneri ${o.durum}`);
+    const ust = el('div', 'yp-oneri-ust');
+    ust.append(el('span', `etiket ${o.tur}`, o.tur === 'hata' ? 'Hata' : 'Öneri'));
+    const z = new Date(o.zaman);
+    ust.append(el('span', '', `${z.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} ${z.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`));
+    ust.append(el('span', '', [o.surum && `v${o.surum}`, o.os].filter(Boolean).join(' · ')));
+    k.append(ust, el('p', '', o.metin));
+    const alt = el('div', 'yp-oneri-alt');
+    alt.append(el('span', 'iletisim', o.iletisim ? `İletişim: ${o.iletisim}` : ''));
+    const dugme = (yazi, durum, sinif = 'ikincil') => {
+      const b = el('button', sinif, yazi);
+      b.addEventListener('click', async () => {
+        if (durum === 'sil' && !b.classList.contains('emin')) { b.classList.add('emin'); b.textContent = 'Emin misin?'; return; }
+        b.disabled = true;
+        const r = await api.yoneticiOneriDurum(o.id, durum);
+        if (!r.ok) { b.disabled = false; panelHata(r); return; }
+        if (durum === 'sil') ypOneriler = ypOneriler.filter((x) => x.id !== o.id); else o.durum = durum;
+        yaz('ypYeniSayi', String(ypOneriler.filter((x) => x.durum === 'yeni').length));
+        $('yonetimNokta').hidden = !ypOneriler.some((x) => x.durum === 'yeni');
+        onerileriCiz();
+      });
+      alt.append(b);
+    };
+    if (o.kayit) {
+      const kb = el('button', 'ikincil', 'Kaydı gör');
+      kb.addEventListener('click', async () => {
+        kb.disabled = true;
+        const r = await api.yoneticiOneriKaydi(o.id);
+        kb.disabled = false;
+        if (!r.ok) { panelHata(r); return; }
+        $('kayitMetin').textContent = r.veri || '(kayıt boş)';
+        $('kayitPerde').hidden = false;
+      });
+      alt.append(kb);
+    }
+    if (o.durum === 'yeni') dugme('Okundu', 'okundu');
+    if (o.durum !== 'cozuldu') dugme('Çözüldü', 'cozuldu', 'birincil');
+    else dugme('Geri aç', 'okundu');
+    dugme('Sil', 'sil');
+    k.append(alt);
+    l.append(k);
+  });
+}
+document.querySelectorAll('#ypFiltre .filtre').forEach((b) => b.addEventListener('click', () => {
+  ypFiltre = b.dataset.f;
+  document.querySelectorAll('#ypFiltre .filtre').forEach((x) => x.classList.toggle('aktif', x === b));
+  onerileriCiz();
+}));
+
+function yoneticileriCiz(liste) {
+  const k = $('ypYoneticiler'); k.textContent = '';
+  liste.forEach((y) => {
+    const s = el('div', 'yp-yonetici');
+    const sol = el('div'); sol.append(el('div', '', y.eposta));
+    if (y.ekleyen && y.ekleyen !== 'kurulum') sol.append(el('small', '', `${y.ekleyen} ekledi`));
+    s.append(sol);
+    if (yonetici && y.eposta !== String(yonetici.eposta || '').toLowerCase()) {
+      const b = el('button', 'bag', 'Kaldır');
+      b.addEventListener('click', async () => {
+        if (!b.classList.contains('emin')) { b.classList.add('emin'); b.textContent = 'Emin misin?'; return; }
+        const r = await api.yoneticiKaldir(y.eposta);
+        if (!r.ok) { panelHata(r); return; }
+        const l = await api.yoneticiListesi(); if (l.ok) yoneticileriCiz(l.veri || []);
+      });
+      s.append(b);
+    } else s.append(el('small', '', 'sen'));
+    k.append(s);
+  });
+}
+$('ypDavet').addEventListener('click', async () => {
+  const e = $('ypDavetEposta').value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { bildirim('Geçerli bir e-posta adresi yaz.', true); return; }
+  $('ypDavet').disabled = true;
+  const r = await api.yoneticiDavet(e);
+  $('ypDavet').disabled = false;
+  if (!r.ok) { panelHata(r); return; }
+  $('ypDavetEposta').value = '';
+  bildirim(`${e} yöneticilere eklendi. Launcher'da Öneri sayfasındaki "Yönetici girişi"nden girebilir.`);
+  const l = await api.yoneticiListesi(); if (l.ok) yoneticileriCiz(l.veri || []);
+});
+$('ypYenile').addEventListener('click', panelYukle);
+$('ypCikis').addEventListener('click', async () => { await api.yoneticiCikis(); yoneticiGoster(null); sayfaAc('bildir'); });
+
+$('durumPaylasSec').addEventListener('change', async (e) => {
+  ayarlar = await api.ayarlariKaydet({ durumPaylas: e.target.checked });
+});
+$('discordSec').addEventListener('change', async (e) => {
+  ayarlar = await api.ayarlariKaydet({ discordDurum: e.target.checked });
+});
+$('istatistikSec').addEventListener('change', async (e) => {
+  ayarlar = await api.ayarlariKaydet({ istatistikGonder: e.target.checked });
+});
+
+// Sunucu bağlı değilse öneri sayfası bunu söyler; kayıtlı yönetici oturumu varsa sekme açılır
+api.sunucuBagli().then((b) => {
+  if (!b) {
+    $('bildirGonder').disabled = true;
+    $('bildirGonder').title = 'Sunucu henüz bağlanmadı';
+    $('yoneticiGirisAc').hidden = true;
+    return;
+  }
+  api.yoneticiDurum().then(yoneticiGoster);
+});
+
+/* =========================================================
+   ÇÖKME YAKALAYICI
+   ========================================================= */
+let sonCokme = null;
+function cokmeGoster(c) {
+  sonCokme = c;
+  yaz('cokmeBaslik', c.baslik || 'Oyun çöktü');
+  yaz('cokmeAciklama', c.aciklama || '');
+  yaz('cokmeOneri', c.oneri || '');
+  $('cokmeNot').value = '';
+  $('cokmeBildir').disabled = false; $('cokmeBildir').textContent = 'Hatayı bildir';
+  $('cokmeRapor').hidden = !c.rapor;
+  $('cokmePerde').hidden = false;
+  sonHata = '';
+}
+$('cokmeBildir').addEventListener('click', async () => {
+  const b = $('cokmeBildir');
+  b.disabled = true; b.textContent = 'Gönderiliyor…';
+  const r = await api.cokmeBildir($('cokmeNot').value, sonCokme ? sonCokme.baslik : '');
+  if (!r.ok) { b.disabled = false; b.textContent = 'Hatayı bildir'; bildirim(r.hata, true); return; }
+  b.textContent = 'Gönderildi ✓';
+  bildirim('Teşekkürler! Çökme kaydı bize ulaştı.');
+  setTimeout(() => { $('cokmePerde').hidden = true; }, 900);
+});
+$('cokmeRapor').addEventListener('click', () => api.cokmeRaporuAc());
+$('cokmeKapat').addEventListener('click', () => { $('cokmePerde').hidden = true; });
+$('kayitKapat').addEventListener('click', () => { $('kayitPerde').hidden = true; });
+$('kayitKopyala').addEventListener('click', () => { api.panoyaYaz($('kayitMetin').textContent); bildirim('Kayıt kopyalandı.'); });
+
+/* =========================================================
+   DUYURULAR
+   ========================================================= */
+function kapatilanDuyurular() {
+  try { return JSON.parse(localStorage.getItem('kapatilanDuyurular') || '[]'); } catch { return []; }
+}
+async function duyurulariYukle() {
+  let liste = [];
+  try { liste = await api.duyurular(); } catch {}
+  const kapali = kapatilanDuyurular();
+  const d = (Array.isArray(liste) ? liste : []).find((x) => !kapali.includes(x.id));
+  $('ustDuyuru').hidden = !d;
+  if (!d) return;
+  yaz('ustDuyuruMetin', d.metin);
+  $('ustDuyuru').dataset.id = d.id;
+}
+$('ustDuyuruKapat').addEventListener('click', () => {
+  const id = Number($('ustDuyuru').dataset.id);
+  const k = kapatilanDuyurular(); k.push(id);
+  try { localStorage.setItem('kapatilanDuyurular', JSON.stringify(k.slice(-50))); } catch {}
+  duyurulariYukle();
+});
+// Açılışta ve 15 dakikada bir (oyun açıkken bakılmaz)
+setTimeout(duyurulariYukle, 3000);
+setInterval(() => { if (oyunDurumu !== 'acik' && !document.hidden) duyurulariYukle(); }, 15 * 60 * 1000);
+
+async function panelDuyurulariYukle() {
+  const r = await api.yoneticiDuyurular();
+  const k = $('ypDuyurular'); k.textContent = '';
+  if (!r.ok) { if (!/oneri_|duyuru_|function/.test(r.hata || '')) panelHata(r); else k.append(el('small', 'bos-yazi', 'Duyurular için veritabanı güncellemesi (guncelleme-2.sql) gerekiyor.')); return; }
+  const liste = Array.isArray(r.veri) ? r.veri : [];
+  if (!liste.length) { k.append(el('small', 'bos-yazi', 'Henüz duyuru yok.')); return; }
+  liste.forEach((d) => {
+    const s = el('div', 'yp-yonetici yp-duyuru');
+    const sol = el('div');
+    sol.append(el('p', '', d.metin));
+    const bitti = d.bitis && new Date(d.bitis) < new Date();
+    sol.append(el('small', '', `${tarihYaz(d.zaman)} · ${d.bitis ? (bitti ? 'süresi doldu' : 'bitiş ' + tarihYaz(d.bitis)) : 'süresiz'}`));
+    const b = el('button', 'bag', 'Sil');
+    b.addEventListener('click', async () => {
+      if (!b.classList.contains('emin')) { b.classList.add('emin'); b.textContent = 'Emin misin?'; return; }
+      const x = await api.yoneticiDuyuruSil(d.id);
+      if (!x.ok) { panelHata(x); return; }
+      panelDuyurulariYukle(); duyurulariYukle();
+    });
+    s.append(sol, b);
+    k.append(s);
+  });
+}
+$('ypDuyuruEkle').addEventListener('click', async () => {
+  const m = $('ypDuyuruMetin').value.trim();
+  if (m.length < 2) { bildirim('Duyuru metnini yaz.', true); return; }
+  $('ypDuyuruEkle').disabled = true;
+  const r = await api.yoneticiDuyuruEkle(m, $('ypDuyuruGun').value);
+  $('ypDuyuruEkle').disabled = false;
+  if (!r.ok) { panelHata(r); return; }
+  $('ypDuyuruMetin').value = '';
+  bildirim('Duyuru yayınlandı.');
+  panelDuyurulariYukle(); duyurulariYukle();
+});
+
+/* =========================================================
+   YENİ NELER VAR (güncellemeden sonra bir kez)
+   ========================================================= */
+(async function yenilikler() {
+  try {
+    const v = await api.uygulamaSurumu();
+    let once = null;
+    try { once = localStorage.getItem('sonGorulenSurum'); localStorage.setItem('sonGorulenSurum', v); } catch {}
+    // İlk kurulumda gösterme; sadece sürüm değiştiyse
+    if (!once || once === v) return;
+    const r = await api.surumNotlari(v, once);
+    if (!r.ok || !Array.isArray(r.veri) || !r.veri.length) return;
+    const l = $('yeniListe'); l.textContent = '';
+    r.veri.forEach((m) => l.append(el('li', '', m)));
+    yaz('yeniSurum', 'v' + v);
+    setTimeout(() => { $('yeniPerde').hidden = false; }, 1800);
+  } catch {}
+})();
+$('yeniTamam').addEventListener('click', () => { $('yeniPerde').hidden = true; });
+
+/* =========================================================
+   EKRAN GÖRÜNTÜLERİ
+   ========================================================= */
+let galeriListe = [];
+let galeriGosterilen = 0;
+let galeriSecili = null;
+const galeriUrl = new Map(); // ad -> blob adresi (bellekte tekrar okunmasın)
+let galeriGozcu = null;
+
+async function resimAdresi(ad) {
+  if (galeriUrl.has(ad)) return galeriUrl.get(ad);
+  const veri = await api.ekranGoruntusuOku(ad);
+  const url = URL.createObjectURL(new Blob([veri], { type: 'image/png' }));
+  galeriUrl.set(ad, url);
+  return url;
+}
+function galeriTemizle() {
+  galeriUrl.forEach((u) => URL.revokeObjectURL(u));
+  galeriUrl.clear();
+}
+async function galeriYukle() {
+  galeriListe = await api.ekranGoruntuleri();
+  galeriGosterilen = 0;
+  $('galeri').textContent = '';
+  if (!galeriListe.length) {
+    $('galeri').append(el('div', 'bos', 'Henüz ekran görüntüsü yok. Oyunda F2\'ye bas.'));
+    $('galeriDaha').hidden = true;
+    return;
+  }
+  if (galeriGozcu) galeriGozcu.disconnect();
+  // Resimler ekrana gelince okunur
+  galeriGozcu = new IntersectionObserver((girdiler) => {
+    girdiler.forEach(async (g) => {
+      if (!g.isIntersecting) return;
+      galeriGozcu.unobserve(g.target);
+      const img = g.target.querySelector('img');
+      try { img.src = await resimAdresi(g.target.dataset.ad); } catch {}
+    });
+  }, { root: $('sayfa-galeri'), rootMargin: '200px' });
+  galeriDahaGoster();
+}
+function galeriDahaGoster() {
+  const son = Math.min(galeriListe.length, galeriGosterilen + 40);
+  for (let i = galeriGosterilen; i < son; i++) {
+    const g = galeriListe[i];
+    const b = el('button', 'galeri-oge');
+    b.dataset.ad = g.ad;
+    const img = el('img'); img.alt = g.ad; img.decoding = 'async';
+    img.addEventListener('load', () => img.classList.add('yuklendi'));
+    const t = new Date(g.zaman);
+    b.append(img, el('span', '', `${t.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} ${t.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`));
+    b.addEventListener('click', () => galeriAc(g.ad));
+    $('galeri').append(b);
+    galeriGozcu.observe(b);
+  }
+  galeriGosterilen = son;
+  $('galeriDaha').hidden = galeriGosterilen >= galeriListe.length;
+}
+async function galeriAc(ad) {
+  galeriSecili = ad;
+  yaz('galeriAd', ad);
+  $('galeriSil').classList.remove('emin'); $('galeriSil').textContent = 'Sil';
+  $('galeriResim').src = await resimAdresi(ad);
+  $('galeriPerde').hidden = false;
+}
+$('galeriDaha').addEventListener('click', galeriDahaGoster);
+// Galeriden arkadaşa gönder
+$('galeriGonder').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const m = $('galeriGonderMenu');
+  if (!m.hidden) { m.hidden = true; return; }
+  m.textContent = '';
+  const ark = (arkSon || []).filter((x) => x.tur === 'arkadas');
+  if (!ark.length) m.append(el('div', 'bos', 'Henüz arkadaşın yok.'));
+  for (const a of ark) {
+    const b = el('button', '', a.ad);
+    b.addEventListener('click', async () => {
+      m.hidden = true;
+      const dosya = galeriSecili;
+      if (await fotoGonderBasla(a.mc_uuid, dosya, null)) bildirim(`Fotoğraf ${a.ad} adlı arkadaşına gönderildi.`);
+    });
+    m.append(b);
+  }
+  m.hidden = false;
+});
+document.addEventListener('click', (e) => { if (!e.target.closest('#galeriGonderMenu, #galeriGonder')) $('galeriGonderMenu').hidden = true; });
+$('galeriKlasor').addEventListener('click', () => api.ekranGoruntusuKlasor());
+$('galeriKapat').addEventListener('click', () => { $('galeriPerde').hidden = true; });
+$('galeriPerde').addEventListener('click', (e) => { if (e.target === $('galeriPerde')) $('galeriPerde').hidden = true; });
+$('galeriKopyala').addEventListener('click', async () => {
+  const r = await api.ekranGoruntusuKopyala(galeriSecili);
+  if (r.ok) bildirim('Panoya kopyalandı. Discord\'a Ctrl+V ile yapıştırabilirsin.'); else bildirim(r.hata, true);
+});
+$('galeriSil').addEventListener('click', async () => {
+  const b = $('galeriSil');
+  if (!b.classList.contains('emin')) { b.classList.add('emin'); b.textContent = 'Emin misin?'; return; }
+  const r = await api.ekranGoruntusuSil(galeriSecili);
+  if (!r.ok) { bildirim(r.hata, true); return; }
+  const u = galeriUrl.get(galeriSecili); if (u) { URL.revokeObjectURL(u); galeriUrl.delete(galeriSecili); }
+  $('galeriPerde').hidden = true;
+  galeriYukle();
+});
+
 /* ---------- Pencereyi sürükleme ---------- */
 (function surukleme() {
   let aktif = false;
@@ -2055,13 +3309,15 @@ $('denetleBtn').addEventListener('click', () => api.guncellemeDenetle());
     // Tutulabilen yerler: üst şerit, başlıklar, logo alanı, pencere kenarları ve vitrinin boş yerleri
     const bos = t === $('pencere') || t.matches('.yan, .vitrin, .sahne, .ozet, .sayfa-baslik');
     if (!t.closest('.surukle') && !bos) return;
+    // Sürüklemeyi Windows/Linux kendisi yapar; bırakınca "pointerup" arayüze hiç gelmeyebilir.
+    // Bu yüzden fareyi yakalamıyoruz ve sürükleme durumunu ilk fırsatta kendimiz bitiriyoruz.
     aktif = true;
     document.body.classList.add('surukleniyor');
-    try { t.setPointerCapture(e.pointerId); } catch { /* yok */ }
     api.surukleBasla();
     e.preventDefault();
   });
-  document.addEventListener('pointermove', () => {
+  document.addEventListener('pointermove', (e) => {
+    if (aktif && e.buttons === 0) { bitir(); return; } // tuş bırakılmış: sürükleme bitti
     if (!aktif || bekliyor) return;
     bekliyor = true;
     requestAnimationFrame(() => { bekliyor = false; if (aktif) api.surukle(); });
@@ -2074,7 +3330,12 @@ $('denetleBtn').addEventListener('click', () => api.guncellemeDenetle());
   };
   document.addEventListener('pointerup', bitir);
   document.addEventListener('pointercancel', bitir);
+  document.addEventListener('pointerdown', (e) => { if (aktif && e.isTrusted) bitir(); }, true);
+  document.addEventListener('mouseenter', bitir);
   window.addEventListener('blur', bitir);
+  window.addEventListener('focus', bitir);
+  // Pencere taşındıktan sonra da bitir (bazı sistemlerde hiçbir fare olayı gelmiyor)
+  api.pencereTasindi?.(() => setTimeout(bitir, 150));
 })();
 
 /* ---------- Kenardan büyütme / küçültme ---------- */
@@ -2129,7 +3390,7 @@ document.addEventListener('keydown', (e) => {
 api.tepsiOynaDinle(() => { if (!$('oynaBtn').disabled) $('oynaBtn').click(); });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { $('configPerde').hidden = true; $('skinEkle').hidden = true; $('sunucuForm').hidden = true; $('profilForm').hidden = true; acilirKapat(); }
+  if (e.key === 'Escape') { $('configPerde').hidden = true; $('skinEkle').hidden = true; $('pelerinKutu').hidden = true; $('sunucuForm').hidden = true; $('profilForm').hidden = true; acilirKapat(); }
   if ($('sayfa-ana').classList.contains('aktif') && document.activeElement === document.body) {
     if (e.key === 'ArrowLeft') skinSec(skinSecili - 1);
     if (e.key === 'ArrowRight') skinSec(skinSecili + 1);
@@ -2164,7 +3425,6 @@ const bekle = (ms) => new Promise((r) => setTimeout(r, ms));
   const d = await api.hesapDurumu();
   girisli = !d.girisli; // ilk çağrıda skinlerin yüklenmesi için
   hesabiGoster(d);
-  if (d.cevrimdisi) bildirim(`İnternet yok: ${d.ad} olarak çevrimdışı oynayabilirsin.`);
 
   await Promise.race([Promise.all([liste, surum]), bekle(3500)]);
   await enAz;
