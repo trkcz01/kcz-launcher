@@ -1,0 +1,45 @@
+// KCZ Client - oyun ici menu, zoom, FPS/ping ve tus gostergesi.
+// Minecraft 26.1 ve sonrasi sifrelenmemis (unobfuscated) geldigi icin esleme (mappings) yok.
+plugins {
+	id 'net.fabricmc.fabric-loom' version '1.18.2'
+}
+
+version = "${project.mod_version}+${project.mc}"
+group = 'com.kcz'
+
+base {
+	archivesName = 'kcz-client'
+}
+
+// Sürüme özel kodlar (ör. hesap servisleri: 26.2 authlib 9, 26.3 authlib 10)
+sourceSets {
+	main {
+		java {
+			srcDir "src/mc${project.mc}/java"
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.mc}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fapi}"
+}
+
+processResources {
+	inputs.property 'version', project.version
+	inputs.property 'mc', project.mc
+	filesMatching('fabric.mod.json') {
+		expand 'version': project.version, 'mc': project.mc
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+	it.options.encoding = 'UTF-8'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}

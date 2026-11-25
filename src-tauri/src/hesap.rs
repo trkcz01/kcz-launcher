@@ -3,8 +3,6 @@
 //     hesaba tıklayıp izin vermek yeter.
 //  2) "pencere": Giriş, launcher'ın açtığı küçük bir pencerede yapılır.
 // Giriş anahtarı Windows Kimlik Bilgisi Yöneticisi'nde saklanır (şifreli).
-//  3) Çevrimdışı: İnternet yoksa son giriş yapılan hesabın adı ve UUID'siyle oyun açılır
-//     (tek oyunculu ve LAN). İnternet gelince otomatik olarak tekrar çevrimiçi olunur.
 use crate::ortak::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -28,31 +26,20 @@ const KASA_HESAP: &str = "microsoft-hesabi";
 struct Kayit {
     yontem: String,   // "tarayici" | "pencere"
     yenileme: String, // Microsoft yenileme anahtarı
-    // Çevrimdışı giriş için son hesabın adı ve UUID'si (eski kayıtlarda yok)
-    #[serde(default)]
-    ad: String,
-    #[serde(default)]
-    uuid: String,
 }
-
-/// İnternete hiç ulaşılamadığında dönen hata (çevrimdışı girişe geçmek için)
-const AG_YOK: &str = "İnternet bağlantısı yok gibi görünüyor.";
-/// Çevrimdışı oturumdaki sahte erişim anahtarı (oyun tek oyunculu/LAN'da bunu denetlemez)
-const CEVRIMDISI_ANAHTAR: &str = "kcz-cevrimdisi";
-/// Çevrimdışıyken tekrar çevrimiçi olmayı en sık bu aralıkla dene
-const CEVRIMDISI_DENEME: Duration = Duration::from_secs(60);
 
 #[derive(Clone)]
 pub struct Oturum {
     pub ad: String,
     pub uuid: String,
     pub erisim: String,
-    pub cevrimdisi: bool,
     zaman: Instant,
 }
 
 static OTURUM: LazyLock<Mutex<Option<Oturum>>> = LazyLock::new(|| Mutex::new(None));
 static BEKLEYEN: AtomicU64 = AtomicU64::new(0);
+/// Oyundaki hesap menüsünden başlatılan girişin sonucu (oyun köprüsü alır)
+pub static OYUN_GIRIS: LazyLock<Mutex<Option<Value>>> = LazyLock::new(|| Mutex::new(None));
 
 /* ---------- Anahtarı saklama ---------- */
 fn kasa() -> Option<keyring::Entry> {
@@ -61,7 +48,9 @@ fn kasa() -> Option<keyring::Entry> {
 
 fn kaydet(k: &Kayit) {
     if let (Some(e), Ok(m)) = (kasa(), serde_json::to_string(k)) {
-        let _ = e.set_password(&m);
+        if let Err(h) = e.set_password(&m) {
+            log(format!("Giriş bilgisi saklanamadı (anahtar kasası): {h}"));
+        }
     }
 }
 
@@ -76,9 +65,114 @@ fn sil() {
     }
 }
 
+/* ---------- Birden fazla hesap ----------
+Aktif hesabın anahtarı yukarıdaki kasada durur (eskisi gibi). Her hesabın bir kopyası da
+"hesap-<uuid>" adıyla ayrı saklanır (Windows bir kayıtta ~2,5 KB'tan fazlasına izin vermiyor).
+Hesapların adları ve sırası şifresiz bir dosyada: hesaplar.json (anahtar içermez). */
+#[derive(Serialize, Deserialize, Clone, Default)]
+struct HesapListesi {
+    aktif: String,
+    liste: Vec<HesapOzeti>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct HesapOzeti {
+    uuid: String,
+    ad: String,
+}
+
+fn liste_dosyasi() -> std::path::PathBuf {
+    kullanici_klasoru().join("hesaplar.json")
+}
+
+fn liste_oku() -> HesapListesi {
+    std::fs::read_to_string(liste_dosyasi())
+        .ok()
+        .and_then(|m| serde_json::from_str(&m).ok())
+        .unwrap_or_default()
+}
+
+fn liste_yaz(l: &HesapListesi) {
+    if let Ok(m) = serde_json::to_string_pretty(l) {
+        let _ = std::fs::write(liste_dosyasi(), m);
+    }
+}
+
+fn hesap_kasasi(uuid: &str) -> Option<keyring::Entry> {
+    keyring::Entry::new(KASA_SERVIS, &format!("hesap-{uuid}")).ok()
+}
+
+/// Aktif hesabı (adı ve güncel anahtarıyla) hesap listesine kaydeder
+fn hatirla(o: &Oturum) {
+    let Some(k) = oku() else { return };
+    if o.uuid.is_empty() {
+        return;
+    }
+    if let (Some(e), Ok(m)) = (hesap_kasasi(&o.uuid), serde_json::to_string(&k)) {
+        let _ = e.set_password(&m);
+    }
+    let mut l = liste_oku();
+    match l.liste.iter_mut().find(|x| x.uuid == o.uuid) {
+        Some(x) => x.ad = o.ad.clone(),
+        None => l.liste.push(HesapOzeti { uuid: o.uuid.clone(), ad: o.ad.clone() }),
+    }
+    l.aktif = o.uuid.clone();
+    liste_yaz(&l);
+}
+
+pub fn hesaplar() -> Value {
+    let l = liste_oku();
+    json!({ "aktif": l.aktif, "liste": l.liste.iter().map(|x| json!({ "uuid": x.uuid, "ad": x.ad })).collect::<Vec<_>>() })
+}
+
+/// Kayıtlı başka bir hesaba geçer (yeniden giriş gerekmez)
+pub async fn hesaba_gec(uuid: &str) -> Value {
+    let Some(m) = hesap_kasasi(uuid).and_then(|e| e.get_password().ok()) else {
+        return json!({ "girisli": false, "hata": "Bu hesabın girişi bulunamadı, tekrar ekle." });
+    };
+    let Ok(k) = serde_json::from_str::<Kayit>(&m) else {
+        return json!({ "girisli": false, "hata": "Bu hesabın girişi bozuk, tekrar ekle." });
+    };
+    kaydet(&k);
+    *OTURUM.lock().unwrap() = None;
+    let mut l = liste_oku();
+    l.aktif = uuid.to_string();
+    liste_yaz(&l);
+    oturumu_yenile().await
+}
+
+/// Hesabı launcher'dan kaldırır. Aktif hesapsa sıradaki hesaba geçilir.
+pub async fn hesabi_unut(uuid: &str) -> Value {
+    if let Some(e) = hesap_kasasi(uuid) {
+        let _ = e.delete_credential();
+    }
+    let mut l = liste_oku();
+    l.liste.retain(|x| x.uuid != uuid);
+    let aktifti = l.aktif == uuid || l.aktif.is_empty();
+    liste_yaz(&l);
+    if !aktifti {
+        return oturumu_yenile().await;
+    }
+    *OTURUM.lock().unwrap() = None;
+    BEKLEYEN.fetch_add(1, Ordering::SeqCst);
+    sil();
+    if let Some(ilk) = l.liste.first().map(|x| x.uuid.clone()) {
+        return hesaba_gec(&ilk).await;
+    }
+    let mut l = liste_oku();
+    l.aktif.clear();
+    liste_yaz(&l);
+    json!({ "girisli": false })
+}
+
+/// Şu an açık hesabın adı ve kimliği (internete sormadan)
+pub fn mevcut() -> Option<(String, String)> {
+    OTURUM.lock().unwrap().as_ref().map(|o| (o.ad.clone(), o.uuid.clone()))
+}
+
 /* ---------- Yardımcılar ---------- */
 fn profil_json(o: &Oturum) -> Value {
-    json!({ "girisli": true, "ad": o.ad, "uuid": o.uuid, "cevrimdisi": o.cevrimdisi })
+    json!({ "girisli": true, "ad": o.ad, "uuid": o.uuid })
 }
 
 fn xbox_hata(kod: u64) -> String {
@@ -97,7 +191,7 @@ async fn form_gonder(url: &str, veri: &[(&str, &str)]) -> Sonuc<(bool, Value)> {
         .form(veri)
         .send()
         .await
-        .map_err(|_| AG_YOK.to_string())?;
+        .map_err(|_| "İnternet bağlantısı yok gibi görünüyor.".to_string())?;
     let ok = r.status().is_success();
     let j = r.json::<Value>().await.unwrap_or(json!({}));
     Ok((ok, j))
@@ -110,7 +204,7 @@ async fn json_gonder(url: &str, govde: Value) -> Sonuc<Value> {
         .json(&govde)
         .send()
         .await
-        .map_err(|_| AG_YOK.to_string())?;
+        .map_err(|_| "İnternet bağlantısı yok gibi görünüyor.".to_string())?;
     let kod = r.status();
     let metin = r.text().await.unwrap_or_default();
     let j: Value = serde_json::from_str(&metin).unwrap_or(json!({}));
@@ -158,7 +252,7 @@ async fn msden_minecrafta(ms_erisim: &str) -> Sonuc<Oturum> {
         .bearer_auth(&erisim)
         .send()
         .await
-        .map_err(|_| AG_YOK.to_string())?;
+        .map_err(|_| "İnternet bağlantısı yok gibi görünüyor.".to_string())?;
     if pr.status().as_u16() == 404 {
         return Err("Bu hesapta Minecraft Java bulunamadı.".into());
     }
@@ -170,18 +264,32 @@ async fn msden_minecrafta(ms_erisim: &str) -> Sonuc<Oturum> {
         ad: metin(&p, "name"),
         uuid: metin(&p, "id"),
         erisim,
-        cevrimdisi: false,
         zaman: Instant::now(),
     })
 }
 
 fn oturum_ayarla(o: &Oturum) {
     *OTURUM.lock().unwrap() = Some(o.clone());
+    hatirla(o);
 }
 
-/* ---------- 1) Edge (cihaz kodu) ile giriş ---------- */
+/* ---------- 1) Tarayıcıda (cihaz kodu) giriş ---------- */
 /// Kodu ve açılacak adresi döndürür; giriş bitince "hesap-sonuc" olayı gönderilir.
 pub async fn tarayici_baslat() -> Sonuc<(String, String)> {
+    tarayici_baslat_ic(false).await
+}
+
+/// Giriş sonucunu launcher arayüzüne gönderir; oyundan başlatıldıysa oyun köprüsüne de bırakır.
+fn sonuc_yay(oyundan: bool, v: Value) {
+    if oyundan {
+        *OYUN_GIRIS.lock().unwrap() = Some(v.clone());
+    }
+    gonder("hesap-sonuc", v);
+}
+
+/// `oyundan`: oyundaki hesap menüsünden başlatıldı. O zaman giriş bitince launcher penceresi
+/// öne getirilmez (oyun açık) ve sonuç oyuna da iletilir.
+pub async fn tarayici_baslat_ic(oyundan: bool) -> Sonuc<(String, String)> {
     let (ok, j) = form_gonder(
         &format!("{LIVE}/oauth20_connect.srf"),
         &[("client_id", CIHAZ_ISTEMCI), ("scope", KAPSAM), ("response_type", "device_code")],
@@ -236,16 +344,16 @@ pub async fn tarayici_baslat() -> Sonuc<(String, String)> {
                         kaydet(&Kayit {
                             yontem: "tarayici".into(),
                             yenileme: metin(&tj, "refresh_token"),
-                            ad: o.ad.clone(),
-                            uuid: o.uuid.clone(),
                         });
                         oturum_ayarla(&o);
-                        pencereyi_one_getir();
+                        if !oyundan {
+                            pencereyi_one_getir();
+                        }
                         profil_json(&o)
                     }
                     Err(e) => json!({ "girisli": false, "hata": e }),
                 };
-                gonder("hesap-sonuc", sonuc);
+                sonuc_yay(oyundan, sonuc);
                 return;
             }
             match metin(&tj, "error").as_str() {
@@ -264,16 +372,13 @@ pub async fn tarayici_baslat() -> Sonuc<(String, String)> {
                             format!("Giriş yapılamadı: {}", if a.is_empty() { e.to_string() } else { a })
                         }
                     };
-                    gonder("hesap-sonuc", json!({ "girisli": false, "hata": hata }));
+                    sonuc_yay(oyundan, json!({ "girisli": false, "hata": hata }));
                     return;
                 }
             }
         }
         if BEKLEYEN.load(Ordering::SeqCst) == bu {
-            gonder(
-                "hesap-sonuc",
-                json!({ "girisli": false, "hata": "Kodun süresi doldu, tekrar dene." }),
-            );
+            sonuc_yay(oyundan, json!({ "girisli": false, "hata": "Kodun süresi doldu, tekrar dene." }));
         }
     });
     Ok((kod, adres))
@@ -364,8 +469,6 @@ async fn pencere_girisi_ic(app: AppHandle) -> Sonuc<Oturum> {
     kaydet(&Kayit {
         yontem: "pencere".into(),
         yenileme: metin(&t, "refresh_token"),
-        ad: o.ad.clone(),
-        uuid: o.uuid.clone(),
     });
     oturum_ayarla(&o);
     Ok(o)
@@ -374,25 +477,13 @@ async fn pencere_girisi_ic(app: AppHandle) -> Sonuc<Oturum> {
 /* ---------- Kayıtlı girişi yenileme ---------- */
 pub async fn oturumu_yenile() -> Value {
     let mevcut = OTURUM.lock().unwrap().clone();
-    if let Some(o) = &mevcut {
-        // Son 30 dakikada yenilendiyse tekrar sormaya gerek yok.
-        // Çevrimdışıysa internet geldi mi diye en fazla dakikada bir bakılır.
-        let bekle = if o.cevrimdisi { CEVRIMDISI_DENEME } else { Duration::from_secs(30 * 60) };
-        if o.zaman.elapsed() < bekle {
-            return profil_json(o);
+    if let Some(o) = mevcut {
+        // Son 30 dakikada yenilendiyse tekrar sormaya gerek yok
+        if o.zaman.elapsed() < Duration::from_secs(30 * 60) {
+            return profil_json(&o);
         }
     }
     let Some(k) = oku() else { return json!({ "girisli": false }) };
-    // Ad girilerek açılmış çevrimdışı oturum: Microsoft anahtarı yok, doğrudan geri yükle
-    if k.yontem == "cevrimdisi" {
-        return match cevrimdisi_oturum(&k) {
-            Some(o) => {
-                oturum_ayarla(&o);
-                profil_json(&o)
-            }
-            None => json!({ "girisli": false }),
-        };
-    }
     if k.yenileme.is_empty() {
         return json!({ "girisli": false });
     }
@@ -417,60 +508,17 @@ pub async fn oturumu_yenile() -> Value {
         kaydet(&Kayit {
             yontem: k.yontem.clone(),
             yenileme: if yeni.is_empty() { k.yenileme.clone() } else { yeni },
-            ad: o.ad.clone(),
-            uuid: o.uuid.clone(),
         });
         Ok(o)
     }
     .await;
     match sonuc {
         Ok(o) => {
-            if mevcut.as_ref().is_some_and(|m| m.cevrimdisi) {
-                log("İnternet geldi, tekrar çevrimiçi olundu.");
-            }
             oturum_ayarla(&o);
             profil_json(&o)
         }
-        // İnternet yok ama daha önce giriş yapılmış: çevrimdışı devam et
-        Err(e) if e == AG_YOK => match cevrimdisi_oturum(&k) {
-            Some(o) => {
-                oturum_ayarla(&o);
-                profil_json(&o)
-            }
-            None => json!({
-                "girisli": false,
-                "hata": "İnternet yok. Çevrimdışı oynayabilmek için önce bir kere internetliyken giriş yapmalısın."
-            }),
-        },
         Err(e) => json!({ "girisli": false, "hata": e }),
     }
-}
-
-/// Çevrimdışıyken "tekrar bağlan": bekleme süresini atlayıp hemen dene
-pub async fn tekrar_dene() -> Value {
-    {
-        let mut o = OTURUM.lock().unwrap();
-        if o.as_ref().is_some_and(|x| x.cevrimdisi) {
-            *o = None;
-        }
-    }
-    oturumu_yenile().await
-}
-
-/// Kayıtlı hesaptan çevrimdışı oturum (ad ve UUID son çevrimiçi girişten)
-fn cevrimdisi_oturum(k: &Kayit) -> Option<Oturum> {
-    let gecerli_ad = !k.ad.is_empty() && k.ad.len() <= 16 && k.ad.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
-    let gecerli_uuid = k.uuid.len() == 32 && k.uuid.chars().all(|c| c.is_ascii_hexdigit());
-    if !gecerli_ad || !gecerli_uuid {
-        return None;
-    }
-    Some(Oturum {
-        ad: k.ad.clone(),
-        uuid: k.uuid.clone(),
-        erisim: CEVRIMDISI_ANAHTAR.into(),
-        cevrimdisi: true,
-        zaman: Instant::now(),
-    })
 }
 
 /// Oyunu başlatmak ve skin işlemleri için geçerli oturum
@@ -484,34 +532,6 @@ pub async fn yetki() -> Option<Oturum> {
     }
 }
 
-/* ---------- Ad girerek çevrimdışı oturum ---------- */
-/// Hiç çevrimiçi giriş yapılmamış olsa bile girilen adla çevrimdışı oturum açar ve kaydeder.
-/// UUID, vanilla offline modundaki gibi "OfflinePlayer:<ad>" üzerinden hesaplanır.
-pub fn cevrimdisi_giris(ad: &str) -> Value {
-    let ad = ad.trim().to_string();
-    if !crate::cevrimdisi::gecerli_ad(&ad) {
-        return json!({
-            "girisli": false,
-            "hata": "Kullanıcı adı 3-16 karakter olmalı; yalnızca harf, rakam ve _ kullanılabilir."
-        });
-    }
-    let o = Oturum {
-        uuid: crate::cevrimdisi::uuid_hesapla(&ad),
-        ad,
-        erisim: CEVRIMDISI_ANAHTAR.into(),
-        cevrimdisi: true,
-        zaman: Instant::now(),
-    };
-    kaydet(&Kayit {
-        yontem: "cevrimdisi".into(),
-        yenileme: String::new(),
-        ad: o.ad.clone(),
-        uuid: o.uuid.clone(),
-    });
-    oturum_ayarla(&o);
-    profil_json(&o)
-}
-
 pub fn cikis() -> Value {
     *OTURUM.lock().unwrap() = None;
     BEKLEYEN.fetch_add(1, Ordering::SeqCst);
@@ -519,37 +539,27 @@ pub fn cikis() -> Value {
     json!({ "girisli": false })
 }
 
-/* ---------- Edge'de adres açma ---------- */
+/* ---------- Çevrimdışı giriş ---------- */
+pub fn cevrimdisi_giris(ad: &str) -> Value {
+    let ad = ad.trim().to_string();
+    if !crate::cevrimdisi::gecerli_ad(&ad) {
+        return json!({ "girisli": false, "hata": "Geçersiz ad. 3\u{2013}16 karakter, harf, rakam veya _ olmalı." });
+    }
+    let o = Oturum {
+        ad: ad.clone(),
+        uuid: crate::cevrimdisi::uuid_hesapla(&ad),
+        erisim: String::new(),
+        zaman: Instant::now(),
+    };
+    *OTURUM.lock().unwrap() = Some(o.clone());
+    profil_json(&o)
+}
+
+/* ---------- Giriş sayfasını açma ---------- */
+/// Adresi bilgisayarın varsayılan tarayıcısında açar (Chrome, Opera, Firefox, Edge… ne seçiliyse).
 pub fn edge_ac(app: &AppHandle, adres: &str) {
     if !adres.starts_with("https://") {
         return;
-    }
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        let adaylar = [
-            std::env::var("ProgramFiles(x86)").unwrap_or_else(|_| "C:\\Program Files (x86)".into()),
-            std::env::var("ProgramFiles").unwrap_or_else(|_| "C:\\Program Files".into()),
-            std::env::var("LOCALAPPDATA").unwrap_or_default(),
-        ];
-        for kok in adaylar {
-            let yol = std::path::Path::new(&kok)
-                .join("Microsoft")
-                .join("Edge")
-                .join("Application")
-                .join("msedge.exe");
-            if yol.exists() {
-                if std::process::Command::new(&yol)
-                    .arg("--new-window")
-                    .arg(adres)
-                    .creation_flags(PENCERESIZ)
-                    .spawn()
-                    .is_ok()
-                {
-                    return;
-                }
-            }
-        }
     }
     use tauri_plugin_opener::OpenerExt;
     let _ = app.opener().open_url(adres, None::<&str>);

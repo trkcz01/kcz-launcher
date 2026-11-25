@@ -2066,19 +2066,19 @@ function oynaGuncelle() {
 let sonHata = '';
 
 // hedefAdres boşsa oyun ana menüye açılır, doluysa direkt o sunucuya girer
-async function oyunuAc(hedefAdres, hedefAd, surum, profilId) {
+async function oyunuAc(hedefAdres, hedefAd, surum, profilId, modsuz) {
   if (!girisli) { perdeyiAc(); return; }
   if (is || oyunDurumu === 'acik') return;
   sonHata = '';
   const id = surum || ayarlar.mcSurum;
-  is = { tur: 'oyna', surum: id, yuzde: 0, metin: hedefAdres ? `${hedefAd} sunucusuna bağlanılacak` : profilId ? `${hedefAd} profili hazırlanıyor…` : 'Hazırlanıyor…' };
+  is = { tur: 'oyna', surum: id, yuzde: 0, metin: modsuz ? 'Modsuz deneme: oyun hiçbir mod olmadan açılacak' : hedefAdres ? `${hedefAd} sunucusuna bağlanılacak` : profilId ? `${hedefAd} profili hazırlanıyor…` : 'Hazırlanıyor…' };
   oynaRef.btn.classList.remove('patla');
   void oynaRef.btn.offsetWidth;
   oynaRef.btn.classList.add('patla');
   oynaGuncelle();
   if ($('sayfa-surumler').classList.contains('aktif')) surumListesiCiz();
 
-  const s = await api.oyunuBaslat(hedefAdres || null, surum || null, profilId || null);
+  const s = await api.oyunuBaslat(hedefAdres || null, surum || null, profilId || null, !!modsuz);
   if (!s.ok) {
     is = null;
     sonHata = s.hata || 'Oyun başlatılamadı.';
@@ -2122,6 +2122,57 @@ api.durumDinle((d) => {
   }
   oynaGuncelle();
 });
+
+/** Son açılışı aynı şekilde (sunucu, profil, sürüm) tekrar aç; modsuz: hiçbir mod olmadan dene */
+async function sonAcilisiTekrarla(modsuz) {
+  const a = await api.sonAcilis();
+  if (!a) { oyunuAc(null, null, null, null, modsuz); return; }
+  const p = a.profilId && (ayarlar.profiller || []).find((x) => x.id === a.profilId);
+  const sv = a.hedefSunucu && sunucular.find((x) => x.adres === a.hedefSunucu);
+  oyunuAc(a.hedefSunucu, p ? p.ad : sv ? sv.ad : null, p ? p.surum : a.surum, a.profilId, modsuz);
+}
+
+/* ---------- Onar: oyun açılmıyor ya da çöküyorsa ---------- */
+async function oyunuOnar(dugme) {
+  if (is || oyunDurumu === 'acik') { bildirim('Oyun açıkken onarılamaz.', true); return false; }
+  const eski = dugme.textContent;
+  dugme.disabled = true;
+  dugme.textContent = 'Onarılıyor…';
+  yaz('onarSonuc', 'Önbellek temizleniyor, oyun dosyaları ve Java kontrol ediliyor…');
+  const r = await api.oyunuOnar();
+  dugme.disabled = false;
+  dugme.textContent = eski;
+  if (!r.ok) { yaz('onarSonuc', r.hata); bildirim(r.hata, true); return false; }
+  const m = r.veri.join(' · ');
+  yaz('onarSonuc', `Onarıldı: ${m}. Şimdi tekrar oynamayı dene; düzelmezse "Modsuz dene".`);
+  bildirim(`Onarım bitti: ${m}`);
+  return true;
+}
+$('onarBtn').addEventListener('click', () => oyunuOnar($('onarBtn')));
+$('modsuzBtn').addEventListener('click', () => sonAcilisiTekrarla(true));
+$('ayarSifirlaBtn').addEventListener('click', async () => {
+  const b = $('ayarSifirlaBtn');
+  if (!b.classList.contains('emin')) {
+    b.classList.add('emin');
+    b.textContent = 'Emin misin?';
+    setTimeout(() => { b.classList.remove('emin'); b.textContent = 'Oyun ayarlarını sıfırla'; }, 3000);
+    return;
+  }
+  b.classList.remove('emin');
+  b.textContent = 'Oyun ayarlarını sıfırla';
+  const r = await api.oyunAyarlariniSifirla();
+  if (!r.ok) { bildirim(r.hata, true); return; }
+  const m = r.veri.startsWith('options.txt.yedek')
+    ? `Oyun ayarları sıfırlandı. Eskisi oyun klasöründe ${r.veri} adıyla duruyor.`
+    : r.veri;
+  yaz('onarSonuc', m);
+  bildirim(m);
+});
+// Çökme penceresinden: onarıp aynı şekilde tekrar aç ya da modsuz dene
+$('cokmeOnar').addEventListener('click', async () => {
+  if (await oyunuOnar($('cokmeOnar'))) { $('cokmePerde').hidden = true; sonAcilisiTekrarla(false); }
+});
+$('cokmeModsuz').addEventListener('click', () => { $('cokmePerde').hidden = true; sonAcilisiTekrarla(true); });
 
 /* ---------- Eksik mod hatası: düzelt ve tekrar oyna ---------- */
 let modHatasi = null;
@@ -2455,6 +2506,7 @@ async function yukluCiz() {
   }
   for (const m of r.veri) {
     const s = el('div', 'ym' + (m.acik ? '' : ' kapali'));
+    s.dataset.dosya = m.dosya;
     let ikon;
     if (m.ikon) { ikon = el('img', 'mk-ikon'); ikon.alt = ''; ikon.src = m.ikon; ikon.onerror = () => ikon.replaceWith(harfIkon(m.ad)); }
     else ikon = harfIkon(m.ad);
@@ -2492,7 +2544,58 @@ async function yukluCiz() {
     s.append(ikon, bilgi, d);
     kap.append(s);
   }
+  if (yukluTur === 'mod') modGuncellemeleriGoster(kap);
 }
+
+/* ---------- Mod güncellemeleri ---------- */
+let modGuncellemeIsi = false;
+async function modGuncellemeleriGoster(kap) {
+  const kapsam = modKapsam;
+  const r = await api.modGuncellemeler({ tur: 'mod', sunucu: kapsam });
+  // Bu arada sekme ya da kapsam değiştiyse eski listeye ekleme
+  if (!r.ok || !r.veri.length || yukluTur !== 'mod' || kapsam !== modKapsam || !kap.isConnected) return;
+  const liste = r.veri;
+  for (const u of liste) {
+    const satir = kap.querySelector(`.ym[data-dosya="${CSS.escape(u.dosya)}"]`);
+    if (!satir) continue;
+    const kucuk = satir.querySelector('.ym-bilgi small');
+    if (kucuk) kucuk.prepend(el('span', 'yeni-surum', `Yeni: ${u.yeni} · `));
+    const b = el('button', 'guncelle', 'Güncelle');
+    b.addEventListener('click', () => { b.disabled = true; b.textContent = 'Güncelleniyor…'; modGuncelleCalistir([u]); });
+    satir.querySelector('.ym-dugmeler').prepend(b);
+  }
+  const serit = el('div', 'guncelleme-serit');
+  const p = el('p');
+  p.append(el('b', '', `${liste.length} modun`), document.createTextNode(' güncellemesi var.'));
+  const hepsi = el('button', 'birincil kucuk', 'Hepsini güncelle');
+  hepsi.addEventListener('click', () => { hepsi.disabled = true; hepsi.textContent = 'Güncelleniyor…'; modGuncelleCalistir(liste); });
+  serit.append(p, hepsi);
+  kap.prepend(serit);
+}
+async function modGuncelleCalistir(liste) {
+  if (modGuncellemeIsi) return;
+  modGuncellemeIsi = true;
+  let tamam = 0;
+  const hatalar = [];
+  for (const u of liste) {
+    const r = await api.modGuncelle({ tur: 'mod', proje: u.proje, sunucu: modKapsam });
+    if (r.ok) tamam++; else hatalar.push(`${u.ad}: ${r.hata}`);
+  }
+  modGuncellemeIsi = false;
+  if (tamam) bildirim(`${tamam} mod güncellendi.`);
+  if (hatalar.length) bildirim(hatalar[0] + (hatalar.length > 1 ? ` (+${hatalar.length - 1} hata daha)` : ''), true);
+  yukluCiz();
+  if (typeof yukluSayisiniGuncelle === 'function') yukluSayisiniGuncelle();
+}
+// Açılıştan kısa süre sonra bir kez: seçili sunucunun ya da genel profilin modlarında güncelleme varsa haber ver
+setTimeout(async () => {
+  try {
+    const s = typeof seciliSunucu === 'function' ? seciliSunucu() : null;
+    const kapsam = s && ayarlar.sunucuProfilleri && ayarlar.sunucuProfilleri[s.adres] ? s.adres : null;
+    const r = await api.modGuncellemeler({ tur: 'mod', sunucu: kapsam });
+    if (r.ok && r.veri.length) bildirim(`${r.veri.length} modun güncellemesi var. Modlar > Yüklü'den güncelleyebilirsin.`);
+  } catch { /* sessiz */ }
+}, 12000);
 document.querySelectorAll('#yukluTurler .filtre').forEach((b) => b.addEventListener('click', () => {
   yukluTur = b.dataset.tur;
   document.querySelectorAll('#yukluTurler .filtre').forEach((x) => x.classList.toggle('aktif', x === b));
@@ -3096,6 +3199,7 @@ function cokmeGoster(c) {
   yaz('cokmeOneri', c.oneri || '');
   $('cokmeNot').value = '';
   $('cokmeBildir').disabled = false; $('cokmeBildir').textContent = 'Hatayı bildir';
+  $('cokmeOnar').disabled = false; $('cokmeOnar').textContent = 'Onar ve tekrar dene';
   $('cokmeRapor').hidden = !c.rapor;
   $('cokmePerde').hidden = false;
   sonHata = '';
@@ -3284,6 +3388,13 @@ document.addEventListener('click', (e) => { if (!e.target.closest('#galeriGonder
 $('galeriKlasor').addEventListener('click', () => api.ekranGoruntusuKlasor());
 $('galeriKapat').addEventListener('click', () => { $('galeriPerde').hidden = true; });
 $('galeriPerde').addEventListener('click', (e) => { if (e.target === $('galeriPerde')) $('galeriPerde').hidden = true; });
+// Discord'a gönder: resim panoya kopyalanır, Discord uygulaması açılır, kullanıcı Ctrl+V ile yapıştırır
+$('galeriDiscord').addEventListener('click', async () => {
+  const r = await api.ekranGoruntusuKopyala(galeriSecili);
+  if (!r.ok) { bildirim(r.hata, true); return; }
+  api.disAc('discord://-/channels/@me');
+  bildirim('Resim kopyalandı. Discord açılınca istediğin sohbete Ctrl+V ile yapıştır.');
+});
 $('galeriKopyala').addEventListener('click', async () => {
   const r = await api.ekranGoruntusuKopyala(galeriSecili);
   if (r.ok) bildirim('Panoya kopyalandı. Discord\'a Ctrl+V ile yapıştırabilirsin.'); else bildirim(r.hata, true);

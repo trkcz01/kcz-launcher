@@ -1,0 +1,11 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "kcz-client:font/simge.png",
+      "ascent": 7,
+      "height": 7,
+      "chars": [""]
+    }
+  ]
+}

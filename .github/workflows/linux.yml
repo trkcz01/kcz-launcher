@@ -1,0 +1,139 @@
+# KÇZ Launcher - Linux derlemesi
+# YAYINLA (Windows) yeni sürümü GitHub'a koyunca kendiliğinden çalışır: aynı kaynaktan Linux
+# AppImage/deb/rpm derler, sürüme ekler ve latest.json'a Linux satırlarını yazar.
+# Böylece Linux'taki launcher'lar da güncellemeyi görür.
+# Elle: Actions > "Linux derleme" > Run workflow > etiket (ör. v0.0.89) - o sürüme Linux ekler.
+#
+# Gerekli gizli ayarlar (Settings > Secrets and variables > Actions):
+#   TAURI_SIGNING_PRIVATE_KEY           imza\kcz-imza.key dosyasının içeriği
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  o anahtarın şifresi
+
+name: Linux derleme
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      etiket:
+        description: "Linux eklenecek sürüm etiketi (ör. v0.0.89). Kaynak seçilen daldan alınır."
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linux-${{ github.event.release.tag_name || inputs.etiket }}
+  cancel-in-progress: false
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      ETIKET: ${{ github.event.release.tag_name || inputs.etiket }}
+      GH_TOKEN: ${{ github.token }}
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+
+      - name: Sürüm denetimi
+        run: |
+          V=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "V=$V" >> "$GITHUB_ENV"
+          if [ "v$V" != "$ETIKET" ]; then
+            echo "::error::Kaynaktaki sürüm ($V) etiketle ($ETIKET) aynı değil."
+            exit 1
+          fi
+          ls -la istemci-mod/cikti/
+
+      - name: Sistem paketleri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config curl wget file cmake \
+            libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev \
+            libasound2-dev libdbus-1-dev libopus-dev libfuse2 rpm jq
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Node paketleri
+        run: npm ci || npm install
+
+      - name: Derle (AppImage, deb, rpm)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY gizli ayarı yok; güncelleme imzası atılamaz."
+            exit 1
+          fi
+          npx tauri build --bundles appimage,deb,rpm
+
+      - name: Dosyaları topla
+        run: |
+          B=src-tauri/target/release/bundle
+          mkdir -p cikis
+          bul() { find "$B/$1" -maxdepth 1 -type f -name "$2" | head -1; }
+          AI=$(bul appimage '*.AppImage'); DEB=$(bul deb '*.deb'); RPM=$(bul rpm '*.rpm')
+          for f in "$AI" "$DEB" "$RPM"; do
+            [ -n "$f" ] && [ -f "$f" ] && [ -f "$f.sig" ] || { echo "::error::Paket ya da imzası eksik: $f"; ls -R "$B"; exit 1; }
+          done
+          cp "$AI"  "cikis/KCZ-Launcher_${V}_amd64.AppImage"
+          cp "$DEB" "cikis/KCZ-Launcher_${V}_amd64.deb"
+          cp "$RPM" "cikis/KCZ-Launcher_${V}_x86_64.rpm"
+          cp "$AI.sig"  cikis/appimage.sig
+          cp "$DEB.sig" cikis/deb.sig
+          cp "$RPM.sig" cikis/rpm.sig
+          ls -la cikis
+
+      - name: Sürüme yükle
+        run: |
+          gh release upload "$ETIKET" --clobber \
+            "cikis/KCZ-Launcher_${V}_amd64.AppImage" \
+            "cikis/KCZ-Launcher_${V}_amd64.deb" \
+            "cikis/KCZ-Launcher_${V}_x86_64.rpm"
+
+      - name: latest.json'a Linux ekle
+        run: |
+          # YAYINLA latest.json'u sürümü açtıktan hemen sonra yükler; yoksa biraz bekle
+          for i in $(seq 1 40); do
+            rm -rf mevcut
+            if gh release download "$ETIKET" -p latest.json -D mevcut 2>/dev/null \
+               && [ "$(jq -r .version mevcut/latest.json)" = "$V" ]; then
+              break
+            fi
+            echo "latest.json bekleniyor ($i)..."; sleep 15
+          done
+          [ -f mevcut/latest.json ] || { echo "::error::Sürümde latest.json yok."; exit 1; }
+          U="https://github.com/${GITHUB_REPOSITORY}/releases/download/${ETIKET}"
+          jq --arg ai "$(cat cikis/appimage.sig)" --arg deb "$(cat cikis/deb.sig)" --arg rpm "$(cat cikis/rpm.sig)" \
+             --arg uai "$U/KCZ-Launcher_${V}_amd64.AppImage" \
+             --arg udeb "$U/KCZ-Launcher_${V}_amd64.deb" \
+             --arg urpm "$U/KCZ-Launcher_${V}_x86_64.rpm" '
+            .platforms["linux-x86_64"]          = {signature: $ai,  url: $uai}  |
+            .platforms["linux-x86_64-appimage"] = {signature: $ai,  url: $uai}  |
+            .platforms["linux-x86_64-deb"]      = {signature: $deb, url: $udeb} |
+            .platforms["linux-x86_64-rpm"]      = {signature: $rpm, url: $urpm}
+          ' mevcut/latest.json > latest.json
+          jq '.platforms | keys' latest.json
+          gh release upload "$ETIKET" latest.json --clobber
+
+      - name: Sürüm notuna Linux satırı
+        run: |
+          NOT=$(gh release view "$ETIKET" --json body -q .body)
+          if ! printf '%s' "$NOT" | grep -q "Linux"; then
+            printf '%s\n\n**Linux:** `KCZ-Launcher_%s_amd64.AppImage` (her dağıtım: çalıştırılabilir yap ve aç; otomatik güncellenir) · Ubuntu/Debian/Mint: `.deb` · Fedora/openSUSE: `.rpm`\n' "$NOT" "$V" > not.md
+            gh release edit "$ETIKET" --notes-file not.md
+          fi

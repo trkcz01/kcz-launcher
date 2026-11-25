@@ -1,16 +1,25 @@
-// KÇZ Launcher (Tauri) - ana kısım: arayüzün çağırdığı komutlar, pencere, güncelleme.
+// KCZ Launcher (Tauri) - ana kısım: arayüzün çağırdığı komutlar, pencere, güncelleme.
 mod ayarlar;
+mod cokme;
+mod discord;
+mod foto;
+mod goruntu;
 mod cevrimdisi;
 mod hesap;
 mod istemci;
 mod java;
+mod kisayol;
 mod modlar;
+mod onar;
 mod ortak;
 mod oyun;
 mod performans;
 mod ping;
 mod profil;
 mod skin;
+mod sunucu;
+#[cfg(target_os = "linux")]
+mod ses_yerel;
 mod sunucular;
 mod sure;
 mod surumler;
@@ -35,11 +44,144 @@ fn ana_pencere() -> Option<tauri::WebviewWindow> {
     UYGULAMA.get().and_then(|a| a.get_webview_window("main"))
 }
 
+/// Launcher uyuyor mu? (Oyun açıkken arayüz kapatıldı, sadece tepsi simgesi var.)
+static UYUYOR: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Uyanınca yeni açılan arayüze gönderilecek son oyun durumu
+static SON_DURUM: LazyLock<Mutex<Option<Value>>> = LazyLock::new(|| Mutex::new(None));
+
+/// Oyun açıkken arayüzü (WebView2) tamamen kapatır: yüzlerce MB bellek oyuna
+/// kalır, arka planda hiçbir şey çizilmez. Oyun ve tepsi simgesi çalışmaya devam eder.
+fn uyut() {
+    if !TEPSI_VAR.load(std::sync::atomic::Ordering::SeqCst) {
+        // Tepsi yoksa geri açacak bir yer kalmaz: sadece küçült
+        if let Some(w) = ana_pencere() {
+            let _ = w.minimize();
+        }
+        return;
+    }
+    if let Some(w) = ana_pencere() {
+        pencere_boyutunu_kaydet();
+        UYUYOR.store(true, std::sync::atomic::Ordering::SeqCst);
+        let _ = w.destroy();
+        log("Launcher uyku modunda (oyun açık).");
+    }
+}
+
+/// Ana pencereyi oluşturur. Hafif modda pencere saydam değil, düz olur: Windows saydam
+/// pencereyi daha pahalı bir yoldan çizdiği için zayıf bilgisayarda kasma yapıyordu.
+fn ana_pencere_kur(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow> {
+    let mut ayar = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == "main")
+        .cloned()
+        .ok_or_else(|| std::io::Error::other("ana pencere ayarı yok"))?;
+    let duz = ayarlar::getir().hafif_mi();
+    ayar.create = true;
+    ayar.transparent = !duz;
+    // Windows (WebView2): sesli sohbet için mikrofon izni sorulmasın (pencere gizliyken soru görünmez,
+    // ses takılır) ve gelen ses kullanıcı tıklamadan çalabilsin. İlk üçü Tauri'nin kendi varsayılanları.
+    #[cfg(windows)]
+    {
+        ayar.additional_browser_args = Some(
+            "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --use-fake-ui-for-media-stream --autoplay-policy=no-user-gesture-required"
+                .into(),
+        );
+    }
+    if duz {
+        ayar.background_color = Some(tauri::webview::Color(10, 10, 11, 255));
+    }
+    tauri::WebviewWindowBuilder::from_config(app, &ayar)?
+        .initialization_script(if duz { "window.__KCZ_DUZ = true;" } else { "window.__KCZ_DUZ = false;" })
+        .on_page_load(|_, yuk| {
+            if yuk.event() == tauri::webview::PageLoadEvent::Finished {
+                // Arayüzün dinleyicileri kurulsun diye biraz bekle, sonra durumu bildir
+                tauri::async_runtime::spawn(async {
+                    tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+                    let d = SON_DURUM.lock().unwrap().take();
+                    if let Some(d) = d {
+                        gonder("oyun-durum", d);
+                    }
+                });
+            }
+        })
+        .build()
+}
+
+/// Uyuyan launcher'ın arayüzünü yeniden oluşturur. Ana iş parçacığını
+/// kilitlememek için arka planda yapılır (Windows'ta gerekli).
+/// Sesli sohbet oyunda açılınca: uyuyan launcher'ı görünmeden geri başlat (ses onun içinde çalışır)
+pub fn sessizce_uyandir() {
+    if !UYUYOR.load(std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    let Some(app) = UYGULAMA.get().cloned() else { return };
+    UYUYOR.store(false, std::sync::atomic::Ordering::SeqCst);
+    tauri::async_runtime::spawn(async move {
+        match ana_pencere_kur(&app) {
+            Ok(w) => {
+                pencere_olaylari(&w);
+                log("Sesli sohbet için launcher arka planda açıldı.");
+            }
+            Err(e) => {
+                UYUYOR.store(true, std::sync::atomic::Ordering::SeqCst);
+                log(format!("Sesli sohbet için launcher açılamadı: {e}"));
+            }
+        }
+    });
+}
+
+fn uyandir(app: &AppHandle) {
+    if app.get_webview_window("main").is_some() {
+        pencereyi_goster(app);
+        return;
+    }
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let kur = ana_pencere_kur(&app);
+        match kur {
+            Ok(w) => {
+                UYUYOR.store(false, std::sync::atomic::Ordering::SeqCst);
+                let p = ayarlar::getir().pencere;
+                let _ = w.set_size(tauri::LogicalSize::new(p.w as f64, p.h as f64));
+                let _ = w.center();
+                pencere_olaylari(&w);
+                let _ = w.show();
+                let _ = w.set_focus();
+                log("Launcher uyandı.");
+            }
+            Err(e) => log(format!("Launcher penceresi açılamadı: {e}")),
+        }
+    });
+}
+
 pub fn oyun_durumu(mut veri: Value) {
     match veri["tur"].as_str() {
         Some("acik") => {
             sure::basla();
-            if ayarlar::getir().oyun_acilinca_gizle {
+            discord::oynuyor(veri["surum"].as_str().unwrap_or(""));
+            {
+                let a = ayarlar::getir();
+                let sunucu = (a.aktif_secim != "profil" && !a.secili_sunucu.is_empty()).then(|| a.secili_sunucu.clone());
+                sunucu::oyun_durumu(true, sunucu);
+            }
+            if let Some(app) = UYGULAMA.get() {
+                goruntu::izlemeyi_baslat(app.clone());
+            }
+            let a = ayarlar::getir();
+            // Düşük sistemde launcher hiç bellek/işlemci kullanmasın: tamamen kapanır, oyun kapanınca geri gelir
+            if (a.launcher_uyusun || a.istemci.dusuk_sistem) && a.istemci.yakin_ses && cfg!(not(target_os = "linux")) {
+                // Sesli sohbet launcher'ın içinde çalışıyor: kapatma, sadece küçült
+                if let Some(w) = ana_pencere() {
+                    let _ = w.minimize();
+                }
+            } else if a.launcher_uyusun || a.istemci.dusuk_sistem {
+                *SON_DURUM.lock().unwrap() = Some(veri.clone());
+                uyut();
+            } else if a.oyun_acilinca_gizle {
                 if let Some(w) = ana_pencere() {
                     let _ = w.minimize();
                 }
@@ -47,7 +189,10 @@ pub fn oyun_durumu(mut veri: Value) {
         }
         Some("kapandi") => {
             sure::bitir();
-            // Oyunun içindeki KÇZ menüsünden yapılan değişiklikleri al
+            discord::temizle();
+            sunucu::oyun_durumu(false, None);
+            goruntu::izlemeyi_durdur();
+            // Oyunun içindeki KCZ menüsünden yapılan değişiklikleri al
             istemci::ayar_geri_oku();
             // Fabric "Incompatible mods / ... which is missing" hatası: eksik modları bul
             let metin = kayit_metni();
@@ -67,8 +212,20 @@ pub fn oyun_durumu(mut veri: Value) {
                     .take(6)
                     .collect();
                 veri["modHatasi"] = json!({ "eksik": eksik, "satirlar": satirlar });
+            } else {
+                // Hatayla kapandıysa (oyuncu kapatmadıysa) sebebini bul
+                let kod = veri["kod"].as_i64().unwrap_or(0);
+                if kod != 0 && kod != 130 && kod != 143 {
+                    veri["cokme"] = cokme::incele(kod as i32);
+                }
             }
-            if let Some(w) = ana_pencere() {
+            if UYUYOR.load(std::sync::atomic::Ordering::SeqCst) {
+                // Arayüz yeniden açılınca bu durum ona iletilir (eksik mod uyarısı dahil)
+                *SON_DURUM.lock().unwrap() = Some(veri.clone());
+                if let Some(app) = UYGULAMA.get() {
+                    uyandir(app);
+                }
+            } else if let Some(w) = ana_pencere() {
                 let _ = w.unminimize();
                 let _ = w.show();
                 let _ = w.set_focus();
@@ -98,8 +255,8 @@ async fn hesap_durum() -> Value {
 }
 
 #[tauri::command]
-async fn hesap_tekrar_dene() -> Value {
-    hesap::tekrar_dene().await
+fn hesap_cevrimdisi_giris(ad: String) -> Value {
+    hesap::cevrimdisi_giris(&ad)
 }
 
 #[tauri::command]
@@ -129,13 +286,26 @@ fn hesap_tarayici_iptal() {
 }
 
 #[tauri::command]
-fn hesap_cikis() -> Value {
-    hesap::cikis()
+fn hesap_listesi() -> Value {
+    hesap::hesaplar()
 }
 
 #[tauri::command]
-fn hesap_cevrimdisi_giris(ad: String) -> Value {
-    hesap::cevrimdisi_giris(&ad)
+async fn hesap_gec(uuid: String) -> Value {
+    skin::profili_unut();
+    hesap::hesaba_gec(&uuid).await
+}
+
+#[tauri::command]
+async fn hesap_unut(uuid: String) -> Value {
+    skin::profili_unut();
+    hesap::hesabi_unut(&uuid).await
+}
+
+#[tauri::command]
+fn hesap_cikis() -> Value {
+    skin::profili_unut();
+    hesap::cikis()
 }
 
 /* =========================================================
@@ -144,6 +314,11 @@ Skinler ve süre
 #[tauri::command]
 async fn skin_liste() -> Value {
     skin::liste().await
+}
+
+#[tauri::command]
+async fn kafa_dokusu(kimlik: String) -> Option<String> {
+    skin::kafa_dokusu(&kimlik).await
 }
 
 #[tauri::command]
@@ -191,6 +366,33 @@ async fn skin_giy(kaynak: Value) -> Value {
 }
 
 #[tauri::command]
+fn skin_gizle(anahtar: String) -> Value {
+    skin::gizle(&anahtar);
+    json!({ "ok": true })
+}
+
+#[tauri::command]
+async fn skin_yenile() -> Value {
+    skin::yenile().await
+}
+
+#[tauri::command]
+fn skin_gizlenenleri_geri() -> Value {
+    skin::gizlenenleri_geri();
+    json!({ "ok": true })
+}
+
+#[tauri::command]
+async fn pelerin_liste() -> Value {
+    sonuc_json(skin::pelerinler().await)
+}
+
+#[tauri::command]
+async fn pelerin_tak(id: String) -> Value {
+    sonuc_json(skin::pelerin_tak(&id).await.map(|_| true))
+}
+
+#[tauri::command]
 fn sure_hafta() -> Value {
     sure::hafta()
 }
@@ -198,7 +400,8 @@ fn sure_hafta() -> Value {
 /// Öneri kartlarındaki bağlantılar (sadece Modrinth)
 #[tauri::command]
 fn dis_ac(app: AppHandle, adres: String) {
-    if adres.starts_with("https://modrinth.com/") {
+    // Galeri "Discord'a gönder": resim panoya kopyalanır, Discord uygulaması açılır
+    if adres.starts_with("https://modrinth.com/") || adres == "discord://-/channels/@me" {
         let _ = app.opener().open_url(adres, None::<&str>);
     }
 }
@@ -215,7 +418,29 @@ fn guncelleme_bildir(d: Value) {
     gonder("guncelleme", d);
 }
 
+/// Son denetimin zamanı (saniye). Odak/zamanlayıcı denetimleri buna bakıp boşuna istek atmaz.
+static SON_DENETIM: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+fn simdi_sn() -> u64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+}
+
+/// Son denetimden en az `aralik` saniye geçtiyse denetle; yoksa hiçbir şey yapma.
+async fn guncelleme_gerekirse(app: AppHandle, aralik: u64) {
+    let son = SON_DENETIM.load(std::sync::atomic::Ordering::SeqCst);
+    if simdi_sn().saturating_sub(son) < aralik {
+        return;
+    }
+    // Yeni sürüm zaten bulunduysa tekrar sormaya gerek yok
+    let tur = GUNCELLEME.lock().unwrap()["tur"].as_str().unwrap_or("").to_string();
+    if matches!(tur.as_str(), "var" | "iniyor" | "hazir" | "bakiliyor") {
+        return;
+    }
+    guncelleme_bak(app).await;
+}
+
 async fn guncelleme_bak(app: AppHandle) {
+    SON_DENETIM.store(simdi_sn(), std::sync::atomic::Ordering::SeqCst);
     if cfg!(debug_assertions) {
         guncelleme_bildir(json!({ "tur": "gelistirme" }));
         return;
@@ -391,13 +616,63 @@ async fn mod_yukle(o: Value) -> Value {
         return json!({ "ok": false, "hata": "Oyun açıkken mod kurulamaz." });
     }
     let p = mod_profili(&o);
-    sonuc_json(modlar::yukle(o["proje"].as_str().unwrap_or(""), &p.tur, &p.mc, &p.yukleyici, p.sunucu.as_deref()).await)
+    let sonuc = modlar::yukle(o["proje"].as_str().unwrap_or(""), &p.tur, &p.mc, &p.yukleyici, p.sunucu.as_deref()).await;
+    // Kaynak paketi ve shader kurulunca hemen kullanılır hâle gelsin
+    if sonuc.is_ok() && (p.tur == "paket" || p.tur == "shader") {
+        if let Some(d) = modlar::dosya_adi(o["proje"].as_str().unwrap_or(""), &p.tur, &p.mc, &p.yukleyici, p.sunucu.as_deref()) {
+            if p.tur == "paket" {
+                istemci::kaynak_paketini_ac(&d);
+            } else {
+                istemci::shaderi_sec(&d);
+            }
+        }
+    }
+    sonuc_json(sonuc)
 }
 
 #[tauri::command]
 fn mod_liste(o: Value) -> Value {
     let p = mod_profili(&o);
     sonuc_json::<Vec<Value>>(Ok(modlar::liste(&p.tur, &p.mc, &p.yukleyici, p.sunucu.as_deref())))
+}
+
+/// Kurulu içeriğin güncellemeleri (Modlar > Yüklü)
+#[tauri::command]
+async fn mod_guncellemeler(o: Value) -> Value {
+    let p = mod_profili(&o);
+    sonuc_json(modlar::guncellemeler(&p.tur, &p.mc, &p.yukleyici, p.sunucu.as_deref()).await)
+}
+
+#[tauri::command]
+async fn mod_guncelle(o: Value) -> Value {
+    if oyun::mesgul_mu() {
+        return json!({ "ok": false, "hata": "Oyun açıkken mod güncellenemez." });
+    }
+    let p = mod_profili(&o);
+    sonuc_json(modlar::guncelle(o["proje"].as_str().unwrap_or(""), &p.tur, &p.mc, &p.yukleyici, p.sunucu.as_deref()).await)
+}
+
+/// "Onar": son açılan (yoksa seçili) sürüm için önbellek, oyun dosyaları ve Java onarımı
+#[tauri::command]
+async fn oyunu_onar() -> Value {
+    if oyun::mesgul_mu() {
+        return json!({ "ok": false, "hata": "Oyun açıkken ya da başka bir işlem sürerken onarılamaz." });
+    }
+    let son = SON_ACILIS.lock().unwrap().clone();
+    let mc = son
+        .as_ref()
+        .map(|a| metin(a, "mc"))
+        .filter(|m| !m.is_empty())
+        .unwrap_or_else(|| ayarlar::getir().mc_surum);
+    sonuc_json(onar::onar(&mc).await)
+}
+
+#[tauri::command]
+fn oyun_ayarlarini_sifirla() -> Value {
+    if oyun::mesgul_mu() {
+        return json!({ "ok": false, "hata": "Oyun açıkken ayarlar sıfırlanamaz." });
+    }
+    sonuc_json(onar::ayarlari_sifirla())
 }
 
 #[tauri::command]
@@ -546,7 +821,7 @@ async fn performans_uygula(seviye: String) -> Value {
 }
 
 /* =========================================================
-KÇZ Client, profil kodu, yedekler
+KCZ Client, profil kodu, yedekler
 ========================================================= */
 #[tauri::command]
 fn istemci_bilgi() -> Value {
@@ -582,7 +857,45 @@ fn pencereyi_goster(app: &AppHandle) {
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
+    } else if UYUYOR.load(std::sync::atomic::Ordering::SeqCst) {
+        // Oyun açıkken tepsiden açıldı: arayüz "oyun açık" durumunda gelsin
+        if oyun::mesgul_mu() {
+            *SON_DURUM.lock().unwrap() = Some(json!({ "tur": "acik", "surum": "", "sessiz": true }));
+        }
+        uyandir(app);
     }
+}
+
+/// Ana pencerenin olayları (boyut, odak, kapatma). Uyanınca yeniden kurulur.
+fn pencere_olaylari(w: &tauri::WebviewWindow) {
+    let w2 = w.clone();
+    w.on_window_event(move |e| match e {
+        WindowEvent::Resized(boyut) => {
+            if let Ok(f) = w2.scale_factor() {
+                let l = boyut.to_logical::<f64>(f);
+                if l.width >= 900.0 && l.height >= 500.0 {
+                    *PENCERE_BOYUTU.lock().unwrap() = Some((l.width.round() as u32, l.height.round() as u32));
+                }
+            }
+        }
+        // Pencereye geri dönüldüğünde: son denetimden 5 dk geçtiyse sessizce bak
+        WindowEvent::Focused(true) => {
+            if !oyun::mesgul_mu() {
+                tauri::async_runtime::spawn(guncelleme_gerekirse(w2.app_handle().clone(), 5 * 60));
+            }
+        }
+        WindowEvent::CloseRequested { api, .. } => {
+            pencere_boyutunu_kaydet();
+            // Ayar açıksa ve tepsi kurulduysa: kapatma yerine saatin yanına küçül
+            if ayarlar::getir().tepsiye_kucult && TEPSI_VAR.load(std::sync::atomic::Ordering::SeqCst) {
+                api.prevent_close();
+                let _ = w2.hide();
+            } else {
+                sure::bitir();
+            }
+        }
+        _ => {}
+    });
 }
 
 fn pencere_boyutunu_kaydet() {
@@ -601,13 +914,13 @@ fn tamamen_kapat(app: &AppHandle) {
 fn tepsi_kur(app: &tauri::App) -> tauri::Result<()> {
     use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-    let ac = MenuItem::with_id(app, "ac", "KÇZ Launcher'ı aç", true, None::<&str>)?;
+    let ac = MenuItem::with_id(app, "ac", "KCZ Launcher'ı aç", true, None::<&str>)?;
     let oyna = MenuItem::with_id(app, "oyna", "Oyna", true, None::<&str>)?;
     let ayrac = PredefinedMenuItem::separator(app)?;
     let cik = MenuItem::with_id(app, "cik", "Çıkış", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&ac, &oyna, &ayrac, &cik])?;
     let mut b = TrayIconBuilder::with_id("kcz")
-        .tooltip("KÇZ Launcher")
+        .tooltip("KCZ Launcher")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, olay| match olay.id.as_ref() {
@@ -640,7 +953,7 @@ fn tepsi_kur(app: &tauri::App) -> tauri::Result<()> {
 OYNA
 ========================================================= */
 #[tauri::command]
-async fn oyun_baslat(hedef_sunucu: Option<String>, surum: Option<String>, profil_id: Option<String>) -> Value {
+async fn oyun_baslat(hedef_sunucu: Option<String>, surum: Option<String>, profil_id: Option<String>, modsuz: Option<bool>) -> Value {
     if oyun::mesgul_mu() {
         return json!({ "ok": false, "hata": "Şu an başka bir işlem sürüyor." });
     }
@@ -649,7 +962,6 @@ async fn oyun_baslat(hedef_sunucu: Option<String>, surum: Option<String>, profil
     };
     let a = ayarlar::getir();
     let hedef = hedef_sunucu.filter(|h| !h.trim().is_empty());
-    let cevrimdisi = yetki.cevrimdisi;
     // Kayıtlı profil seçildiyse o profilin sürümü, yükleyicisi ve modları
     let pr = profil_id.as_ref().and_then(|id| a.profiller.iter().find(|x| &x.id == id).cloned());
     let sp = match &pr {
@@ -676,14 +988,12 @@ async fn oyun_baslat(hedef_sunucu: Option<String>, surum: Option<String>, profil
         "hedefSunucu": hedef, "surum": surum, "profilId": profil_id
     }));
     kayit_temizle();
-    if cevrimdisi {
-        log("Çevrimdışı mod: tek oyunculu ve LAN oynanabilir, internetteki sunuculara bağlanılamaz.");
-    }
     let sonuc = oyun::baslat(oyun::Acilis {
         ayarlar: acilis,
         hedef_sunucu: if pr.is_some() { None } else { hedef },
         mod_sunucusu: mod_anahtari,
         yetki,
+        modsuz: modsuz.unwrap_or(false),
     })
     .await;
     match sonuc {
@@ -709,14 +1019,15 @@ static TEPSI_VAR: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool:
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.unminimize();
-                let _ = w.show();
-                let _ = w.set_focus();
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _| {
+            // Masaüstü kısayolu: launcher açıkken tıklandıysa sunucuya bağlan, pencereyi gösterme
+            match kisayol::argumandan(&argv) {
+                Some(adres) => kisayol::ilet(adres),
+                None => pencereyi_goster(app),
             }
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
@@ -725,50 +1036,50 @@ pub fn run() {
             // Önceki oyun sırasında launcher kapandıysa güç planını geri al
             std::thread::spawn(performans::guc_plani_geri);
             sunucular::izle();
-            if let Some(w) = app.get_webview_window("main") {
+            // Masaüstü kısayoluyla açıldıysa pencere gösterilmez; arayüz oyunu doğrudan başlatır
+            let kisayoldan = kisayol::argumandan(&std::env::args().collect::<Vec<_>>());
+            let ilk = match ana_pencere_kur(app.handle()) {
+                Ok(w) => Some(w),
+                Err(e) => {
+                    log(format!("Launcher penceresi açılamadı: {e}"));
+                    None
+                }
+            };
+            if let Some(w) = ilk {
                 let p = ayarlar::getir().pencere;
                 let _ = w.set_size(tauri::LogicalSize::new(p.w as f64, p.h as f64));
                 let _ = w.center();
-                let _ = w.show();
-                let w2 = w.clone();
-                w.on_window_event(move |e| match e {
-                    WindowEvent::Resized(boyut) => {
-                        if let Ok(f) = w2.scale_factor() {
-                            let l = boyut.to_logical::<f64>(f);
-                            if l.width >= 900.0 && l.height >= 500.0 {
-                                *PENCERE_BOYUTU.lock().unwrap() = Some((l.width.round() as u32, l.height.round() as u32));
-                            }
-                        }
+                match kisayoldan {
+                    Some(adres) => kisayol::beklet(adres),
+                    None => {
+                        let _ = w.show();
                     }
-                    WindowEvent::CloseRequested { api, .. } => {
-                        pencere_boyutunu_kaydet();
-                        // Ayar açıksa ve tepsi kurulduysa: kapatma yerine saatin yanına küçül
-                        if ayarlar::getir().tepsiye_kucult && TEPSI_VAR.load(std::sync::atomic::Ordering::SeqCst) {
-                            api.prevent_close();
-                            let _ = w2.hide();
-                        } else {
-                            sure::bitir();
-                        }
-                    }
-                    _ => {}
-                });
+                }
+                pencere_olaylari(&w);
             }
             match tepsi_kur(app) {
                 Ok(()) => TEPSI_VAR.store(true, std::sync::atomic::Ordering::SeqCst),
                 Err(e) => log(format!("Sistem tepsisi kurulamadı: {e}")),
             }
-            // KÇZ Optimizasyon: oyuncu beklemesin diye arka planda önceden hazırla
+            sunucu::sayimi_baslat();
+            // KCZ Optimizasyon: oyuncu beklemesin diye arka planda önceden hazırla
             tauri::async_runtime::spawn(async {
                 tokio::time::sleep(std::time::Duration::from_secs(8)).await;
                 performans::onceden_hazirla().await;
             });
-            // Güncellemeyi açılıştan 4 sn sonra ve her 30 dakikada bir denetle
+            // Güncelleme: açılıştan 4 sn sonra, sonra 10 dakikada bir (odakla yapılan denetim
+            // sayacı sıfırladıysa o tur atlanır). Her denetim ~1 KB'lık tek bir istek.
             let h = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(4)).await;
+                guncelleme_bak(h.clone()).await;
                 loop {
-                    guncelleme_bak(h.clone()).await;
-                    tokio::time::sleep(std::time::Duration::from_secs(30 * 60)).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+                    // Oyun açıkken güncelleme denetimi yok (işlemci ve ağ oyuna kalsın)
+                    if oyun::mesgul_mu() {
+                        continue;
+                    }
+                    guncelleme_gerekirse(h.clone(), 10 * 60).await;
                 }
             });
             Ok(())
@@ -777,28 +1088,89 @@ pub fn run() {
             ayarlar_getir,
             ayarlar_kaydet,
             hesap_durum,
-            hesap_tekrar_dene,
+            hesap_cevrimdisi_giris,
             hesap_pencere_giris,
             hesap_tarayici_baslat,
             edge_ac,
             hesap_tarayici_iptal,
             hesap_cikis,
-            hesap_cevrimdisi_giris,
+            hesap_listesi,
+            hesap_gec,
+            hesap_unut,
             skin_liste,
+            kafa_dokusu,
             skin_isim_ekle,
             skin_dosya_ekle,
             skin_kaldir,
             skin_giy,
+            pelerin_liste,
+            skin_gizle,
+            skin_gizlenenleri_geri,
+            skin_yenile,
+            pelerin_tak,
             sure_hafta,
             dis_ac,
             guncelleme_durum,
             guncelleme_denetle,
+            sunucu::sunucu_bagli,
+            sunucu::oneri_gonder,
+            sunucu::arkadas_durumlari,
+            kisayol::kisayol_bekleyen,
+            kisayol::kisayol_olustur,
+            sunucu::arkadas_ekle,
+            sunucu::arkadas_sil,
+            sunucu::kimlik_kodu,
+            sunucu::arkadas_istek_gonder,
+            sunucu::arkadas_listesi,
+            sunucu::arkadas_istek_yanit,
+            sunucu::arkadas_cikar,
+            sunucu::mesaj_gonder,
+            sunucu::mesajlari_al,
+            sunucu::profil_al,
+            sunucu::profil_kaydet,
+            sunucu::davet_gonder,
+            sunucu::davetleri_al,
+            sunucu::ses_katil,
+            sunucu::ses_ayril,
+            sunucu::ses_sinyal_gonder,
+            sunucu::ses_sinyalleri_al,
+            sunucu::ses_durum_yaz,
+            sunucu::ses_ice,
+            foto::foto_gonder,
+            foto::foto_al,
+            sunucu::duyurular,
+            sunucu::surum_notlari,
+            sunucu::yonetici_duyurular,
+            sunucu::yonetici_duyuru_ekle,
+            sunucu::yonetici_duyuru_sil,
+            sunucu::yonetici_oneri_kaydi,
+            cokme::cokme_bildir,
+            goruntu::ekran_goruntuleri,
+            goruntu::ekran_goruntusu_oku,
+            goruntu::ekran_goruntusu_kopyala,
+            goruntu::ekran_goruntusu_sil,
+            goruntu::ekran_goruntusu_klasor,
+            cokme::cokme_raporu_ac,
+            sunucu::yonetici_kod_iste,
+            sunucu::yonetici_kod_dogrula,
+            sunucu::yonetici_durum,
+            sunucu::yonetici_cikis,
+            sunucu::yonetici_istatistik,
+            sunucu::yonetici_oneriler,
+            sunucu::yonetici_oneri_durum,
+            sunucu::yonetici_listesi,
+            sunucu::yonetici_davet,
+            sunucu::yonetici_kaldir,
             guncelleme_indir,
             guncelleme_kur,
             mod_ara,
             mod_sunucu_sayilari,
             mod_yukle,
             mod_liste,
+            mod_guncellemeler,
+            mod_guncelle,
+            oyunu_onar,
+            oyun_ayarlarini_sifirla,
             mod_eksikleri_kur,
             oyun_son_acilis,
             mod_ac_kapat,
@@ -826,6 +1198,14 @@ pub fn run() {
             profil_kod_ekle,
             yedek_klasor_ac
         ])
-        .run(tauri::generate_context!())
-        .expect("KÇZ Launcher başlatılamadı");
+        .build(tauri::generate_context!())
+        .expect("KCZ Launcher başlatılamadı")
+        .run(|_, olay| {
+            // Uyurken pencere kalmıyor: Tauri bunu "çıkış" sanmasın
+            if let tauri::RunEvent::ExitRequested { api, code: None, .. } = olay {
+                if UYUYOR.load(std::sync::atomic::Ordering::SeqCst) {
+                    api.prevent_exit();
+                }
+            }
+        });
 }

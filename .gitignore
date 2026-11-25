@@ -1,0 +1,18 @@
+node_modules/
+src-tauri/target/
+src-tauri/gen/
+imza/
+gh-token.txt
+latest.json
+*kaydi.txt
+istemci-mod/build/
+istemci-mod/.gradle/
+yayin/
+# istemci-mod/cikti/ bilerek dahil: Linux derlemesi (GitHub Actions) gomulu KCZ Client jarlarini buradan alir
+# Yerel yayin araclari (imza sifresi/anahtar yollari iceriyor) depoya gitmez
+yayinla.ps1
+YAYINLA.bat
+TAURI-KUR.bat
+ANAHTARI-KOPYALA.bat
+imza-ayarla.ps1
+BENIOKU.md

@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "kcz-client",
+	"version": "${version}",
+	"name": "KÇZ Client",
+	"description": "KÇZ Launcher'ın oyun içi menüsü: zoom, FPS, ping ve tuş göstergesi.",
+	"authors": ["KÇZ"],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/kcz-client/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["com.kcz.client.KczClient"]
+	},
+	"mixins": [
+		{
+			"config": "kcz-client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.0",
+		"minecraft": "~${mc}",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

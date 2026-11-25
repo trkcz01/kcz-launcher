@@ -530,6 +530,15 @@
           <div class="ayar-yazi"><b>KCZ Launcher <span id="uygSurum"></span></b><small id="guncelleDurum">Güncellemeler otomatik denetlenir.</small></div>
           <button type="button" class="ikincil" id="denetleBtn">Güncellemeleri denetle</button>
         </div>
+        <div class="ayar-kart dikey">
+          <div class="ayar-yazi"><b>Oyun açılmıyor ya da çöküyor mu?</b><small>Onar: mod yükleyici önbelleğini temizler, oyun dosyalarını doğrulayıp bozukları yeniden indirir, Java'yı dener. Düzelmezse oyunu modsuz dene ya da oyun ayarlarını sıfırla (eski ayarların yedeklenir).</small></div>
+          <div class="satir-dugme">
+            <button type="button" class="ikincil" id="onarBtn">Onar</button>
+            <button type="button" class="ikincil" id="modsuzBtn">Modsuz dene</button>
+            <button type="button" class="ikincil" id="ayarSifirlaBtn">Oyun ayarlarını sıfırla</button>
+          </div>
+          <small class="soluk" id="onarSonuc"></small>
+        </div>
         <details class="kayit">
           <summary>Oyun kaydı (sorun olursa buraya bak)</summary>
           <pre id="log"></pre>
@@ -554,6 +563,7 @@
           <button class="birincil kucuk" id="galeriGonder">Arkadaşa gönder</button>
           <div class="sohbet-menu galeri-gonder-menu" id="galeriGonderMenu" hidden></div>
         </span>
+        <button class="ikincil kucuk" id="galeriDiscord">Discord'a gönder</button>
         <button class="ikincil kucuk" id="galeriKopyala">Kopyala</button>
         <button class="ikincil kucuk" id="galeriSil">Sil</button>
         <button class="mini-ikon" id="galeriKapat" aria-label="Kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
@@ -670,6 +680,7 @@
       <p class="cokme-oneri" id="cokmeOneri"></p>
     </div>
     <textarea id="cokmeNot" class="bildir-metin kisa" maxlength="500" placeholder="Ne yapıyordun? (isteğe bağlı)"></textarea>
+    <div class="satir"><button class="ikincil" id="cokmeOnar">Onar ve tekrar dene</button><button class="ikincil" id="cokmeModsuz">Modsuz dene</button></div>
     <button class="birincil genis-btn" id="cokmeBildir">Hatayı bildir</button>
     <div class="satir"><button class="bag" id="cokmeRapor">Çökme raporunu aç</button><button class="bag" id="cokmeKapat">Kapat</button></div>
     <small class="bos-yazi">Bildirince oyun kaydı da gönderilir; hesap bilgilerin gönderilmez.</small>

@@ -864,6 +864,13 @@ kbd { display: inline-block; min-width: 18px; padding: 1px 5px; border-radius: 5
 .ym-dugmeler { display: flex; align-items: center; gap: 8px; }
 .ym-dugmeler button { height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .05); font-size: 12px; font-weight: 600; }
 .ym-dugmeler .sil.emin { background: #e11d48; border-color: #e11d48; color: #fff; }
+/* Mod güncellemeleri: listenin üstünde şerit, satırda "Güncelle" */
+.guncelleme-serit { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 4px; border-radius: 12px; background: rgba(74, 222, 128, .08); border: 1px solid rgba(74, 222, 128, .28); }
+.guncelleme-serit p { margin: 0; flex: 1; font-size: 12.5px; }
+.guncelleme-serit p b { color: var(--yesil); }
+.ym-dugmeler .guncelle { background: rgba(74, 222, 128, .14); border-color: rgba(74, 222, 128, .4); color: var(--yesil); }
+.ym-bilgi .yeni-surum { color: var(--yesil); }
+#onarSonuc:empty { display: none; }
 .cfg { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .06); text-align: left; font-family: Consolas, monospace; font-size: 12.5px; }
 .cfg:hover { border-color: var(--v); }
 .cfg span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

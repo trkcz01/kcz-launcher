@@ -1,8 +1,8 @@
 [package]
 name = "kcz-launcher"
-version = "0.0.1"
-description = "KÇZ Launcher"
-authors = ["KÇZ"]
+version = "0.0.80"
+description = "KCZ Launcher"
+authors = ["KCZ"]
 edition = "2021"
 
 [lib]
@@ -13,11 +13,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
+tauri-plugin-clipboard-manager = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
@@ -25,10 +26,11 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 futures-util = "0.3"
 sha1 = "0.10"
 hex = "0.4"
-md5 = "0.7"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 base64 = "0.22"
-uuid = { version = "1", features = ["v3", "v4", "serde"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+uuid = { version = "1", features = ["v4"] }
+md5 = "0.7"
 regex = "1"
 chrono = "0.4"
 url = "2"
@@ -44,6 +46,13 @@ panic = "abort"
 # Giriş bilgisinin saklandığı yer: Windows Kimlik Bilgisi Yöneticisi / Linux Secret Service (GNOME Keyring, KWallet)
 [target.'cfg(windows)'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }
+mslnk = "0.1"
+winreg = "0.55"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
+# KCZ sesli sohbet (Linux'ta WebKitGTK'da WebRTC yok): yerel ses, Opus, WebRTC
+webrtc = "=0.11.0"
+cpal = "=0.15.3"
+opus = "0.3"
+bytes = "1"

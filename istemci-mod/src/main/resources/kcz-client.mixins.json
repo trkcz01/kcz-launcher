@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.kcz.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"CameraMixin",
+		"MinecraftHesapErisim",
+		"MouseHandlerMixin",
+		"TabSimgeMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
