@@ -347,7 +347,7 @@ function hesabiGoster(d) {
       const img = $('hesapAvatar');
       img.onload = () => { img.hidden = false; $('hesapHarf').hidden = true; };
       img.onerror = () => { img.hidden = true; $('hesapHarf').hidden = false; };
-      kafaKoy(img, d.uuid);
+      kafaKoy(img, d.cevrimdisi ? d.ad : d.uuid); // isimle eklenen hesabın UUID'si Mojang'da yok: kafa adına göre
     }
   } else {
     const kaydedilenAd = localStorage.getItem('kcz_cevrimdisi_ad') || '';
@@ -467,7 +467,7 @@ async function hesapMenusuCiz() {
     const aktif = h.uuid === d.aktif && girisli;
     const s = el('div', 'hesap-satir' + (aktif ? ' aktif' : ''));
     const img = el('img', 'avatar');
-    kafaKoy(img, h.uuid);
+    kafaKoy(img, h.cevrimdisi ? h.ad : h.uuid);
     img.alt = '';
     const ad = el('b', '', h.ad);
     s.append(img, ad, el('small', '', aktif ? 'Açık' : h.cevrimdisi ? 'Çevrimdışı' : 'Geç'));

@@ -415,37 +415,14 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
     // Hızlı açılış: Java sınıf paylaşım arşivi (CDS). İlk açılışta oyun kapanırken oluşur, sonraki açılışlarda
     // sınıflar hazır yüklenir; sınıf yolu değişirse (sürüm/kütüphane) Java arşivi kendisi yeniler.
     // Sadece Java 19+: eski Java'lar bu seçeneği tanımaz ve hiç açılmaz.
-    if yeni && java_ana >= 25 {
-        // Java 25 AOT önbelleği (CDS'in gelişmişi): ilk açılışta oyun kapanırken oluşur, sonraki açılışlarda
-        // sınıflar hazır ve ilk dakikalardaki derleme takılmaları azalır. Sınıf yolu ya da bayraklar değişince
-        // adı değişir, yenisi oluşur; eski önbellekler silinir. Önbellek uymazsa Java onu kullanmadan açılır.
-        let aot = ana_klasor().join("aot");
-        if std::fs::create_dir_all(&aot).is_ok() {
-            let ad: String = surum_adi
-                .chars()
-                .map(|c| if c.is_ascii_alphanumeric() || "._-".contains(c) { c } else { '_' })
-                .collect();
-            use std::hash::{Hash, Hasher};
-            let mut h = std::collections::hash_map::DefaultHasher::new();
-            sinif_yolu.hash(&mut h);
-            jvm.hash(&mut h);
-            let dosya = aot.join(format!("{ad}-{:016x}.aot", h.finish()));
-            if let Ok(d) = std::fs::read_dir(&aot) {
-                for e in d.flatten() {
-                    let p = e.path();
-                    let n = p.file_name().and_then(|x| x.to_str()).unwrap_or("");
-                    if n.starts_with(&format!("{ad}-")) && p != dosya {
-                        let _ = std::fs::remove_file(&p);
-                    }
-                }
-            }
-            if dosya.exists() {
-                jvm.push(format!("-XX:AOTCache={}", dosya.display()));
-            } else {
-                jvm.push(format!("-XX:AOTCacheOutput={}", dosya.display()));
-            }
-        }
-    } else if java_ana >= 19 {
+    // Java 25 AOT önbelleği (0.0.95) kaldırıldı: oyun kapanınca Java pencere olmadan dakikalarca
+    // (4 GB bellek, yoğun işlemci) önbellek oluşturuyordu; o sırada tekrar OYNA'ya basılınca oyun çok geç açılıyordu.
+    // Kalan dosyalar (yüzlerce MB) bir kere silinir.
+    let aot = ana_klasor().join("aot");
+    if aot.exists() {
+        let _ = std::fs::remove_dir_all(&aot);
+    }
+    if java_ana >= 19 {
         let cds = ana_klasor().join("cds");
         if std::fs::create_dir_all(&cds).is_ok() {
             let ad: String = surum_adi

@@ -196,6 +196,10 @@ public final class Foto {
 	public static void tick(Minecraft mc) {
 		dokulariKaydet(mc);
 		while (KczClient.FOTO.consumeClick()) {
+			if (CarkEkrani.acikMi()) {
+				CarkEkrani.tusBasildi();
+				continue;
+			}
 			if (mc.gui.screen() != null) continue;
 			// Aynı tuş: F2'den sonraki kart ekrandayken fotoğrafı gönderir, diğer zamanlarda komut çarkını açar
 			boolean kartAcik = sonDosya != null && System.currentTimeMillis() <= kartBitis && Files.exists(sonDosya);

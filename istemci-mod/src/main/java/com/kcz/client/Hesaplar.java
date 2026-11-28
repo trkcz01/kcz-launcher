@@ -142,7 +142,17 @@ public final class Hesaplar {
 			JsonArray a = k.getAsJsonObject("hesaplar").has("liste") ? k.getAsJsonObject("hesaplar").getAsJsonArray("liste") : new JsonArray();
 			for (JsonElement e : a) {
 				JsonObject o = e.getAsJsonObject();
-				l.add(new Hesap(yazi(o, "uuid"), yazi(o, "ad")));
+				String ad = yazi(o, "ad");
+				// Launcher'da isimle eklenen hesap: Microsoft listesinde değil, "isimle" bölümünde (bir kez) görünür
+				if (o.has("cevrimdisi") && o.get("cevrimdisi").isJsonPrimitive() && o.get("cevrimdisi").getAsBoolean()) {
+					if (gecerliAd(ad) && cevrimdisiAdlar().stream().noneMatch(x -> x.equalsIgnoreCase(ad))) {
+						cevrimdisiAdlar().add(ad);
+						cevrimdisiKaydet();
+						surum++;
+					}
+					continue;
+				}
+				l.add(new Hesap(yazi(o, "uuid"), ad));
 			}
 		}
 		if (!l.equals(liste)) {

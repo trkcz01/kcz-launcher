@@ -275,7 +275,6 @@
  "Tıkla: ekle": "Click to add",
  "Fareyle seç": "Aim with the mouse",
  "{tus} bırak: gönder · sağ tık: düzenle": "Release {tus} to send · right-click to edit",
- "Tıkla: gönder · sağ tık: düzenle · 1-8: hızlı seç · Esc: kapat": "Click: send · right-click: edit · 1-8: quick pick · Esc: close",
  "Yeni: komut çarkı": "New: command wheel",
  "{tus} tuşunu basılı tut, fareyle seç, bırak.": "Hold {tus}, aim with the mouse, release.",
  "{tus} basılı tut, fareyle seç, bırak": "Hold {tus}, aim with the mouse, release",
@@ -296,5 +295,6 @@
  "Açık Artırma": "Auction",
  "Sipariş": "Orders",
  "Teslimat": "Delivery",
- "Kazı yarışı": "Mining race"
+ "Kazı yarışı": "Mining race",
+ "Tıkla: gönder · sağ tık: düzenle · 1-8: hızlı seç · {tus}: kapat": "Click: send · right-click: edit · 1-8: quick pick · {tus}: close"
 }

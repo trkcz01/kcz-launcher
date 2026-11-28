@@ -59,6 +59,8 @@ public class KczClient implements ClientModInitializer {
 		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("hud"), Hud::ciz);
 		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("ses"), Ses::ciz);
 		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("foto"), Foto::ciz);
+		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("cark"), CarkEkrani::ciz);
+		ClientTickEvents.START_CLIENT_TICK.register(CarkEkrani::basTick);
 		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, Nisangah::sar);
 
 		// KÇZ kullanan birine eğilip eli boşken sağ tık: KÇZ menüsü (arkadaş ekle, mesaj)

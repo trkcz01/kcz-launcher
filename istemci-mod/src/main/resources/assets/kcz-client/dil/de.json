@@ -275,7 +275,6 @@
  "Tıkla: ekle": "Klicken: hinzufügen",
  "Fareyle seç": "Mit der Maus wählen",
  "{tus} bırak: gönder · sağ tık: düzenle": "{tus} loslassen: senden · Rechtsklick: bearbeiten",
- "Tıkla: gönder · sağ tık: düzenle · 1-8: hızlı seç · Esc: kapat": "Klick: senden · Rechtsklick: bearbeiten · 1-8: Schnellwahl · Esc: schließen",
  "Yeni: komut çarkı": "Neu: Befehlsrad",
  "{tus} tuşunu basılı tut, fareyle seç, bırak.": "Halte {tus}, wähle mit der Maus, lass los.",
  "{tus} basılı tut, fareyle seç, bırak": "Halte {tus}, wähle mit der Maus, lass los",
@@ -297,5 +296,6 @@
  "Açık Artırma": "Auktion",
  "Sipariş": "Aufträge",
  "Teslimat": "Lieferung",
- "Kazı yarışı": "Abbau-Rennen"
+ "Kazı yarışı": "Abbau-Rennen",
+ "Tıkla: gönder · sağ tık: düzenle · 1-8: hızlı seç · {tus}: kapat": "Klick: senden · Rechtsklick: bearbeiten · 1-8: Schnellwahl · {tus}: schließen"
 }

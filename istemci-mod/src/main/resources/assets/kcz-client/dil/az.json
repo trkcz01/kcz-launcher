@@ -251,7 +251,6 @@
  "Tıkla: ekle": "Kliklə: əlavə et",
  "Fareyle seç": "Siçanla seç",
  "{tus} bırak: gönder · sağ tık: düzenle": "{tus} burax: göndər · sağ klik: düzənlə",
- "Tıkla: gönder · sağ tık: düzenle · 1-8: hızlı seç · Esc: kapat": "Kliklə: göndər · sağ klik: düzənlə · 1-8: tez seç · Esc: bağla",
  "Yeni: komut çarkı": "Yeni: komanda çarxı",
  "{tus} tuşunu basılı tut, fareyle seç, bırak.": "{tus} düyməsini basılı saxla, siçanla seç, burax.",
  "{tus} basılı tut, fareyle seç, bırak": "{tus} basılı saxla, siçanla seç, burax",
@@ -269,5 +268,6 @@
  "Açık Artırma": "Hərrac",
  "Sipariş": "Sifariş",
  "Teslimat": "Təhvil",
- "Kazı yarışı": "Qazma yarışı"
+ "Kazı yarışı": "Qazma yarışı",
+ "Tıkla: gönder · sağ tık: düzenle · 1-8: hızlı seç · {tus}: kapat": "Kliklə: göndər · sağ klik: düzənlə · 1-8: tez seç · {tus}: bağla"
 }
