@@ -36,7 +36,7 @@ public final class Arkadaslar {
 	/** "Çevrimdışı · 2 saat önce" (son görülme bilinmiyorsa sadece "Çevrimdışı") */
 	public static String cevrimdisiYazi(Arkadas a) {
 		String once = zamanOnce(a.son());
-		return once.isEmpty() ? "Çevrimdışı" : "Çevrimdışı · " + once;
+		return once.isEmpty() ? Dil.t("Çevrimdışı") : Dil.t("Çevrimdışı · ") + once;
 	}
 
 	/** Launcher'daki "x dk/saat/gün önce" ile aynı yuvarlama */
@@ -53,10 +53,10 @@ public final class Arkadaslar {
 			}
 		}
 		long dk = Math.round((System.currentTimeMillis() - t.toEpochMilli()) / 60000.0);
-		if (dk < 60) return Math.max(1, dk) + " dk önce";
+		if (dk < 60) return Math.max(1, dk) + Dil.t(" dk önce");
 		long sa = Math.round(dk / 60.0);
-		if (sa < 24) return sa + " saat önce";
-		return Math.round(sa / 24.0) + " gün önce";
+		if (sa < 24) return sa + Dil.t(" saat önce");
+		return Math.round(sa / 24.0) + Dil.t(" gün önce");
 	}
 
 	public record Davet(long id, String ad, String sunucu) {
@@ -148,7 +148,7 @@ public final class Arkadaslar {
 				if (!ilk && x.oyunda() && Boolean.FALSE.equals(once) && Ayar.get().arkadasBildirim) {
 					String s = x.sunucu() == null || x.sunucu().isEmpty() ? "" : x.sunucu();
 					String burasi = sunucu(mc);
-					toast(mc, x.ad() + " oyuna girdi", s.isEmpty() ? "KCZ Launcher" : s.equalsIgnoreCase(burasi) ? "Seninle aynı sunucuda!" : s);
+					toast(mc, x.ad() + Dil.t(" oyuna girdi"), s.isEmpty() ? "KCZ Launcher" : s.equalsIgnoreCase(burasi) ? Dil.t("Seninle aynı sunucuda!") : s);
 				}
 			}
 			arkadaslar = a;
@@ -159,10 +159,10 @@ public final class Arkadaslar {
 				Davet v = new Davet(o.get("id").getAsLong(), yazi(o, "ad"), yazi(o, "sunucu"));
 				d.add(v);
 				if (gorulenDavet.add(v.id()) && !ilk) {
-					toast(mc, v.ad() + " seni çağırıyor", v.sunucu() + " · KCZ Menü > Arkadaşlar'dan katıl");
+					toast(mc, v.ad() + Dil.t(" seni çağırıyor"), v.sunucu() + Dil.t(" · KCZ Menü > Arkadaşlar'dan katıl"));
 					if (mc.player != null)
-						mc.player.sendSystemMessage(Component.literal("§b[KCZ] §f" + v.ad() + " seni §e" + v.sunucu()
-								+ "§f sunucusuna çağırıyor. §7Esc > KCZ Menü > Arkadaşlar > Katıl"));
+						mc.player.sendSystemMessage(Component.literal(Dil.t("§b[KCZ] §f") + v.ad() + Dil.t(" seni §e") + v.sunucu()
+								+ Dil.t("§f sunucusuna çağırıyor. §7Esc > KCZ Menü > Arkadaşlar > Katıl")));
 				}
 			}
 			davetler = d;
@@ -190,7 +190,7 @@ public final class Arkadaslar {
 				if (uuid.equals(acikSohbet)) continue;
 				okunmamis.merge(uuid, 1, Integer::sum);
 				if (mc.player != null)
-					mc.player.sendSystemMessage(Component.literal("§d✉ " + ad + "§7: §f" + metin + " §8(Esc > Arkadaşlar'dan cevap ver)"));
+					mc.player.sendSystemMessage(Component.literal("§d✉ " + ad + "§7: §f" + metin + Dil.t(" §8(Esc > Arkadaşlar'dan cevap ver)")));
 				else toast(mc, ad, metin);
 			}
 			if (ilk) for (JsonElement e : ya) gorulenMesaj.add(e.getAsJsonObject().get("id").getAsLong());
@@ -247,7 +247,7 @@ public final class Arkadaslar {
 	/** Launcher'a istek bırak (davet, mesaj, geçmiş, hesap) */
 	static boolean istekBirak(Minecraft mc, JsonObject o) {
 		if (!launcherVar) {
-			toast(mc, "Gönderilemedi", "KCZ Launcher kapalı görünüyor.");
+			toast(mc, Dil.t("Gönderilemedi"), Dil.t("KCZ Launcher kapalı görünüyor."));
 			return false;
 		}
 		Path p = dosya("kcz-davet-istek.json");
@@ -259,7 +259,7 @@ public final class Arkadaslar {
 			Files.move(gecici, p, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 			return true;
 		} catch (Exception e) {
-			toast(mc, "Gönderilemedi", e.getMessage() == null ? "Dosya yazılamadı" : e.getMessage());
+			toast(mc, Dil.t("Gönderilemedi"), e.getMessage() == null ? Dil.t("Dosya yazılamadı") : e.getMessage());
 			return false;
 		}
 	}
@@ -308,11 +308,11 @@ public final class Arkadaslar {
 	public static void davetEt(Minecraft mc, Arkadas a) {
 		String s = sunucu(mc);
 		if (s == null) {
-			toast(mc, "Davet gönderilemedi", "Önce bir sunucuya gir; tek oyunculu dünyaya davet olmaz.");
+			toast(mc, Dil.t("Davet gönderilemedi"), Dil.t("Önce bir sunucuya gir; tek oyunculu dünyaya davet olmaz."));
 			return;
 		}
 		if (!launcherVar) {
-			toast(mc, "Davet gönderilemedi", "KCZ Launcher kapalı görünüyor.");
+			toast(mc, Dil.t("Davet gönderilemedi"), Dil.t("KCZ Launcher kapalı görünüyor."));
 			return;
 		}
 		JsonObject o = new JsonObject();
@@ -320,22 +320,22 @@ public final class Arkadaslar {
 		o.addProperty("kime", a.uuid());
 		o.addProperty("ad", a.ad());
 		o.addProperty("sunucu", s);
-		if (istekBirak(mc, o)) toast(mc, "Davet gidiyor", a.ad() + " → " + s);
+		if (istekBirak(mc, o)) toast(mc, Dil.t("Davet gidiyor"), a.ad() + " → " + s);
 	}
 
 	/** Davet edilen sunucuya geç: bulunduğun dünyadan çıkılır, sunucuya bağlanılır */
 	public static void katil(Minecraft mc, String adres) {
 		if (adres == null || adres.isBlank() || !ServerAddress.isValidAddress(adres)) {
-			toast(mc, "Katılınamadı", "Sunucu adresi geçersiz.");
+			toast(mc, Dil.t("Katılınamadı"), Dil.t("Sunucu adresi geçersiz."));
 			return;
 		}
 		String simdiki = sunucu(mc);
 		if (adres.equalsIgnoreCase(simdiki)) {
-			toast(mc, "Zaten buradasın", adres);
+			toast(mc, Dil.t("Zaten buradasın"), adres);
 			return;
 		}
 		mc.execute(() -> {
-			if (mc.level != null) mc.disconnectFromWorld(Component.literal("Arkadaşının sunucusuna geçiliyor…"));
+			if (mc.level != null) mc.disconnectFromWorld(Component.literal(Dil.t("Arkadaşının sunucusuna geçiliyor…")));
 			ConnectScreen.startConnecting(new TitleScreen(), mc, ServerAddress.parseString(adres),
 					new ServerData(adres, adres, ServerData.Type.OTHER), false, null);
 		});

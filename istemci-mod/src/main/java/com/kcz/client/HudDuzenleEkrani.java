@@ -13,7 +13,7 @@ public class HudDuzenleEkrani extends Screen {
 	private double farkX, farkY;
 
 	public HudDuzenleEkrani(Screen onceki) {
-		super(Component.literal("HUD'u düzenle"));
+		super(Component.literal(Dil.t("HUD'u düzenle")));
 		this.onceki = onceki;
 	}
 
@@ -21,11 +21,11 @@ public class HudDuzenleEkrani extends Screen {
 	protected void init() {
 		Hud.duzenleme = true;
 		int y = this.height - 28;
-		this.addRenderableWidget(Button.builder(Component.literal("Varsayılana döndür"), b -> {
+		this.addRenderableWidget(Button.builder(Component.literal(Dil.t("Varsayılana döndür")), b -> {
 			Ayar.get().hudKonum.clear();
 			Ayar.kaydet();
 		}).bounds(this.width / 2 - 124, y, 120, 20).build());
-		this.addRenderableWidget(Button.builder(Component.literal("Bitti"), b -> onClose())
+		this.addRenderableWidget(Button.builder(Component.literal(Dil.t("Bitti")), b -> onClose())
 				.bounds(this.width / 2 + 4, y, 120, 20).build());
 	}
 
@@ -64,7 +64,7 @@ public class HudDuzenleEkrani extends Screen {
 			g.outline(s[0] - 2, s[1] - 2, s[2] + 4, s[3] + 4, ust ? vurgu : 0x99FFFFFF);
 			if (ust) g.text(this.font, Hud.PARCA_ADI[i], s[0], Math.max(0, s[1] - 12), vurgu, true);
 		}
-		String ipucu = "Göstergeleri fareyle sürükleyip istediğin yere bırak";
+		String ipucu = Dil.t("Göstergeleri fareyle sürükleyip istediğin yere bırak");
 		g.centeredText(this.font, ipucu, this.width / 2, this.height - 42, 0xFFF1F5F9);
 	}
 

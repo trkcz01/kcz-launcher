@@ -92,6 +92,10 @@ pub fn ayar_yaz(a: &Ayarlar) {
         ("kenarliksiz", json!(i.kenarliksiz)),
         ("dusukSistem", json!(i.dusuk_sistem)),
         ("gucluSistem", json!(i.guclu_sistem)),
+        ("akilliFps", json!(i.akilli_fps)),
+        // Oyun sonu özeti kapalıysa oyunda ölçüm de yapılmaz
+        ("olcum", json!(i.olcum && a.performans_ozeti)),
+        ("dil", json!(if a.dil == "en" { "en" } else { "tr" })),
         // ad: temanın adı (oyun içi menüdeki maskot ve süsler için), maskot: kapalıysa çizilmez
         ("tema", json!({ "zemin": zemin, "zemin2": zemin2, "vurgu": a.vurgu, "ad": a.tema, "maskot": a.maskot })),
     ] {
@@ -158,6 +162,26 @@ pub fn bulaniklik_ayarla(a: &Ayarlar) {
     }
 }
 
+/// KCZ Client'ın oyun sonunda yazdığı performans ölçümü (config/kcz-oturum.json).
+/// Sadece bu oyun açıldıktan sonra yazılmışsa döner (eski bir oturum gösterilmesin).
+pub fn oturum_oku(baslangic_ms: u64) -> Option<Value> {
+    let yol = oyun_klasoru().join("config").join("kcz-oturum.json");
+    let j: Value = serde_json::from_str(&std::fs::read_to_string(yol).ok()?).ok()?;
+    let bitis = j["bitis"].as_u64().unwrap_or(0);
+    (bitis >= baslangic_ms).then_some(j)
+}
+
+/// Önceki oturum (karşılaştırma için): config/kcz-oturumlar.json'daki sondan ikinci kayıt
+pub fn onceki_oturum() -> Option<Value> {
+    let yol = oyun_klasoru().join("config").join("kcz-oturumlar.json");
+    let j: Value = serde_json::from_str(&std::fs::read_to_string(yol).ok()?).ok()?;
+    let l = j["liste"].as_array()?;
+    if l.len() < 2 {
+        return None;
+    }
+    l.get(l.len() - 2).cloned()
+}
+
 /// Oyun kapandıktan sonra: oyunun içinden yapılan değişiklikleri launcher ayarlarına al
 pub fn ayar_geri_oku() {
     let Some(j) = std::fs::read_to_string(ayar_dosyasi())
@@ -199,6 +223,7 @@ pub fn ayar_geri_oku() {
         "kenarliksiz",
         "dusukSistem",
         "gucluSistem",
+        "akilliFps",
     ] {
         if let Some(v) = j.get(k) {
             if i.get(k) != Some(v) && (v.is_boolean() || v.is_number() || v.is_string()) {

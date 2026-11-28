@@ -1,5 +1,7 @@
 // KCZ Launcher (Tauri) - ana kısım: arayüzün çağırdığı komutlar, pencere, güncelleme.
 mod ayarlar;
+mod cekirdek;
+mod isit;
 mod cokme;
 mod discord;
 mod foto;
@@ -158,9 +160,14 @@ fn uyandir(app: &AppHandle) {
     });
 }
 
+/// Oyunun açıldığı an (ms): oyun sonu özetinin bu oyuna ait olduğunu anlamak için
+static OYUN_BASLADI_MS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 pub fn oyun_durumu(mut veri: Value) {
     match veri["tur"].as_str() {
         Some("acik") => {
+            let simdi = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0);
+            OYUN_BASLADI_MS.store(simdi, std::sync::atomic::Ordering::SeqCst);
             sure::basla();
             discord::oynuyor(veri["surum"].as_str().unwrap_or(""));
             {
@@ -195,6 +202,16 @@ pub fn oyun_durumu(mut veri: Value) {
             goruntu::izlemeyi_durdur();
             // Oyunun içindeki KCZ menüsünden yapılan değişiklikleri al
             istemci::ayar_geri_oku();
+            // Oyun sonu performans özeti (KCZ Client ölçtüyse)
+            if ayarlar::getir().performans_ozeti {
+                if let Some(o) = istemci::oturum_oku(OYUN_BASLADI_MS.load(std::sync::atomic::Ordering::SeqCst)) {
+                    veri["performans"] = o;
+                    if let Some(p) = istemci::onceki_oturum() {
+                        veri["oncekiPerformans"] = p;
+                    }
+                    veri["sistem"] = cekirdek::bilgi();
+                }
+            }
             // Fabric "Incompatible mods / ... which is missing" hatası: eksik modları bul
             let metin = kayit_metni();
             static EKSIK: LazyLock<Regex> =
@@ -817,6 +834,16 @@ async fn sistem_tara() -> Value {
 }
 
 #[tauri::command]
+fn cekirdek_bilgi() -> Value {
+    cekirdek::bilgi()
+}
+
+#[tauri::command]
+fn oyun_secenegi_yaz(anahtar: String, deger: String) -> Value {
+    performans::secenek_yaz(&anahtar, &deger)
+}
+
+#[tauri::command]
 async fn performans_uygula(seviye: String) -> Value {
     performans::uygula(&seviye).await
 }
@@ -1032,6 +1059,8 @@ pub fn run() {
         .setup(|app| {
             let _ = UYGULAMA.set(app.handle().clone());
             ayarlar::yukle();
+            // Launcher boştayken oyun dosyalarını önceden hazırla
+            isit::baslat();
             // Önceki oyun sırasında launcher kapandıysa güç planını geri al
             std::thread::spawn(performans::guc_plani_geri);
             sunucular::izle();
@@ -1189,6 +1218,8 @@ pub fn run() {
             oyun_klasor_ac,
             sistem_tara,
             performans_uygula,
+            cekirdek_bilgi,
+            oyun_secenegi_yaz,
             istemci_bilgi,
             profil_kodu,
             profil_kod_ekle,

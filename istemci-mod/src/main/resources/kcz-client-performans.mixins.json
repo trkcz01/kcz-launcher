@@ -1,0 +1,21 @@
+{
+	"required": false,
+	"package": "com.kcz.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"AnimasyonMixin",
+		"FpsSiniriMixin",
+		"GokyuzuMixin",
+		"IsimEtiketiMixin",
+		"KareOlcumMixin",
+		"ParcacikMixin",
+		"PostEfektMixin",
+		"TabelaMixin",
+		"VarlikMesafeMixin",
+		"YagisMixin",
+		"ZoomGameRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

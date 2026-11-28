@@ -55,6 +55,12 @@ public class Ayar {
 	public Guclu guclu = new Guclu();
 	/** Dinamik görüş mesafesinin hedeflediği FPS */
 	public int hedefFps = 60;
+	/** Akıllı FPS sınırı: "kapali", "hz" (ekranın Hz'i), "pil" (en çok 60). Menüde 60, AFK'de 30. */
+	public String akilliFps = "kapali";
+	/** Oyun sonu performans özeti için ölçüm */
+	public boolean olcum = true;
+	/** Menü dili: "tr" ya da "en" (launcher'dan gelir) */
+	public String dil = "tr";
 
 	/** Zayıf bilgisayarlar: FPS için kısılanlar */
 	public static class Dusuk {
@@ -133,6 +139,8 @@ public class Ayar {
 					if (a.dusuk.gorusAlt < 2 || a.dusuk.gorusAlt > 32) a.dusuk.gorusAlt = 6;
 					if (a.hedefFps != 30 && a.hedefFps != 60 && a.hedefFps != 100) a.hedefFps = 60;
 					if (a.dusukSistem && a.gucluSistem) a.gucluSistem = false;
+					if (!"hz".equals(a.akilliFps) && !"pil".equals(a.akilliFps)) a.akilliFps = "kapali";
+					if (!"en".equals(a.dil)) a.dil = "tr";
 					mevcut = a;
 				}
 			}

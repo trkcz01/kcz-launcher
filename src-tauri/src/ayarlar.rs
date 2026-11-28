@@ -91,6 +91,10 @@ pub struct Istemci {
     pub alttab_durdurma_kapali: bool,
     /// Tam ekran çerçevesiz pencere olur (Alt-Tab'da ekran modu değişmez)
     pub kenarliksiz: bool,
+    /// Akıllı FPS sınırı: "kapali", "hz" (ekranın Hz'i), "pil" (pil tasarrufu); menüde ve AFK'de de kısar
+    pub akilli_fps: String,
+    /// Oyun sırasında FPS ve takılma ölçümü (oyun sonunda özet için)
+    pub olcum: bool,
 }
 
 impl Default for Istemci {
@@ -131,6 +135,8 @@ impl Default for Istemci {
             guclu_sistem: false,
             alttab_durdurma_kapali: true,
             kenarliksiz: true,
+            akilli_fps: "kapali".into(),
+            olcum: true,
         }
     }
 }
@@ -190,6 +196,17 @@ pub struct Ayarlar {
     /// Bir kerelik geçişler: 1 = "Yüksek ayarda launcher oyun açıkken görünür" (11-28) uygulandı
     #[serde(default)]
     pub launcher_gecis: u32,
+    /// Java 25 hızlandırmaları: sıkıştırılmış nesne başlıkları, AOT önbelleği, güçlü bilgisayarda ZGC.
+    /// Oyun bunlarla açılamazsa launcher kendiliğinden kapatır.
+    pub java_yeni: bool,
+    /// Oyunu hibrit işlemcide güçlü (P), AMD X3D'de büyük önbellekli çekirdeklere yönlendir
+    pub guclu_cekirdek: bool,
+    /// Launcher boştayken oyun dosyalarını önceden belleğe al (daha hızlı açılış)
+    pub dosya_isit: bool,
+    /// Oyun kapanınca performans özeti göster
+    pub performans_ozeti: bool,
+    /// Arayüz dili: "tr", "en" ya da "" (ilk açılışta bilgisayarın diline göre seçilir)
+    pub dil: String,
 }
 
 impl Default for Ayarlar {
@@ -229,6 +246,11 @@ impl Default for Ayarlar {
             dunya_yedek: true,
             // 0: ilk yüklemede duzelt() geçişi uygular ve 1 yapar (yeni kurulumda hiçbir şey değişmez)
             launcher_gecis: 0,
+            java_yeni: true,
+            guclu_cekirdek: true,
+            dosya_isit: true,
+            performans_ozeti: true,
+            dil: String::new(),
         }
     }
 }
@@ -269,6 +291,12 @@ fn duzelt(mut t: Ayarlar) -> Ayarlar {
     t.ram = t.ram.clamp(2, 16);
     if !YUKLEYICILER.contains(&t.yukleyici.as_str()) {
         t.yukleyici = "fabric".into();
+    }
+    if !["", "tr", "en"].contains(&t.dil.as_str()) {
+        t.dil = String::new();
+    }
+    if !["kapali", "hz", "pil"].contains(&t.istemci.akilli_fps.as_str()) {
+        t.istemci.akilli_fps = "kapali".into();
     }
     if !["gri", "siyah", "end", "nether", "dunya", "performans", "sade"].contains(&t.tema.as_str()) {
         t.tema = "gri".into();

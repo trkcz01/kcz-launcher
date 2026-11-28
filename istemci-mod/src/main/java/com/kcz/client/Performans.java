@@ -1,6 +1,7 @@
 package com.kcz.client;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.Identifier;
@@ -82,16 +83,52 @@ public final class Performans {
 	private static final int MENU_FPS = 30;
 	/** 0 = sınır yok; menüdeyken 30 */
 	public static volatile int menuSiniri = 0;
-	/** 0 = yok; güçlü sistemde ekranın Hz'i */
+	/** 0 = yok; güçlü sistemde ya da akıllı FPS'te ekranın Hz'i (pil modunda en çok 60) */
 	public static volatile int hzHedef = 0;
+	/** 0 = yok; akıllı FPS açıkken AFK'de 30 */
+	public static volatile int afkSiniri = 0;
+	private static final int AKILLI_MENU_FPS = 60;
+	private static final int AFK_FPS = 30;
+	private static final long AFK_MS = 90_000L;
+	private static double afkX, afkY, afkZ;
+	private static float afkYon, afkBakis;
+	private static long sonHareket = System.currentTimeMillis();
 
 	private static void fpsSiniri(Minecraft mc, Ayar a) {
 		try {
 			Screen ekran = mc.gui.screen();
-			boolean menude = mc.level != null && ekran != null
+			boolean dunyada = mc.level != null && mc.player != null;
+			boolean menude = dunyada && ekran != null
 					&& (ekran instanceof PauseScreen || ekran instanceof KczEkrani || ekran instanceof SistemEkrani || mc.isPaused());
-			menuSiniri = a.dusukSistem && a.dusuk.menuFps && menude ? MENU_FPS : 0;
-			hzHedef = a.gucluSistem && !a.dusukSistem && a.guclu.hzFps ? ekranHz(mc) : 0;
+			boolean akilli = !"kapali".equals(a.akilliFps);
+			// Oyunu örten ekranlar (envanter, ayarlar, Esc); sohbet oyunu örtmez, kısılmaz
+			boolean ortulu = dunyada && ekran != null && !(ekran instanceof ChatScreen);
+			int menu = 0;
+			if (a.dusukSistem && a.dusuk.menuFps && menude) menu = MENU_FPS;
+			else if (akilli && ortulu) menu = AKILLI_MENU_FPS;
+			menuSiniri = menu;
+			// AFK: 90 saniye ne bakış ne konum değişti
+			long simdi = System.currentTimeMillis();
+			if (dunyada) {
+				var p = mc.player;
+				if (ekran != null || Math.abs(p.getX() - afkX) > 0.05 || Math.abs(p.getY() - afkY) > 0.05 || Math.abs(p.getZ() - afkZ) > 0.05
+						|| Math.abs(p.getYRot() - afkYon) > 0.5f || Math.abs(p.getXRot() - afkBakis) > 0.5f) {
+					sonHareket = simdi;
+					afkX = p.getX();
+					afkY = p.getY();
+					afkZ = p.getZ();
+					afkYon = p.getYRot();
+					afkBakis = p.getXRot();
+				}
+			} else {
+				sonHareket = simdi;
+			}
+			afkSiniri = akilli && dunyada && ekran == null && simdi - sonHareket > AFK_MS ? AFK_FPS : 0;
+			int hz = 0;
+			if (a.gucluSistem && !a.dusukSistem && a.guclu.hzFps) hz = ekranHz(mc);
+			if ("hz".equals(a.akilliFps)) hz = ekranHz(mc);
+			else if ("pil".equals(a.akilliFps)) hz = Math.min(ekranHz(mc), 60);
+			hzHedef = hz;
 		} catch (Throwable t) {
 			KczClient.LOG.debug("FPS sınırı: {}", t.toString());
 		}
@@ -105,8 +142,9 @@ public final class Performans {
 		if (a.arkaplanFps && !mc.isWindowActive()) return Math.min(oyununki, ARKA_PLAN_FPS);
 		int s = oyununki;
 		if (menuSiniri > 0) s = Math.min(s, menuSiniri);
-		// Güçlü sistem: oyun kendisi kısmıyorsa (AFK, menü vb.) ekranın Hz'i
-		if (hzHedef > 0 && oyununki == mc.options.framerateLimit().get()) s = hzHedef;
+		if (afkSiniri > 0) s = Math.min(s, afkSiniri);
+		// Ekranın Hz'i: oyun kendisi kısmıyorsa; oyuncunun kendi sınırını geçmez (260 = sınırsız)
+		if (hzHedef > 0 && oyununki == mc.options.framerateLimit().get()) s = Math.min(s, oyununki >= 260 ? hzHedef : Math.min(oyununki, hzHedef));
 		return s;
 	}
 
@@ -117,6 +155,7 @@ public final class Performans {
 	private static void fpsGeriAl(Minecraft mc) {
 		menuSiniri = 0;
 		hzHedef = 0;
+		afkSiniri = 0;
 	}
 
 	/** Ekranın yenileme hızı (bulunamazsa 60). Oyunun en yüksek sınırı 260 (= sınırsız). */

@@ -27,7 +27,7 @@ public class SohbetEkrani extends Screen {
 	private int kaydir = 0;
 
 	public SohbetEkrani(Screen onceki, Arkadaslar.Arkadas kim) {
-		super(Component.literal("Sohbet"));
+		super(Component.literal(Dil.t("Sohbet")));
 		this.onceki = onceki;
 		this.kim = kim;
 	}
@@ -39,24 +39,24 @@ public class SohbetEkrani extends Screen {
 		px = (this.width - pw) / 2;
 		py = (this.height - ph) / 2;
 		String eski = kutu != null ? kutu.getValue() : "";
-		kutu = new EditBox(this.font, px + 10 + 24, py + ph - 28, pw - 20 - 62 - 24, 18, Component.literal("Mesaj"));
+		kutu = new EditBox(this.font, px + 10 + 24, py + ph - 28, pw - 20 - 62 - 24, 18, Component.literal(Dil.t("Mesaj")));
 		kutu.setMaxLength(500);
-		kutu.setHint(Component.literal("Mesaj yaz…  (Enter: gönder)"));
+		kutu.setHint(Component.literal(Dil.t("Mesaj yaz…  (Enter: gönder)")));
 		kutu.setValue(eski);
 		addRenderableWidget(kutu);
-		gonder = addRenderableWidget(Button.builder(Component.literal("Gönder"), b -> gonder())
+		gonder = addRenderableWidget(Button.builder(Component.literal(Dil.t("Gönder")), b -> gonder())
 				.bounds(px + pw - 10 - 56, py + ph - 29, 56, 20).build());
 		// Son ekran görüntüsünü bu arkadaşa gönder
 		foto = addRenderableWidget(Button.builder(Component.literal("▣"), b -> {
-			if (Foto.sonDosya() == null) Arkadaslar.bildir(this.minecraft, "Önce fotoğraf çek", "Oyunda F2'ye bas, sonra buradan gönder.");
+			if (Foto.sonDosya() == null) Arkadaslar.bildir(this.minecraft, Dil.t("Önce fotoğraf çek"), Dil.t("Oyunda F2'ye bas, sonra buradan gönder."));
 			else this.minecraft.gui.setScreen(new FotoPaylasEkrani(this, Foto.sonDosya(), Foto.sonKonum()));
 		}).bounds(px + 9, py + ph - 29, 20, 20).build());
-		foto.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Son ekran görüntüsünü gönder (konumuyla)")));
+		foto.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(Dil.t("Son ekran görüntüsünü gönder (konumuyla)"))));
 		geri = addRenderableWidget(Button.builder(Component.literal("‹"), b -> onClose())
 				.bounds(px + 8, py + 9, 18, 18).build());
-		davet = addRenderableWidget(Button.builder(Component.literal("Davet et"), b -> Arkadaslar.davetEt(this.minecraft, kim))
+		davet = addRenderableWidget(Button.builder(Component.literal(Dil.t("Davet et")), b -> Arkadaslar.davetEt(this.minecraft, kim))
 				.bounds(px + pw - 10 - 56, py + 8, 56, 18).build());
-		katil = addRenderableWidget(Button.builder(Component.literal("Katıl"), b -> Arkadaslar.katil(this.minecraft, kim.sunucu()))
+		katil = addRenderableWidget(Button.builder(Component.literal(Dil.t("Katıl")), b -> Arkadaslar.katil(this.minecraft, kim.sunucu()))
 				.bounds(px + pw - 10 - 56 - 6 - 44, py + 8, 44, 18).build());
 		setInitialFocus(kutu);
 		Arkadaslar.acikSohbet = kim.uuid();
@@ -152,8 +152,8 @@ public class SohbetEkrani extends Screen {
 		int renk = kim.oyunda() ? yesil : kim.cevrimici() ? sari : gri;
 		kutuCiz(g, px + 34, py + 14, 6, 6, renk);
 		g.text(this.font, kim.ad(), px + 46, py + 9, yazi, false);
-		String durum = kim.oyunda() ? (kim.sunucu() != null && !kim.sunucu().isEmpty() ? "Oyunda · " + kim.sunucu() : "Oyunda")
-				: kim.cevrimici() ? "Launcher açık" : Arkadaslar.cevrimdisiYazi(kim) + " · mesajı sonra görür";
+		String durum = kim.oyunda() ? (kim.sunucu() != null && !kim.sunucu().isEmpty() ? Dil.t("Oyunda · ") + kim.sunucu() : Dil.t("Oyunda"))
+				: kim.cevrimici() ? Dil.t("Launcher açık") : Arkadaslar.cevrimdisiYazi(kim) + Dil.t(" · mesajı sonra görür");
 		g.text(this.font, this.font.plainSubstrByWidth(durum, pw - 46 - 130), px + 46, py + 21, kim.oyunda() ? 0xFF86EFAC : soluk, false);
 		// Alt çizgi
 		g.fill(px + 1, py + ph - 36, px + pw - 1, py + ph - 35, cizgi);
@@ -164,14 +164,14 @@ public class SohbetEkrani extends Screen {
 		List<Object[]> balonlar = new ArrayList<>(); // {benden, satırlar, gidiyor, fotoId}
 		for (var m : Arkadaslar.sohbet(kim.uuid())) {
 			long fid = Foto.fotoId(m.metin());
-			String yaziM = fid > 0 ? "Fotoğraf yükleniyor…" : m.metin();
+			String yaziM = fid > 0 ? Dil.t("Fotoğraf yükleniyor…") : m.metin();
 			balonlar.add(new Object[] { m.benden(), this.font.split(Component.literal(yaziM), maxW - 12), false, fid });
 		}
 		for (var m : Arkadaslar.gidenler(kim.uuid())) balonlar.add(new Object[] { true, this.font.split(Component.literal(m), maxW - 12), true, -1L });
 		fotoAlanlari.clear();
 		g.enableScissor(px + 1, ust, px + pw - 1, alt);
 		if (balonlar.isEmpty()) {
-			String bos = Arkadaslar.bagli() ? "Henüz mesaj yok. İlk mesajı sen at!" : "KCZ Launcher kapalı: mesaj gönderilemez.";
+			String bos = Arkadaslar.bagli() ? Dil.t("Henüz mesaj yok. İlk mesajı sen at!") : Dil.t("KCZ Launcher kapalı: mesaj gönderilemez.");
 			g.text(this.font, bos, px + (pw - this.font.width(bos)) / 2, (ust + alt) / 2 - 4, soluk, false);
 		}
 		int y = alt + kaydir;
@@ -187,7 +187,7 @@ public class SohbetEkrani extends Screen {
 				// Fotoğraf balonu: küçük resim, altında not; tıklayınca büyür
 				Foto.Bilgi fb = Foto.bilgi(fid);
 				int fw = Math.min(150, maxW), fh = Math.max(40, Math.min(110, fw * dk.h() / Math.max(1, dk.w())));
-				String alt2 = fb != null && !fb.not().isEmpty() ? fb.not() : fb != null && fb.konum() != null ? "Konumlu anı · tıkla" : "Fotoğraf · tıkla";
+				String alt2 = fb != null && !fb.not().isEmpty() ? fb.not() : fb != null && fb.konum() != null ? Dil.t("Konumlu anı · tıkla") : Dil.t("Fotoğraf · tıkla");
 				alt2 = this.font.plainSubstrByWidth(alt2, fw);
 				int bw = fw + 8, bh = fh + 18;
 				y -= bh + 4;

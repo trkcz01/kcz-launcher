@@ -537,7 +537,7 @@ function sunucuKarti(s, sira, secili) {
   ikon.src = (d && d.ikon) || s.ikon || 'logo.svg';
   ikonKap.append(ikon, el('span', 'sk-nokta'));
   const bilgi = el('span', 'sk-bilgi');
-  const durumYazi = !d ? 'Bakılıyor…' : d.durum === 'acik' ? `${d.oyuncu}/${d.maks} oyuncu · ${d.gecikme} ms` : 'Kapalı';
+  const durumYazi = !d ? 'Bakılıyor…' : d.durum === 'acik' ? `${d.oyuncu}/${d.maks} oyuncu · ${d.gecikme} ms` : KAPALI_SUNUCU;
   bilgi.append(el('b', '', s.ad), el('small', 'sk-durum', durumYazi));
   kart.append(ikonKap, bilgi);
 
@@ -1123,6 +1123,7 @@ function balonEkle(m) {
   const gun = gunAdi(m.zaman);
   if (gun !== sohbetSonGun) { $('sohbetAkis').append(el('div', 'sohbet-gun', gun)); sohbetSonGun = gun; }
   const b = el('div', 'balon ' + (m.benden ? 'ben' : 'o'));
+  b.translate = false; // arkadaşın yazdığı çevrilmez
   const fid = fotoIdBul(m.metin);
   if (fid) fotoBalonu(b, fid, m.benden); else b.append(document.createTextNode(m.metin));
   b.append(el('small', '', new Date(m.zaman).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })));
@@ -1473,7 +1474,7 @@ function sahneBilgisi() {
   }
   const d = s.veri;
   yaz('secAd', s.ad);
-  yaz('secDurum', !d ? 'Bakılıyor…' : d.durum === 'acik' ? `Çevrimiçi · ${d.oyuncu}/${d.maks} oyuncu · ${d.gecikme} ms` : 'Kapalı');
+  yaz('secDurum', !d ? 'Bakılıyor…' : d.durum === 'acik' ? `Çevrimiçi · ${d.oyuncu}/${d.maks} oyuncu · ${d.gecikme} ms` : KAPALI_SUNUCU);
   yaz('devYazi', s.ad.toLocaleUpperCase('tr').split(/\s+/).slice(0, 2).join(' ').slice(0, 12));
 }
 
@@ -1532,12 +1533,13 @@ async function haftayiCiz() {
   const enCok = Math.max(30, ...h.gunler.map((x) => x.dk));
   for (const gun of h.gunler) {
     const kol = el('span', 'gun' + (gun.bugun ? ' bugun' : ''));
-    kol.title = `${gun.gun}: ${gun.dk} dk`;
+    const gunAd = dilT(gun.gun);
+    kol.title = `${gunAd}: ${gun.dk} dk`;
     const kap = el('span', 'cubuk-kap');
     const c = el('span', 'cubuk');
     c.style.height = Math.max(3, (gun.dk / enCok) * 100) + '%';
     kap.append(c);
-    kol.append(kap, el('small', '', gun.gun[0]));
+    kol.append(kap, el('small', '', gunAd[0]));
     g.append(kol);
   }
 }
@@ -1557,7 +1559,7 @@ function oneriCiz() {
     const b = el('button', '', 'Kur');
     b.addEventListener('click', () => icerikKur(o.proje, o.tur, b));
     const alt = el('span', 'alt', o.alt);
-    k.append(el('span', 'oneri-harf', o.harf), el('span', 'oneri-tur', 'ÖNERİ · ' + o.etiket), el('b', '', o.ad), alt, b);
+    k.append(el('span', 'oneri-harf', o.harf), el('span', 'oneri-tur', dilT('ÖNERİ · ') + o.etiket), el('b', '', o.ad), alt, b);
     kap.append(k);
   });
   const n = el('span', 'oneri-noktalar');
@@ -2231,13 +2233,140 @@ api.durumDinle((d) => {
     oyunDurumu = 'bosta';
     document.body.classList.remove('oyun-acik');
     api.ayarlariGetir().then((a) => { ayarlar = a; oyunAyarlariniDoldur(); }).catch(() => {});
-    if (d.kod && d.kod !== 0) sonHata = 'Oyun bir hatayla kapandı. Ayrıntılar: Ayarlar > Oyun kaydı.';
-    if (d.modHatasi) modHatasiGoster(d.modHatasi);
-    else if (d.cokme) cokmeGoster(d.cokme);
+    if (d.javaGeriAlindi) {
+      // Yeni Java ayarları bu bilgisayarda açılmadı: launcher kapattı, eski ayarlarla tekrar açılıyor
+      bildirim('Java hızlandırmaları bu bilgisayarda çalışmadı ve kapatıldı. Oyun eski ayarlarla tekrar açılıyor…');
+      setTimeout(() => sonAcilisiTekrarla(false), 900);
+    } else {
+      if (d.kod && d.kod !== 0) sonHata = 'Oyun bir hatayla kapandı. Ayrıntılar: Ayarlar > Oyun kaydı.';
+      if (d.modHatasi) modHatasiGoster(d.modHatasi);
+      else if (d.cokme) cokmeGoster(d.cokme);
+      else if (d.performans) setTimeout(() => ozetGoster(d.performans, d.oncekiPerformans, d.sistem), 600);
+    }
     sunuculariYukle();
     haftayiCiz();
   }
   oynaGuncelle();
+});
+
+/* =========================================================
+   OYUN SONU PERFORMANS ÖZETİ: KCZ Client'ın ölçümü + bilgisayara göre öneriler
+   ========================================================= */
+function akicilikPuani(p) {
+  // En kötü %1 karelerin ortalamaya oranı ve dakikadaki takılma sayısı
+  const oran = p.fps > 0 ? Math.min(1, (p.fps1 || 0) / p.fps) : 0;
+  const dakika = Math.max(1, (p.sure || 60) / 60);
+  const takilmaDk = (p.takilma || 0) / dakika;
+  return Math.max(0, Math.min(100, Math.round(oran * 110 - takilmaDk * 6 - (p.cokBuyukTakilma || 0) * 2)));
+}
+function sureYazisi(sn) {
+  const dk = Math.round(sn / 60);
+  return dk < 60 ? `${dk} dk` : `${Math.floor(dk / 60)} sa ${dk % 60} dk`;
+}
+function oneriler(p, s) {
+  const l = [];
+  const a = p.ayar || {}, i = ayarlar.istemci || {};
+  const hz = a.ekranHz || 60;
+  const sebep = p.sebep || {};
+  const dakika = Math.max(1, (p.sure || 60) / 60);
+  const takilmaDk = (p.takilma || 0) / dakika;
+  if (p.fps < 30 && !i.dusukSistem) {
+    l.push({ baslik: 'Düşük sistem modunu aç', aciklama: 'FPS düşük: parçacık, uzak yaratık ve animasyonlar kısılır.', uygula: () => istemciKaydet({ dusukSistem: true, gucluSistem: false }) });
+  }
+  if (p.fps < 50 && (a.gorus || 0) > 10) {
+    const yeni = Math.max(8, a.gorus - 4);
+    l.push({ baslik: `Görüş mesafesini ${yeni} yap`, aciklama: `Şu an ${a.gorus}. Görüş, FPS'i en çok etkileyen ayar.`, uygula: () => api.oyunSecenegiYaz('renderDistance', yeni) });
+  } else if ((sebep.yukleme || 0) >= 5 && (a.gorus || 0) > 8) {
+    const yeni = Math.max(8, a.gorus - 2);
+    l.push({ baslik: `Görüş mesafesini ${yeni} yap`, aciklama: 'Hızlı giderken yeni bölge yüklenirken takılıyor.', uygula: () => api.oyunSecenegiYaz('renderDistance', yeni) });
+  }
+  if (a.tekOyunculu && (a.simulasyon || 0) > 8 && p.fps < 60) {
+    l.push({ baslik: 'Simülasyon mesafesini 6 yap', aciklama: 'Tek oyunculuda işlemciyi en çok yoran ayarlardan biri.', uygula: () => api.oyunSecenegiYaz('simulationDistance', 6) });
+  }
+  const bellekSikinti = (sebep.gc || 0) >= 3 || ((p.bellek || {}).enCokYuzde || 0) >= 92;
+  if (bellekSikinti) {
+    const sistemRam = (s && s.ram) || 8;
+    const yeni = Math.min(ayarlar.ram + 2, Math.max(4, Math.floor(sistemRam / 2)));
+    if (yeni > ayarlar.ram) {
+      l.push({ baslik: `Oyuna ${yeni} GB bellek ver`, aciklama: 'Takılmaların bir kısmı belleğin dolmasından (bellek temizliği).', uygula: async () => { ayarlar = await api.ayarlariKaydet({ ram: yeni }); oyunAyarlariniDoldur(); } });
+    } else if (!ayarlar.javaYeni) {
+      l.push({ baslik: 'Java hızlandırmalarını aç', aciklama: 'Bellek temizliği takılmalarını azaltır.', uygula: async () => { ayarlar = await api.ayarlariKaydet({ javaYeni: true }); oyunAyarlariniDoldur(); } });
+    }
+  }
+  if (a.vsync && p.fps < hz * 0.9) {
+    l.push({ baslik: 'VSync\'i kapat', aciklama: 'FPS ekranın Hz\'inin altında kalınca VSync takılma yapar.', uygula: () => api.oyunSecenegiYaz('enableVsync', 'false') });
+  }
+  if ((i.akilliFps || 'kapali') === 'kapali' && p.fps > hz * 1.6 && !a.vsync) {
+    l.push({ baslik: 'Akıllı FPS sınırını aç', aciklama: `FPS ekranının gösterebileceğinden (${hz} Hz) çok fazla: sınırlamak daha akıcı ve daha az ısınır.`, uygula: () => istemciKaydet({ akilliFps: 'hz' }) });
+  }
+  if (s && (s.tur === 'hibrit' || s.tur === 'x3d') && !ayarlar.gucluCekirdek && takilmaDk > 1) {
+    l.push({ baslik: 'Güçlü çekirdekleri kullan', aciklama: 'İşlemcinde güçlü çekirdekler var: takılmaları azaltır.', uygula: async () => { ayarlar = await api.ayarlariKaydet({ gucluCekirdek: true }); oyunAyarlariniDoldur(); } });
+  }
+  if (!l.length && takilmaDk > 3) {
+    const sira = ['yuksek', 'orta', 'dusuk', 'cokdusuk'];
+    const simdi = sira.indexOf(ayarlar.performansSeviye || 'yuksek');
+    if (simdi >= 0 && simdi < sira.length - 1) {
+      const yeni = sira[simdi + 1];
+      l.push({ baslik: `Hazır ayarı "${SEVIYE_AD[yeni]}" yap`, aciklama: 'Sık takılıyor: bir kademe hafif ayar daha akıcı olur.', uygula: () => seviyeUygula(yeni) });
+    }
+  }
+  return l.slice(0, 3);
+}
+function ozetGoster(p, once, s) {
+  if (!p || (p.sure || 0) < 60) return;
+  yaz('ozetAlt', `${sureYazisi(p.sure)} oyun${p.ayar && p.ayar.gorus ? ` · görüş ${p.ayar.gorus}` : ''}`);
+  yaz('ozetFps', Math.round(p.fps));
+  yaz('ozetFps1', Math.round(p.fps1));
+  yaz('ozetTakilma', p.takilma || 0);
+  yaz('ozetEnUzun', p.enUzunMs ? `${p.enUzunMs} ms` : '—');
+  const fark = $('ozetFark');
+  fark.textContent = '';
+  fark.className = '';
+  if (once && once.fps > 0) {
+    const yuzde = Math.round(((p.fps - once.fps) / once.fps) * 100);
+    if (Math.abs(yuzde) >= 3) {
+      fark.textContent = `${yuzde > 0 ? '+' : ''}%${yuzde} geçen sefere göre`;
+      fark.className = yuzde > 0 ? 'iyi' : 'kotu';
+    }
+  }
+  const puan = akicilikPuani(p);
+  const cubuk = $('ozetCubuk');
+  cubuk.style.width = puan + '%';
+  cubuk.dataset.seviye = puan >= 80 ? 'cok-iyi' : puan >= 60 ? 'iyi' : puan >= 40 ? 'orta' : 'kotu';
+  yaz('ozetNot', puan >= 80 ? 'Çok akıcı' : puan >= 60 ? 'İyi' : puan >= 40 ? 'Orta' : 'Takılıyor');
+  const sebep = p.sebep || {};
+  const parcalar = [];
+  if (sebep.gc) parcalar.push(dilT(`${sebep.gc} tanesi bellek temizliğinden`));
+  if (sebep.yukleme) parcalar.push(dilT(`${sebep.yukleme} tanesi hızlı giderken yeni bölge yüklenirken`));
+  yaz('ozetSebep', p.takilma ? `${p.takilma} takılma${parcalar.length ? ': ' + parcalar.join(', ') : ''}.` : 'Hiç takılma olmadı.');
+  const k = $('ozetOneriler');
+  k.replaceChildren();
+  const l = oneriler(p, s);
+  if (!l.length) {
+    k.append(el('div', 'ozet-tamam', 'Her şey yolunda: bilgisayarın bu ayarlarla rahat çalışıyor ✓'));
+  } else {
+    k.append(el('div', 'ozet-oneri-baslik', 'Öneriler'));
+    for (const o of l) {
+      const satir = el('div', 'ozet-oneri');
+      const y = el('div', 'ozet-oneri-yazi');
+      y.append(el('b', '', o.baslik), el('small', '', o.aciklama));
+      const b = el('button', 'ikincil kucuk', 'Uygula');
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        try { await o.uygula(); b.textContent = 'Uygulandı ✓'; b.classList.add('uygulandi'); } catch { b.disabled = false; bildirim('Uygulanamadı.', true); }
+      });
+      satir.append(y, b);
+      k.append(satir);
+    }
+  }
+  $('ozetPerde').hidden = false;
+}
+$('ozetTamam').addEventListener('click', () => { $('ozetPerde').hidden = true; });
+$('ozetGosterme').addEventListener('click', async () => {
+  $('ozetPerde').hidden = true;
+  ayarlar = await api.ayarlariKaydet({ performansOzeti: false });
+  oyunAyarlariniDoldur();
+  bildirim('Performans özeti kapatıldı. Ayarlar > Performans\'tan tekrar açabilirsin.');
 });
 
 /** Son açılışı aynı şekilde (sunucu, profil, sürüm) tekrar aç; modsuz: hiçbir mod olmadan dene */
@@ -2818,10 +2947,38 @@ $('klasorBtn').addEventListener('click', () => api.klasoruAc());
    PERFORMANS
    ========================================================= */
 const SEVIYE_AD = { cokdusuk: 'Çok düşük', dusuk: 'Düşük', orta: 'Orta', yuksek: 'Yüksek' };
+/* ---------- Dil ---------- */
+/** Parça parça kurulan yazılar için: her parçayı ayrı çevir (DOM çevirisi birleşik yazıyı tanımaz) */
+const dilT = (s) => (window.DIL ? DIL.t(s) : s);
+const KAPALI_SUNUCU = window.DIL && DIL.aktif === 'en' ? 'Offline' : 'Kapalı';
+$('dilSec').value = window.DIL ? DIL.aktif : 'tr';
+$('dilSec').addEventListener('change', async (e) => {
+  const yeni = e.target.value === 'en' ? 'en' : 'tr';
+  try { ayarlar = await api.ayarlariKaydet({ dil: yeni }); } catch { /* yine de değiştir */ }
+  DIL.degistir(yeni);
+});
+let dilEsitlendi = false;
+function dilEsitle() {
+  if (dilEsitlendi || !window.DIL || !ayarlar) return;
+  dilEsitlendi = true;
+  DIL.esitle(ayarlar.dil, (d) => api.ayarlariKaydet({ dil: d }).then((a) => { ayarlar = a; }).catch(() => {}));
+}
+
 const PERFORMANS_ANAHTARLARI = [
   ['hafifSec', 'hafifMod'], ['ekranKartiSec', 'ekranKarti'], ['javaSec', 'javaAyar'],
   ['oncelikSec', 'oncelik'], ['gucSec', 'gucPlani'],
+  ['gucluCekirdekSec', 'gucluCekirdek'], ['javaYeniSec', 'javaYeni'], ['dosyaIsitSec', 'dosyaIsit'], ['performansOzetiSec', 'performansOzeti'],
 ];
+// İşlemciye göre "Güçlü çekirdekleri kullan" açıklaması
+let sistemBilgisi = null;
+api.cekirdekBilgi().then((b) => {
+  sistemBilgisi = b;
+  if (!b) return;
+  const yazi = b.tur === 'hibrit' ? `İşlemcin hibrit: oyun ${b.guclu} güçlü (P) çekirdekte çalışır, Windows'un oyunu yavaşlatması kapanır.`
+    : b.tur === 'x3d' ? `İşlemcinde büyük önbellekli çekirdekler var: oyun bu ${b.guclu} çekirdekte çalışır.`
+    : 'İşlemcinde ayrı güçlü çekirdek yok; sadece Windows\'un oyunu yavaşlatması (enerji kısıtlaması) kapanır.';
+  yaz('cekirdekAciklama', yazi);
+}).catch(() => {});
 let tarama = null;
 
 function performansDoldur() {
@@ -2951,6 +3108,7 @@ function istemciDoldur() {
   $('istZoomKat').value = String(Math.round(i.zoomKat || 4));
   $('istZoomBas').value = String(i.zoomBaslangic || 3);
   $('istKonum').value = i.konum === 'sag-ust' ? 'sag-ust' : 'sol-ust';
+  $('istAkilliFps').value = ['hz', 'pil'].includes(i.akilliFps) ? i.akilliFps : 'kapali';
   $('istAyarlar').classList.toggle('kapali', !i.acik);
   const destek = istemciSurumleri.length
     ? `Minecraft ${istemciSurumleri.join(', ')} · Fabric/Quilt (Vanilla dahil).`
@@ -2983,6 +3141,7 @@ document.querySelectorAll('[data-ist]').forEach((x) => {
 $('istZoomKat').addEventListener('change', (e) => istemciKaydet({ zoomKat: Number(e.target.value) }));
 $('istZoomBas').addEventListener('change', (e) => istemciKaydet({ zoomBaslangic: Number(e.target.value) }));
 $('istKonum').addEventListener('change', (e) => istemciKaydet({ konum: e.target.value }));
+$('istAkilliFps').addEventListener('change', (e) => istemciKaydet({ akilliFps: e.target.value }));
 
 /* ---------- Tepsi ve yedek ---------- */
 $('tepsiSec').addEventListener('change', async (e) => {
@@ -3649,6 +3808,7 @@ const bekle = (ms) => new Promise((r) => setTimeout(r, ms));
   const enAz = bekle(1200);
   yaz('acilisDurum', 'Ayarlar yükleniyor…');
   ayarlar = await api.ayarlariGetir();
+  dilEsitle();
   temaUygula();
   solSekmeAc(ayarlar.solSekme || 'sunucu', false);
   oyunAyarlariniDoldur();

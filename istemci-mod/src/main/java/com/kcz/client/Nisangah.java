@@ -13,9 +13,9 @@ public final class Nisangah {
 	}
 
 	public static final String[] SEKILLER = { "arti", "nokta", "arti-nokta", "kose", "daire" };
-	public static final String[] SEKIL_ADI = { "Artı", "Nokta", "Artı + nokta", "Köşeler", "Halka" };
+	public static final String[] SEKIL_ADI = { Dil.t("Artı"), Dil.t("Nokta"), Dil.t("Artı + nokta"), Dil.t("Köşeler"), Dil.t("Halka") };
 	public static final String[] RENKLER = { "beyaz", "tema", "yesil", "kirmizi", "sari", "mavi" };
-	public static final String[] RENK_ADI = { "Beyaz", "Tema", "Yeşil", "Kırmızı", "Sarı", "Mavi" };
+	public static final String[] RENK_ADI = { Dil.t("Beyaz"), Dil.t("Tema"), Dil.t("Yeşil"), Dil.t("Kırmızı"), Dil.t("Sarı"), Dil.t("Mavi") };
 
 	public static HudElement sar(HudElement oyununki) {
 		return (g, d) -> {

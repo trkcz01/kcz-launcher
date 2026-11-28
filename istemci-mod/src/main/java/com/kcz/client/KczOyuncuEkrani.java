@@ -43,11 +43,11 @@ public class KczOyuncuEkrani extends Screen {
 		int y = py + 48;
 		Arkadaslar.Arkadas a = arkadas();
 		if (a != null) {
-			addRenderableWidget(Button.builder(Component.literal("Mesaj gönder"),
+			addRenderableWidget(Button.builder(Component.literal(Dil.t("Mesaj gönder")),
 					b -> this.minecraft.gui.setScreen(new SohbetEkrani(this, a))).bounds(x, y, w, 20).build());
 		} else {
 			Button ekle = addRenderableWidget(Button.builder(
-					Component.literal(istekGitti ? "İstek gönderildi ✔" : "Arkadaş ekle"), b -> {
+					Component.literal(istekGitti ? Dil.t("İstek gönderildi ✔") : Dil.t("Arkadaş ekle")), b -> {
 						JsonObject o = new JsonObject();
 						o.addProperty("tur", "arkadas_ekle_uuid");
 						o.addProperty("uuid", kisi.uuid());
@@ -59,7 +59,7 @@ public class KczOyuncuEkrani extends Screen {
 					}).bounds(x, y, w, 20).build());
 			ekle.active = !istekGitti && kisi.uuid() != null && !kisi.uuid().isEmpty() && Arkadaslar.bagli();
 		}
-		addRenderableWidget(Button.builder(Component.literal("Kapat"), b -> onClose()).bounds(x, y + 26, w, 20).build());
+		addRenderableWidget(Button.builder(Component.literal(Dil.t("Kapat")), b -> onClose()).bounds(x, y + 26, w, 20).build());
 	}
 
 	@Override
@@ -84,10 +84,10 @@ public class KczOyuncuEkrani extends Screen {
 		int x = px + 12;
 		g.text(this.font, Component.empty().append(KczOyunculari.SIMGE).append(" ").append(kisi.ad()), x, py + 12, 0xFFF1F5F9, false);
 		Arkadaslar.Arkadas a = arkadas();
-		String alt = a != null ? "Arkadaşın · KÇZ kullanıyor"
-				: !Arkadaslar.bagli() ? "KÇZ Launcher kapalı görünüyor"
-				: istekGitti ? "Kabul edince arkadaş listende görünür"
-				: "KÇZ kullanıyor";
+		String alt = a != null ? Dil.t("Arkadaşın · KÇZ kullanıyor")
+				: !Arkadaslar.bagli() ? Dil.t("KÇZ Launcher kapalı görünüyor")
+				: istekGitti ? Dil.t("Kabul edince arkadaş listende görünür")
+				: Dil.t("KÇZ kullanıyor");
 		g.text(this.font, alt, x, py + 27, 0xFF9CA3AF, false);
 	}
 }

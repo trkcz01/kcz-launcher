@@ -31,38 +31,38 @@ public class SistemEkrani extends Screen {
 	private int pw, ph, px, py, sw, solX, sagX, y0;
 
 	public SistemEkrani(Screen onceki, boolean dusuk) {
-		super(Component.literal(dusuk ? "Düşük sistem" : "Güçlü sistem"));
+		super(Component.literal(dusuk ? Dil.t("Düşük sistem") : Dil.t("Güçlü sistem")));
 		this.onceki = onceki;
 		this.dusuk = dusuk;
 		Ayar a = Ayar.get();
 		if (dusuk) {
-			satirlar.add(new Satir("Düşük sistem", () -> a.dusukSistem, null, () -> {
+			satirlar.add(new Satir(Dil.t("Düşük sistem"), () -> a.dusukSistem, null, () -> {
 				a.dusukSistem = !a.dusukSistem;
 				if (a.dusukSistem) a.gucluSistem = false;
 			}));
 			Ayar.Dusuk d = a.dusuk;
-			satirlar.add(new Satir("Hareketli dokuları durdur", () -> d.animasyon, null, () -> d.animasyon = !d.animasyon));
-			satirlar.add(new Satir("Uzaktaki yaratıkları gizle", () -> d.uzakVarlik, null, () -> d.uzakVarlik = !d.uzakVarlik));
-			satirlar.add(new Satir("Parçacık sınırı", () -> d.parcacik, null, () -> d.parcacik = !d.parcacik));
-			satirlar.add(new Satir("Menüdeyken 30 FPS", () -> d.menuFps, null, () -> d.menuFps = !d.menuFps));
-			satirlar.add(new Satir("Uzak tabela yazılarını gizle", () -> d.tabela, null, () -> d.tabela = !d.tabela));
-			satirlar.add(new Satir("Yağmur ve karı azalt", () -> d.yagis, null, () -> d.yagis = !d.yagis));
-			satirlar.add(new Satir("Sade gökyüzü", () -> d.gokyuzu, null, () -> d.gokyuzu = !d.gokyuzu));
-			satirlar.add(new Satir("Uzak isimleri gizle", () -> d.isimEtiketi, null, () -> d.isimEtiketi = !d.isimEtiketi));
-			satirlar.add(new Satir("Dinamik görüş mesafesi", () -> d.dinamikGorus, null, () -> d.dinamikGorus = !d.dinamikGorus));
-			satirlar.add(new Satir("Görüş en az", null, () -> String.valueOf(d.gorusAlt), () -> d.gorusAlt = sonraki(GORUS_ALT, d.gorusAlt)));
-			satirlar.add(new Satir("Hedef FPS", null, () -> String.valueOf(a.hedefFps), () -> a.hedefFps = sonraki(HEDEF_FPS, a.hedefFps)));
+			satirlar.add(new Satir(Dil.t("Hareketli dokuları durdur"), () -> d.animasyon, null, () -> d.animasyon = !d.animasyon));
+			satirlar.add(new Satir(Dil.t("Uzaktaki yaratıkları gizle"), () -> d.uzakVarlik, null, () -> d.uzakVarlik = !d.uzakVarlik));
+			satirlar.add(new Satir(Dil.t("Parçacık sınırı"), () -> d.parcacik, null, () -> d.parcacik = !d.parcacik));
+			satirlar.add(new Satir(Dil.t("Menüdeyken 30 FPS"), () -> d.menuFps, null, () -> d.menuFps = !d.menuFps));
+			satirlar.add(new Satir(Dil.t("Uzak tabela yazılarını gizle"), () -> d.tabela, null, () -> d.tabela = !d.tabela));
+			satirlar.add(new Satir(Dil.t("Yağmur ve karı azalt"), () -> d.yagis, null, () -> d.yagis = !d.yagis));
+			satirlar.add(new Satir(Dil.t("Sade gökyüzü"), () -> d.gokyuzu, null, () -> d.gokyuzu = !d.gokyuzu));
+			satirlar.add(new Satir(Dil.t("Uzak isimleri gizle"), () -> d.isimEtiketi, null, () -> d.isimEtiketi = !d.isimEtiketi));
+			satirlar.add(new Satir(Dil.t("Dinamik görüş mesafesi"), () -> d.dinamikGorus, null, () -> d.dinamikGorus = !d.dinamikGorus));
+			satirlar.add(new Satir(Dil.t("Görüş en az"), null, () -> String.valueOf(d.gorusAlt), () -> d.gorusAlt = sonraki(GORUS_ALT, d.gorusAlt)));
+			satirlar.add(new Satir(Dil.t("Hedef FPS"), null, () -> String.valueOf(a.hedefFps), () -> a.hedefFps = sonraki(HEDEF_FPS, a.hedefFps)));
 		} else {
-			satirlar.add(new Satir("Güçlü sistem", () -> a.gucluSistem, null, () -> {
+			satirlar.add(new Satir(Dil.t("Güçlü sistem"), () -> a.gucluSistem, null, () -> {
 				a.gucluSistem = !a.gucluSistem;
 				if (a.gucluSistem) a.dusukSistem = false;
 			}));
 			Ayar.Guclu g = a.guclu;
-			satirlar.add(new Satir("Kenar yumuşatma", () -> g.kenar, null, () -> g.kenar = !g.kenar));
-			satirlar.add(new Satir("Keskinleştirme", () -> g.keskin, null, () -> g.keskin = !g.keskin));
-			satirlar.add(new Satir("Canlı renkler", () -> g.renk, null, () -> g.renk = !g.renk));
-			satirlar.add(new Satir("Hareket bulanıklığı", () -> g.bulaniklik, null, () -> g.bulaniklik = !g.bulaniklik));
-			satirlar.add(new Satir("FPS = ekranın Hz'i", () -> g.hzFps, null, () -> g.hzFps = !g.hzFps));
+			satirlar.add(new Satir(Dil.t("Kenar yumuşatma"), () -> g.kenar, null, () -> g.kenar = !g.kenar));
+			satirlar.add(new Satir(Dil.t("Keskinleştirme"), () -> g.keskin, null, () -> g.keskin = !g.keskin));
+			satirlar.add(new Satir(Dil.t("Canlı renkler"), () -> g.renk, null, () -> g.renk = !g.renk));
+			satirlar.add(new Satir(Dil.t("Hareket bulanıklığı"), () -> g.bulaniklik, null, () -> g.bulaniklik = !g.bulaniklik));
+			satirlar.add(new Satir(Dil.t("FPS = ekranın Hz'i"), () -> g.hzFps, null, () -> g.hzFps = !g.hzFps));
 		}
 	}
 
@@ -144,8 +144,8 @@ public class SistemEkrani extends Screen {
 		int lx = px + 10, ly = py + 10;
 		g.fill(lx, ly, lx + 16, ly + 16, vurgu);
 		g.text(this.font, "K", lx + 5, ly + 4, Ayar.ustYazi(vurgu), false);
-		g.text(this.font, (dusuk ? "Düşük sistem" : "Güçlü sistem") + " · ayrıntılar", lx + 22, ly + 4, yazi, true);
-		String ipucu = "Esc ile geri dön";
+		g.text(this.font, (dusuk ? Dil.t("Düşük sistem") : Dil.t("Güçlü sistem")) + Dil.t(" · ayrıntılar"), lx + 22, ly + 4, yazi, true);
+		String ipucu = Dil.t("Esc ile geri dön");
 		g.text(this.font, ipucu, px + pw - 10 - this.font.width(ipucu), ly + 4, soluk, false);
 
 		boolean anaAcik = satirlar.get(0).acik().getAsBoolean();
@@ -187,8 +187,8 @@ public class SistemEkrani extends Screen {
 			toplam += Hud.fpsGecmisi[idx];
 			if (Hud.enUzunKare[idx] > 100f) takilma++;
 		}
-		String baslik = n == 0 ? "FPS GEÇMİŞİ · ölçülüyor..."
-				: "FPS GEÇMİŞİ · ortalama " + (toplam / n) + " · şimdi " + Hud.sonFps() + (takilma > 0 ? " · " + takilma + " takılma" : "");
+		String baslik = n == 0 ? Dil.t("FPS GEÇMİŞİ · ölçülüyor...")
+				: Dil.t("FPS GEÇMİŞİ · ortalama ") + (toplam / n) + Dil.t(" · şimdi ") + Hud.sonFps() + (takilma > 0 ? " · " + takilma + Dil.t(" takılma") : "");
 		g.text(this.font, baslik, gx, gy - 12, soluk, false);
 		g.fill(gx, gy, gx + gw, gy + GRAFIK_H, kart);
 		if (n == 0) return;
@@ -207,7 +207,7 @@ public class SistemEkrani extends Screen {
 			int hy = gy + GRAFIK_H - Math.round((GRAFIK_H - 4) * hedef / (float) enCok);
 			g.fill(gx, hy, gx + gw, hy + 1, 0x80FFFFFF);
 		}
-		String alt = enCok + " FPS";
+		String alt = enCok + Dil.t(" FPS");
 		g.text(this.font, alt, gx + gw - this.font.width(alt) - 3, gy + 3, soluk, false);
 	}
 }

@@ -68,22 +68,22 @@ public class KczClient implements ClientModInitializer {
 		ScreenEvents.AFTER_INIT.register((mc, ekran, genislik, yukseklik) -> {
 			// Ana menü ve Esc menüsünün sağ üstü: hesap değiştir / ekle
 			if (ekran instanceof TitleScreen || ekran instanceof PauseScreen) {
-				String hesap = "Hesap: " + mc.getUser().getName();
+				String hesap = Dil.t("Hesap: ") + mc.getUser().getName();
 				int w = Math.min(170, mc.font.width(hesap) + 16);
 				Screens.getWidgets(ekran).add(Button.builder(Component.literal(hesap), b -> mc.gui.setScreen(new HesapEkrani(ekran)))
 						.bounds(genislik - w - 6, 6, w, 20)
 						.build());
 			}
 			if (ekran instanceof PauseScreen) {
-				Screens.getWidgets(ekran).add(Button.builder(Component.literal("KCZ Menü"), b -> mc.gui.setScreen(KczEkrani.sekmeyle(ekran, false)))
+				Screens.getWidgets(ekran).add(Button.builder(Component.literal(Dil.t("KCZ Menü")), b -> mc.gui.setScreen(KczEkrani.sekmeyle(ekran, false)))
 						.bounds(6, 6, 80, 20)
 						.build());
 				// Arkadaşlar: gelen davet varsa sayısı, yoksa çevrimiçi arkadaş sayısı
 				int davet = Arkadaslar.davetler().size();
 				long acik = Arkadaslar.liste().stream().filter(x -> x.cevrimici() || x.oyunda()).count();
 				int mesaj = Arkadaslar.okunmamisToplam();
-				String yazi = mesaj > 0 ? "Arkadaşlar · " + mesaj + " mesaj" : davet > 0 ? "Arkadaşlar · " + davet + " davet"
-						: acik > 0 ? "Arkadaşlar · " + acik : "Arkadaşlar";
+				String yazi = mesaj > 0 ? Dil.t("Arkadaşlar · ") + mesaj + Dil.t(" mesaj") : davet > 0 ? Dil.t("Arkadaşlar · ") + davet + Dil.t(" davet")
+						: acik > 0 ? Dil.t("Arkadaşlar · ") + acik : Dil.t("Arkadaşlar");
 				Screens.getWidgets(ekran).add(Button.builder(Component.literal(yazi), b -> mc.gui.setScreen(KczEkrani.sekmeyle(ekran, true)))
 						.bounds(90, 6, Math.max(80, mc.font.width(yazi) + 16), 20)
 						.build());
@@ -102,6 +102,7 @@ public class KczClient implements ClientModInitializer {
 			}
 			zoomda = simdi;
 			Performans.tick(mc);
+			Olcum.tick(mc);
 			Kenarliksiz.tick(mc);
 			Hareket.tick(mc);
 			Arkadaslar.tick(mc);
@@ -111,7 +112,11 @@ public class KczClient implements ClientModInitializer {
 			Foto.tick(mc);
 		});
 		// Oyun kapanırken FPS ve görüş ayarlarını eski hâline getir (geçici değerler kaydedilmesin)
-		ClientLifecycleEvents.CLIENT_STOPPING.register(Performans::geriAl);
+		ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> {
+			// Önce ölçümü yaz (oyun dünyadayken kapatıldıysa), sonra geçici ayarları geri al
+			Olcum.bitir();
+			Performans.geriAl(mc);
+		});
 		LOG.info("KCZ Client hazır.");
 	}
 

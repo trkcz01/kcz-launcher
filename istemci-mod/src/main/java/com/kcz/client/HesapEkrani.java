@@ -30,7 +30,7 @@ public class HesapEkrani extends Screen {
 	private EditBox isimKutusu;
 
 	public HesapEkrani(Screen onceki) {
-		super(Component.literal("Hesaplar"));
+		super(Component.literal(Dil.t("Hesaplar")));
 		this.onceki = onceki;
 	}
 
@@ -69,7 +69,7 @@ public class HesapEkrani extends Screen {
 		for (Hesaplar.Hesap h : Hesaplar.liste()) {
 			boolean burada = Hesaplar.oyundakiMi(this.minecraft, h);
 			Button b = addRenderableWidget(Button.builder(
-					Component.literal(burada ? h.ad() + "  §a● oyunda" : h.ad()),
+					Component.literal(burada ? h.ad() + Dil.t("  §a● oyunda") : h.ad()),
 					btn -> sec(h.ad(), false, () -> Hesaplar.gec(this.minecraft, h))).bounds(x, y, w, 20).build());
 			b.active = bagli && !mesgul && !burada;
 			y += SATIR;
@@ -78,7 +78,7 @@ public class HesapEkrani extends Screen {
 		for (String ad : Hesaplar.cevrimdisiAdlar()) {
 			boolean burada = Hesaplar.oyundakiAdMi(this.minecraft, ad);
 			Button b = addRenderableWidget(Button.builder(
-					Component.literal(ad + (burada ? "  §a● oyunda" : "  §7· çevrimdışı")),
+					Component.literal(ad + (burada ? Dil.t("  §a● oyunda") : Dil.t("  §7· çevrimdışı"))),
 					btn -> sec(ad, true, () -> Hesaplar.cevrimdisiGec(this.minecraft, ad))).bounds(x, y, w - 24, 20).build());
 			b.active = !mesgul && !burada;
 			Button sil = addRenderableWidget(Button.builder(Component.literal("×"), btn -> {
@@ -97,23 +97,23 @@ public class HesapEkrani extends Screen {
 			kodY = y;
 			y += SATIR * 2; // kod kutusu
 			int yarim = (w - 6) / 2;
-			Button ac = addRenderableWidget(Button.builder(Component.literal("Tarayıcıyı aç"),
+			Button ac = addRenderableWidget(Button.builder(Component.literal(Dil.t("Tarayıcıyı aç")),
 					b -> Hesaplar.tarayiciAc(this.minecraft)).bounds(x, y, yarim, 20).build());
 			ac.active = g.equals("kod");
-			Button kopyala = addRenderableWidget(Button.builder(Component.literal("Kodu kopyala"), b -> {
+			Button kopyala = addRenderableWidget(Button.builder(Component.literal(Dil.t("Kodu kopyala")), b -> {
 				this.minecraft.keyboardHandler.setClipboard(Hesaplar.girisKod());
-				b.setMessage(Component.literal("Kopyalandı ✔"));
+				b.setMessage(Component.literal(Dil.t("Kopyalandı ✔")));
 			}).bounds(x + yarim + 6, y, yarim, 20).build());
 			kopyala.active = g.equals("kod");
 			y += SATIR;
-			addRenderableWidget(Button.builder(Component.literal("Vazgeç"),
+			addRenderableWidget(Button.builder(Component.literal(Dil.t("Vazgeç")),
 					b -> Hesaplar.girisIptal(this.minecraft)).bounds(x, y, w, 20).build());
 		} else if (isimModu) {
 			ipucuY = y + 6;
 			y += SATIR;
-			isimKutusu = new EditBox(this.font, x, y + 1, w - 96, 18, Component.literal("İsim"));
+			isimKutusu = new EditBox(this.font, x, y + 1, w - 96, 18, Component.literal(Dil.t("İsim")));
 			isimKutusu.setMaxLength(16);
-			isimKutusu.setHint(Component.literal("Oyuncu adı"));
+			isimKutusu.setHint(Component.literal(Dil.t("Oyuncu adı")));
 			isimKutusu.setValue(isimYazisi);
 			// Sadece harf, rakam ve _ kalsın (26.x EditBox'ta filtre yok; yazılanı temizle)
 			isimKutusu.setResponder(s -> {
@@ -123,10 +123,10 @@ public class HesapEkrani extends Screen {
 				}
 			});
 			addRenderableWidget(isimKutusu);
-			Button gir = addRenderableWidget(Button.builder(Component.literal("Gir"), b -> isimleGir())
+			Button gir = addRenderableWidget(Button.builder(Component.literal(Dil.t("Gir")), b -> isimleGir())
 					.bounds(x + w - 92, y, 44, 20).build());
 			gir.active = !mesgul;
-			addRenderableWidget(Button.builder(Component.literal("Vazgeç"), b -> {
+			addRenderableWidget(Button.builder(Component.literal(Dil.t("Vazgeç")), b -> {
 				isimModu = false;
 				isimYazisi = "";
 				rebuildWidgets();
@@ -134,17 +134,17 @@ public class HesapEkrani extends Screen {
 			setInitialFocus(isimKutusu);
 		} else {
 			int yarim = (w - 6) / 2;
-			Button ekle = addRenderableWidget(Button.builder(Component.literal("+ Microsoft hesabı"),
+			Button ekle = addRenderableWidget(Button.builder(Component.literal(Dil.t("+ Microsoft hesabı")),
 					b -> Hesaplar.ekle(this.minecraft)).bounds(x, y, yarim, 20).build());
 			ekle.active = bagli && !mesgul;
-			Button isim = addRenderableWidget(Button.builder(Component.literal("+ İsimle gir"), b -> {
+			Button isim = addRenderableWidget(Button.builder(Component.literal(Dil.t("+ İsimle gir")), b -> {
 				isimModu = true;
 				rebuildWidgets();
 			}).bounds(x + yarim + 6, y, yarim, 20).build());
 			isim.active = !mesgul;
 		}
 
-		addRenderableWidget(Button.builder(Component.literal("Kapat"), b -> onClose())
+		addRenderableWidget(Button.builder(Component.literal(Dil.t("Kapat")), b -> onClose())
 				.bounds(px + PW / 2 - 50, py + ph - 28, 100, 20).build());
 	}
 
@@ -167,12 +167,12 @@ public class HesapEkrani extends Screen {
 			return;
 		}
 		boolean tek = this.minecraft.isLocalServer();
-		Component baslik = Component.literal(ad + " hesabına geçilsin mi?");
+		Component baslik = Component.literal(ad + Dil.t(" hesabına geçilsin mi?"));
 		String m = tek
-				? "Dünya kaydedilip ana menüye dönülecek, sonra hesap değişecek."
-				: "Sunucudan çıkılıp " + ad + " hesabıyla aynı sunucuya tekrar bağlanılacak.";
+				? Dil.t("Dünya kaydedilip ana menüye dönülecek, sonra hesap değişecek.")
+				: Dil.t("Sunucudan çıkılıp ") + ad + Dil.t(" hesabıyla aynı sunucuya tekrar bağlanılacak.");
 		if (cevrimdisi && !tek) {
-			m += " Çevrimdışı hesapla sadece premium istemeyen sunuculara girilebilir.";
+			m += Dil.t(" Çevrimdışı hesapla sadece premium istemeyen sunuculara girilebilir.");
 		}
 		this.minecraft.gui.setScreen(new ConfirmScreen(onay -> {
 			if (onay) {
@@ -226,21 +226,21 @@ public class HesapEkrani extends Screen {
 		Ayar a = Ayar.get();
 		int vurgu = Ayar.renk(a.tema.vurgu, 0xFF, 0xFFA1A1AA);
 		int x = px + 12;
-		g.text(this.font, "Hesaplar", x, py + 10, 0xFFF1F5F9, false);
-		g.text(this.font, "Oyundaki hesap: " + this.minecraft.getUser().getName(), x, py + 24, 0xFF9CA3AF, false);
+		g.text(this.font, Dil.t("Hesaplar"), x, py + 10, 0xFFF1F5F9, false);
+		g.text(this.font, Dil.t("Oyundaki hesap: ") + this.minecraft.getUser().getName(), x, py + 24, 0xFF9CA3AF, false);
 
 		if (bosY >= 0) {
-			g.text(this.font, bagli() ? "Kayıtlı hesap yok." : "Hesap listesi bekleniyor…", x, bosY, 0xFF9CA3AF, false);
+			g.text(this.font, bagli() ? Dil.t("Kayıtlı hesap yok.") : Dil.t("Hesap listesi bekleniyor…"), x, bosY, 0xFF9CA3AF, false);
 		}
 		if (ipucuY >= 0) {
-			g.text(this.font, "Premium istemeyen sunucular ve tek oyunculu için:", x, ipucuY, 0xFFCBD5E1, false);
+			g.text(this.font, Dil.t("Premium istemeyen sunucular ve tek oyunculu için:"), x, ipucuY, 0xFFCBD5E1, false);
 		}
 
 		String gd = Hesaplar.girisDurum();
 		if (kodY >= 0 && gd.equals("bekliyor")) {
-			g.text(this.font, "Giriş kodu hazırlanıyor…", x, kodY + 6, 0xFFCBD5E1, false);
+			g.text(this.font, Dil.t("Giriş kodu hazırlanıyor…"), x, kodY + 6, 0xFFCBD5E1, false);
 		} else if (kodY >= 0 && gd.equals("kod")) {
-			g.text(this.font, "Tarayıcıda açılan sayfaya bu kodu gir:", x, kodY, 0xFFCBD5E1, false);
+			g.text(this.font, Dil.t("Tarayıcıda açılan sayfaya bu kodu gir:"), x, kodY, 0xFFCBD5E1, false);
 			// Kod büyük yazılsın
 			g.pose().pushMatrix();
 			g.pose().translate(px + PW / 2f, kodY + 14);
@@ -257,7 +257,7 @@ public class HesapEkrani extends Screen {
 			g.centeredText(this.font, this.font.plainSubstrByWidth(Hesaplar.durum(), PW - 16), px + PW / 2, alt,
 					Hesaplar.durumHata() ? 0xFFF87171 : 0xFF86EFAC);
 		} else if (!bagli()) {
-			g.centeredText(this.font, "Launcher kapalı: Microsoft hesapları için açık olmalı.", px + PW / 2, alt, 0xFFF87171);
+			g.centeredText(this.font, Dil.t("Launcher kapalı: Microsoft hesapları için açık olmalı."), px + PW / 2, alt, 0xFFF87171);
 		}
 	}
 }

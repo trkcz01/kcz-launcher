@@ -111,7 +111,7 @@ public final class Ses {
 				} else {
 					bagli = 0;
 					konusanlar = List.of();
-					hata = "Launcher bağlı değil";
+					hata = Dil.t("Launcher bağlı değil");
 				}
 			} catch (Exception e) {
 				// yarım yazılmış dosya: sonra tekrar
@@ -132,7 +132,7 @@ public final class Ses {
 			renkler.add(0xFF86EFAC);
 		}
 		if (konusuyor) {
-			satirlar.add(hata.isEmpty() ? "● Konuşuyorsun" : "● " + hata);
+			satirlar.add(hata.isEmpty() ? Dil.t("● Konuşuyorsun") : "● " + hata);
 			renkler.add(hata.isEmpty() ? 0xFFF87171 : 0xFFFBBF24);
 		}
 		for (int i = 0; i < satirlar.size(); i++) {

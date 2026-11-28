@@ -25,20 +25,22 @@ public class KczEkrani extends Screen {
 	private record Satir(String ad, String aciklama, BooleanSupplier acik, Supplier<String> deger, Runnable tik, Runnable detay) {
 	}
 
-	private static final String[] SEKMELER = { "Ekran", "Eşya", "Nişangah", "Hareket", "Zoom", "Performans", "Eklentiler", "Arkadaşlar" };
+	private static final String[] SEKMELER = { Dil.t("Ekran"), Dil.t("Eşya"), Dil.t("Nişangah"), Dil.t("Hareket"), Dil.t("Zoom"), Dil.t("Performans"), Dil.t("Eklentiler"), Dil.t("Arkadaşlar") };
 	private static final String[] SEKME_ACIKLAMA = {
-			"Göstergeler · hemen uygulanır",
-			"Eşya göstergeleri · HUD'u düzenle ile taşı",
-			"Ortadaki nişan işareti",
-			"Koşma ve eğilme",
-			"C basılı tut · tekerlekle yaklaş / uzaklaş",
-			"Hemen uygulanır · ⋮ ile ayrıntılar",
-			"Oyunu kapatıp açınca uygulanır",
-			"Mesaj at · sunucuna çağır · yanına katıl" };
+			Dil.t("Göstergeler · hemen uygulanır"),
+			Dil.t("Eşya göstergeleri · HUD'u düzenle ile taşı"),
+			Dil.t("Ortadaki nişan işareti"),
+			Dil.t("Koşma ve eğilme"),
+			Dil.t("C basılı tut · tekerlekle yaklaş / uzaklaş"),
+			Dil.t("Hemen uygulanır · ⋮ ile ayrıntılar"),
+			Dil.t("Oyunu kapatıp açınca uygulanır"),
+			Dil.t("Mesaj at · sunucuna çağır · yanına katıl") };
 	private static final int EKLENTI_SEKMESI = 6, ARKADAS_SEKMESI = 7, NISANGAH_SEKMESI = 2;
 	private static int sekme = 0;
 
 	private static final float[] BASLANGIC = { 1.5f, 2f, 3f, 4f, 6f, 8f };
+	private static final String[] AKILLI_FPS = { "kapali", "hz", "pil" };
+	private static final String[] AKILLI_FPS_AD = { Dil.t("Kapalı"), Dil.t("Ekran Hz"), Dil.t("Pil") };
 	private static final float[] EN_FAZLA = { 4f, 8f, 16f, 32f, 64f, 128f };
 	private static final int SATIR_H = 20, ARA_H = 3, PAD = 10, SEKME_W = 112, DETAY_W = 20, BASLIK_H = 40;
 
@@ -69,70 +71,72 @@ public class KczEkrani extends Screen {
 		Ayar a = Ayar.get();
 		switch (sekme) {
 			case 0 -> {
-				satirlar.add(anahtar("FPS", "Saniyedeki kare", () -> a.fps, () -> a.fps = !a.fps));
-				satirlar.add(anahtar("Ping", "Sunucuya gecikme", () -> a.ping, () -> a.ping = !a.ping));
-				satirlar.add(anahtar("Tuş göstergesi", "WASD, fare, zıplama", () -> a.tuslar, () -> a.tuslar = !a.tuslar));
-				satirlar.add(anahtar("CPS", a.tuslar ? "Fare tuşlarının içinde" : "Saniyedeki tıklama", () -> a.cps, () -> a.cps = !a.cps));
-				satirlar.add(anahtar("Koordinat ve yön", "XYZ ve baktığın yön", () -> a.koordinat, () -> a.koordinat = !a.koordinat));
-				satirlar.add(anahtar("Zırh", "Parçaların dayanıklılığı", () -> a.zirh, () -> a.zirh = !a.zirh));
-				satirlar.add(anahtar("İksirler", "Etkiler ve kalan süre", () -> a.iksir, () -> a.iksir = !a.iksir));
-				satirlar.add(new Satir("HUD'u düzenle", "sürükle bırak", null, null,
+				satirlar.add(anahtar("FPS", Dil.t("Saniyedeki kare"), () -> a.fps, () -> a.fps = !a.fps));
+				satirlar.add(anahtar(Dil.t("Ping"), Dil.t("Sunucuya gecikme"), () -> a.ping, () -> a.ping = !a.ping));
+				satirlar.add(anahtar(Dil.t("Tuş göstergesi"), Dil.t("WASD, fare, zıplama"), () -> a.tuslar, () -> a.tuslar = !a.tuslar));
+				satirlar.add(anahtar("CPS", a.tuslar ? Dil.t("Fare tuşlarının içinde") : Dil.t("Saniyedeki tıklama"), () -> a.cps, () -> a.cps = !a.cps));
+				satirlar.add(anahtar(Dil.t("Koordinat ve yön"), Dil.t("XYZ ve baktığın yön"), () -> a.koordinat, () -> a.koordinat = !a.koordinat));
+				satirlar.add(anahtar(Dil.t("Zırh"), Dil.t("Parçaların dayanıklılığı"), () -> a.zirh, () -> a.zirh = !a.zirh));
+				satirlar.add(anahtar(Dil.t("İksirler"), Dil.t("Etkiler ve kalan süre"), () -> a.iksir, () -> a.iksir = !a.iksir));
+				satirlar.add(new Satir(Dil.t("HUD'u düzenle"), Dil.t("sürükle bırak"), null, null,
 						() -> this.minecraft.gui.setScreen(new HudDuzenleEkrani(this)), null));
 			}
 			case 1 -> {
-				satirlar.add(anahtar("Eldeki eşya", "Kalan dayanıklılık", () -> a.eldeki, () -> a.eldeki = !a.eldeki));
-				satirlar.add(anahtar("Ok sayısı", "Envanterdeki oklar", () -> a.okSayisi, () -> a.okSayisi = !a.okSayisi));
-				satirlar.add(anahtar("Totem sayısı", "Ölümsüzlük totemleri", () -> a.totem, () -> a.totem = !a.totem));
-				satirlar.add(anahtar("Hız", "Saniyede kaç blok", () -> a.hiz, () -> a.hiz = !a.hiz));
-				satirlar.add(anahtar("Gerçek saat", "Bilgisayarın saati", () -> a.saat, () -> a.saat = !a.saat));
-				satirlar.add(new Satir("HUD'u düzenle", "sürükle bırak", null, null,
+				satirlar.add(anahtar(Dil.t("Eldeki eşya"), Dil.t("Kalan dayanıklılık"), () -> a.eldeki, () -> a.eldeki = !a.eldeki));
+				satirlar.add(anahtar(Dil.t("Ok sayısı"), Dil.t("Envanterdeki oklar"), () -> a.okSayisi, () -> a.okSayisi = !a.okSayisi));
+				satirlar.add(anahtar(Dil.t("Totem sayısı"), Dil.t("Ölümsüzlük totemleri"), () -> a.totem, () -> a.totem = !a.totem));
+				satirlar.add(anahtar(Dil.t("Hız"), Dil.t("Saniyede kaç blok"), () -> a.hiz, () -> a.hiz = !a.hiz));
+				satirlar.add(anahtar(Dil.t("Gerçek saat"), Dil.t("Bilgisayarın saati"), () -> a.saat, () -> a.saat = !a.saat));
+				satirlar.add(new Satir(Dil.t("HUD'u düzenle"), Dil.t("sürükle bırak"), null, null,
 						() -> this.minecraft.gui.setScreen(new HudDuzenleEkrani(this)), null));
 			}
 			case 2 -> {
-				satirlar.add(anahtar("Özel nişangah", "Kapalıyken oyunun kendisi", () -> a.nisangah, () -> a.nisangah = !a.nisangah));
-				satirlar.add(new Satir("Şekil", null, null, () -> ad(Nisangah.SEKILLER, Nisangah.SEKIL_ADI, a.nisangahSekil),
+				satirlar.add(anahtar(Dil.t("Özel nişangah"), Dil.t("Kapalıyken oyunun kendisi"), () -> a.nisangah, () -> a.nisangah = !a.nisangah));
+				satirlar.add(new Satir(Dil.t("Şekil"), null, null, () -> ad(Nisangah.SEKILLER, Nisangah.SEKIL_ADI, a.nisangahSekil),
 						() -> a.nisangahSekil = secimAdim(Nisangah.SEKILLER, a.nisangahSekil), null));
-				satirlar.add(new Satir("Renk", null, null, () -> ad(Nisangah.RENKLER, Nisangah.RENK_ADI, a.nisangahRenk),
+				satirlar.add(new Satir(Dil.t("Renk"), null, null, () -> ad(Nisangah.RENKLER, Nisangah.RENK_ADI, a.nisangahRenk),
 						() -> a.nisangahRenk = secimAdim(Nisangah.RENKLER, a.nisangahRenk), null));
-				satirlar.add(new Satir("Boyut", null, null, () -> new String[] { "Küçük", "Orta", "Büyük" }[Math.max(1, Math.min(3, a.nisangahBoyut)) - 1],
+				satirlar.add(new Satir(Dil.t("Boyut"), null, null, () -> new String[] { Dil.t("Küçük"), Dil.t("Orta"), Dil.t("Büyük") }[Math.max(1, Math.min(3, a.nisangahBoyut)) - 1],
 						() -> a.nisangahBoyut = (int) adim(new float[] { 1, 2, 3 }, a.nisangahBoyut), null));
-				satirlar.add(anahtar("Hedefte kırmızı", "Yaratığa bakınca renk değişir", () -> a.nisangahDinamik, () -> a.nisangahDinamik = !a.nisangahDinamik));
+				satirlar.add(anahtar(Dil.t("Hedefte kırmızı"), Dil.t("Yaratığa bakınca renk değişir"), () -> a.nisangahDinamik, () -> a.nisangahDinamik = !a.nisangahDinamik));
 			}
 			case 3 -> {
-				satirlar.add(anahtar("Koşmayı açık tut", "Ctrl'e basmadan koş", () -> a.surekliKos, () -> a.surekliKos = !a.surekliKos));
-				satirlar.add(anahtar("Eğilmeyi açık tut", "Shift'e bir kere bas", () -> a.egilmeTut, () -> a.egilmeTut = !a.egilmeTut));
+				satirlar.add(anahtar(Dil.t("Koşmayı açık tut"), Dil.t("Ctrl'e basmadan koş"), () -> a.surekliKos, () -> a.surekliKos = !a.surekliKos));
+				satirlar.add(anahtar(Dil.t("Eğilmeyi açık tut"), Dil.t("Shift'e bir kere bas"), () -> a.egilmeTut, () -> a.egilmeTut = !a.egilmeTut));
 			}
 			case 4 -> {
-				satirlar.add(anahtar("Yakınlaştırma", "C tuşu, tekerlekle ayarla", () -> a.zoom, () -> a.zoom = !a.zoom));
-				satirlar.add(new Satir("İlk zoom", null, null, () -> kat(a.zoomBaslangic), () -> a.zoomBaslangic = adim(BASLANGIC, a.zoomBaslangic), null));
-				satirlar.add(new Satir("En fazla zoom", null, null, () -> kat(a.zoomKat), () -> a.zoomKat = adim(EN_FAZLA, a.zoomKat), null));
+				satirlar.add(anahtar(Dil.t("Yakınlaştırma"), Dil.t("C tuşu, tekerlekle ayarla"), () -> a.zoom, () -> a.zoom = !a.zoom));
+				satirlar.add(new Satir(Dil.t("İlk zoom"), null, null, () -> kat(a.zoomBaslangic), () -> a.zoomBaslangic = adim(BASLANGIC, a.zoomBaslangic), null));
+				satirlar.add(new Satir(Dil.t("En fazla zoom"), null, null, () -> kat(a.zoomKat), () -> a.zoomKat = adim(EN_FAZLA, a.zoomKat), null));
 			}
 			case 5 -> {
-				satirlar.add(new Satir("Düşük sistem", "zayıf bilgisayar", () -> a.dusukSistem, null, () -> {
+				satirlar.add(new Satir(Dil.t("Düşük sistem"), Dil.t("zayıf bilgisayar"), () -> a.dusukSistem, null, () -> {
 					a.dusukSistem = !a.dusukSistem;
 					if (a.dusukSistem) a.gucluSistem = false;
 				}, () -> this.minecraft.gui.setScreen(new SistemEkrani(this, true))));
-				satirlar.add(new Satir("Güçlü sistem", "görüntü kalitesi", () -> a.gucluSistem, null, () -> {
+				satirlar.add(new Satir(Dil.t("Güçlü sistem"), Dil.t("görüntü kalitesi"), () -> a.gucluSistem, null, () -> {
 					a.gucluSistem = !a.gucluSistem;
 					if (a.gucluSistem) a.dusukSistem = false;
 				}, () -> this.minecraft.gui.setScreen(new SistemEkrani(this, false))));
 				var op = this.minecraft.options;
-				satirlar.add(new Satir("Görüş mesafesi", null, null, () -> op.renderDistance().get() + " chunk", () -> {
+				satirlar.add(new Satir(Dil.t("Görüş mesafesi"), null, null, () -> op.renderDistance().get() + Dil.t(" chunk"), () -> {
 					op.renderDistance().set((int) adim(new float[] { 4, 6, 8, 10, 12, 16, 20, 24, 28, 32 }, op.renderDistance().get()));
 					op.save();
 				}, null));
-				satirlar.add(anahtar("Arka planda FPS düşür", "Alt-Tab'da bilgisayarı yormaz", () -> a.arkaplanFps, () -> a.arkaplanFps = !a.arkaplanFps));
+				satirlar.add(anahtar(Dil.t("Arka planda FPS düşür"), Dil.t("Alt-Tab'da bilgisayarı yormaz"), () -> a.arkaplanFps, () -> a.arkaplanFps = !a.arkaplanFps));
+				satirlar.add(new Satir(Dil.t("Akıllı FPS"), null, null, () -> ad(AKILLI_FPS, AKILLI_FPS_AD, a.akilliFps),
+						() -> a.akilliFps = secimAdim(AKILLI_FPS, a.akilliFps), null));
 				if (Kenarliksiz.destekleniyor())
-					satirlar.add(anahtar("Kenarlıksız tam ekran", "Alt-Tab'da kararma olmaz", () -> a.kenarliksiz, () -> a.kenarliksiz = !a.kenarliksiz));
+					satirlar.add(anahtar(Dil.t("Kenarlıksız tam ekran"), Dil.t("Alt-Tab'da kararma olmaz"), () -> a.kenarliksiz, () -> a.kenarliksiz = !a.kenarliksiz));
 			}
 			case ARKADAS_SEKMESI -> arkadasSatirlari();
 			default -> {
-				satirlar.add(anahtar("KCZ Optimizasyon", "Daha fazla FPS", () -> a.optimizasyon, () -> a.optimizasyon = !a.optimizasyon));
-				satirlar.add(anahtar("KCZ sesli sohbet", "Yakındakiler duyar · B: konuş", () -> a.yakinSes, () -> a.yakinSes = !a.yakinSes));
-				satirlar.add(anahtar("Sesli: sadece arkadaşlar", "IP adresin yabancıya gitmez", () -> a.sesSadeceArkadas, () -> a.sesSadeceArkadas = !a.sesSadeceArkadas));
-				satirlar.add(anahtar("Simple Voice Chat", "Sunucuda da kurulu olmalı", () -> a.sesliSohbet, () -> a.sesliSohbet = !a.sesliSohbet));
-				satirlar.add(anahtar("Uzak görüş", "Sunucu sınırından uzağı göster", () -> a.uzakGorus, () -> a.uzakGorus = !a.uzakGorus));
-				satirlar.add(anahtar("Oyun kaydı", "Flashback ile video", () -> a.kayit, () -> a.kayit = !a.kayit));
+				satirlar.add(anahtar(Dil.t("KCZ Optimizasyon"), Dil.t("Daha fazla FPS"), () -> a.optimizasyon, () -> a.optimizasyon = !a.optimizasyon));
+				satirlar.add(anahtar(Dil.t("KCZ sesli sohbet"), Dil.t("Yakındakiler duyar · B: konuş"), () -> a.yakinSes, () -> a.yakinSes = !a.yakinSes));
+				satirlar.add(anahtar(Dil.t("Sesli: sadece arkadaşlar"), Dil.t("IP adresin yabancıya gitmez"), () -> a.sesSadeceArkadas, () -> a.sesSadeceArkadas = !a.sesSadeceArkadas));
+				satirlar.add(anahtar(Dil.t("Simple Voice Chat"), Dil.t("Sunucuda da kurulu olmalı"), () -> a.sesliSohbet, () -> a.sesliSohbet = !a.sesliSohbet));
+				satirlar.add(anahtar(Dil.t("Uzak görüş"), Dil.t("Sunucu sınırından uzağı göster"), () -> a.uzakGorus, () -> a.uzakGorus = !a.uzakGorus));
+				satirlar.add(anahtar(Dil.t("Oyun kaydı"), Dil.t("Flashback ile video"), () -> a.kayit, () -> a.kayit = !a.kayit));
 			}
 		}
 	}
@@ -141,7 +145,7 @@ public class KczEkrani extends Screen {
 	private void arkadasSatirlari() {
 		var mc = this.minecraft;
 		if (!Arkadaslar.bagli()) {
-			satirlar.add(new Satir("Launcher bağlı değil", "KCZ Launcher açık olmalı", null, null, () -> {
+			satirlar.add(new Satir(Dil.t("Launcher bağlı değil"), Dil.t("KCZ Launcher açık olmalı"), null, null, () -> {
 			}, null));
 			arkTur.add(null);
 			return;
@@ -155,7 +159,7 @@ public class KczEkrani extends Screen {
 		}
 		var liste = Arkadaslar.liste();
 		if (liste.isEmpty() && kalan > 0) {
-			satirlar.add(new Satir("Henüz arkadaşın yok", "Launcher > Arkadaşlar'dan ID ile ekle", null, null, () -> {
+			satirlar.add(new Satir(Dil.t("Henüz arkadaşın yok"), Dil.t("Launcher > Arkadaşlar'dan ID ile ekle"), null, null, () -> {
 			}, null));
 			arkTur.add(null);
 			return;
@@ -164,8 +168,8 @@ public class KczEkrani extends Screen {
 		for (int i = 0; i < liste.size() && kalan > 0; i++, kalan--) {
 			var a = liste.get(i);
 			String durum = a.oyunda() ? (a.sunucu() != null && !a.sunucu().isEmpty()
-					? (a.sunucu().equalsIgnoreCase(burasi) ? "Seninle aynı sunucuda" : "Oyunda · " + a.sunucu()) : "Oyunda")
-					: a.cevrimici() ? "Launcher açık" : Arkadaslar.cevrimdisiYazi(a);
+					? (a.sunucu().equalsIgnoreCase(burasi) ? Dil.t("Seninle aynı sunucuda") : Dil.t("Oyunda · ") + a.sunucu()) : Dil.t("Oyunda"))
+					: a.cevrimici() ? Dil.t("Launcher açık") : Arkadaslar.cevrimdisiYazi(a);
 			satirlar.add(new Satir(a.ad(), durum, null, null, () -> mc.gui.setScreen(new SohbetEkrani(this, a)), null));
 			arkTur.add(a);
 		}
@@ -359,13 +363,13 @@ public class KczEkrani extends Screen {
 
 	private static String temaAdi(String t) {
 		return switch (t == null ? "" : t) {
-			case "end" -> "End teması";
-			case "nether" -> "Nether teması";
-			case "dunya" -> "Dünya teması";
-			case "siyah" -> "Siyah tema";
-			case "performans" -> "Performans teması";
-			case "sade" -> "Sade tema";
-			default -> "Gri tema";
+			case "end" -> Dil.t("End teması");
+			case "nether" -> Dil.t("Nether teması");
+			case "dunya" -> Dil.t("Dünya teması");
+			case "siyah" -> Dil.t("Siyah tema");
+			case "performans" -> Dil.t("Performans teması");
+			case "sade" -> Dil.t("Sade tema");
+			default -> Dil.t("Gri tema");
 		};
 	}
 
@@ -480,11 +484,11 @@ public class KczEkrani extends Screen {
 
 		// Sağda Esc tuşu ve "kapat"
 		String kapat = "kapat";
-		int escW = this.font.width("Esc") + 8;
+		int escW = this.font.width(Dil.t("Esc")) + 8;
 		int ex = (int) (px + pw - 12 - this.font.width(kapat) * 0.75f - 5 - escW), ey = py + (BASLIK_H - 14) / 2;
 		kutu(g, ex, ey, escW, 14, Ayar.ac(zemin, 0.16f));
 		kutu(g, ex + 1, ey + 1, escW - 2, 11, Ayar.ac(zemin, 0.07f));
-		g.text(this.font, "Esc", ex + 4, ey + 3, soluk, false);
+		g.text(this.font, Dil.t("Esc"), ex + 4, ey + 3, soluk, false);
 		kucukYazi(g, kapat, ex + escW + 5, ey + 4, cokSoluk);
 
 		// Sol menü (zemini biraz koyu)
@@ -514,13 +518,13 @@ public class KczEkrani extends Screen {
 				}
 			}
 		}
-		kucukYazi(g, "Launcher ile eşitlenir", px + 10, py + ph - 12, cokSoluk);
+		kucukYazi(g, Dil.t("Launcher ile eşitlenir"), px + 10, py + ph - 12, cokSoluk);
 
 		// İçerik başlığı
 		g.text(this.font, SEKMELER[sekme], icX, py + BASLIK_H + 10, yazi, false);
 		kucukYazi(g, SEKME_ACIKLAMA[sekme], icX, py + BASLIK_H + 22, soluk);
-		String not = sekme == EKLENTI_SEKMESI ? "Oyunu yeniden açınca uygulanır"
-				: sekme == ARKADAS_SEKMESI ? arkadasOzet() : "Hemen uygulanır";
+		String not = sekme == EKLENTI_SEKMESI ? Dil.t("Oyunu yeniden açınca uygulanır")
+				: sekme == ARKADAS_SEKMESI ? arkadasOzet() : Dil.t("Hemen uygulanır");
 		float nw = this.font.width(not) * 0.75f;
 		int nx = (int) (px + pw - 12 - nw - 8), ny = py + BASLIK_H + 9;
 		kutu(g, nx, ny, (int) nw + 8, 11, Ayar.ac(zemin, 0.06f));
@@ -544,15 +548,15 @@ public class KczEkrani extends Screen {
 				g.text(this.font, a2.ad(), x + 22, y + 6, yazi, false);
 				kucukYazi(g, s.aciklama(), x + 22, y + 18, a2.oyunda() ? 0xFF86EFAC : soluk);
 				int yeni = Arkadaslar.okunmamis(a2.uuid());
-				if (yeni > 0) hap(g, yeni + " yeni mesaj", x + genis - 8, y, h, yesil, 0xFF052E16);
-				else hap(g, "Mesaj", x + genis - 8, y, h, ust ? vurgu : Ayar.ac(zemin, 0.16f), ust ? Ayar.ustYazi(vurgu) : yazi);
+				if (yeni > 0) hap(g, yeni + Dil.t(" yeni mesaj"), x + genis - 8, y, h, yesil, 0xFF052E16);
+				else hap(g, Dil.t("Mesaj"), x + genis - 8, y, h, ust ? vurgu : Ayar.ac(zemin, 0.16f), ust ? Ayar.ustYazi(vurgu) : yazi);
 				continue;
 			}
 			if (tur instanceof Arkadaslar.Davet d2) {
 				kutu(g, x + 1, y + 1, 2, h - 2, yesil);
-				g.text(this.font, d2.ad() + " seni çağırıyor", x + 12, y + 6, yazi, false);
+				g.text(this.font, d2.ad() + Dil.t(" seni çağırıyor"), x + 12, y + 6, yazi, false);
 				kucukYazi(g, d2.sunucu(), x + 12, y + 18, 0xFF86EFAC);
-				hap(g, "Katıl", x + genis - 8, y, h, yesil, 0xFF052E16);
+				hap(g, Dil.t("Katıl"), x + genis - 8, y, h, yesil, 0xFF052E16);
 				continue;
 			}
 
@@ -638,7 +642,7 @@ public class KczEkrani extends Screen {
 	private static String arkadasOzet() {
 		var l = Arkadaslar.liste();
 		long c = l.stream().filter(x -> x.cevrimici() || x.oyunda()).count();
-		return l.isEmpty() ? "Launcher üzerinden" : c + "/" + l.size() + " çevrimiçi";
+		return l.isEmpty() ? Dil.t("Launcher üzerinden") : c + "/" + l.size() + Dil.t(" çevrimiçi");
 	}
 
 	/** Liste değerinin görünen adı */

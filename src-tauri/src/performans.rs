@@ -440,6 +440,35 @@ fn options_yaz(seviye: &str) -> Sonuc<usize> {
     Ok(degisen)
 }
 
+/// Oyun ayarlarına (options.txt) tek bir değer yazar: oyun sonu özetindeki "Uygula" düğmeleri için.
+/// Sadece bilinen, güvenli görüntü ayarları değiştirilebilir.
+pub fn secenek_yaz(anahtar: &str, deger: &str) -> Value {
+    const IZINLI: [&str; 9] = [
+        "renderDistance", "simulationDistance", "particles", "entityShadows", "renderClouds",
+        "biomeBlendRadius", "mipmapLevels", "enableVsync", "maxFps",
+    ];
+    if !IZINLI.contains(&anahtar) || deger.is_empty() || deger.len() > 8 || !deger.chars().all(|c| c.is_ascii_alphanumeric() || c == '.') {
+        return json!({ "ok": false, "hata": "Bu ayar değiştirilemez." });
+    }
+    let yol = oyun_klasoru().join("options.txt");
+    let eski = std::fs::read_to_string(&yol).unwrap_or_default();
+    let mut satirlar: Vec<String> = eski.lines().map(String::from).collect();
+    let on = format!("{anahtar}:");
+    if let Some(s) = satirlar.iter_mut().find(|s| s.starts_with(&on)) {
+        let tirnakli = s[on.len()..].starts_with('"');
+        *s = if tirnakli { format!("{on}\"{deger}\"") } else { format!("{on}{deger}") };
+    } else {
+        satirlar.push(format!("{on}{deger}"));
+    }
+    match std::fs::write(&yol, satirlar.join("\n") + "\n") {
+        Ok(()) => {
+            log(format!("Oyun ayarı: {anahtar} = {deger}"));
+            json!({ "ok": true })
+        }
+        Err(e) => json!({ "ok": false, "hata": format!("Oyun ayarları yazılamadı: {e}") }),
+    }
+}
+
 pub async fn uygula(seviye: &str) -> Value {
     if !["cokdusuk", "dusuk", "orta", "yuksek"].contains(&seviye) {
         return json!({ "ok": false, "hata": "Geçersiz seviye." });
@@ -652,7 +681,23 @@ pub async fn onceden_hazirla() {
 /* =========================================================
 Java bellek ayarları (takılmaları azaltır)
 ========================================================= */
-pub fn java_bayraklari() -> Vec<String> {
+/// Çöp toplayıcı ayarları. Güçlü bilgisayarda (16 GB+ RAM, 8+ çekirdek, oyuna 6 GB+ verilmiş,
+/// Java 21+) ve "Java hızlandırmaları" açıksa düşük gecikmeli ZGC: duraklama 1 ms'nin altında,
+/// bellek temizliği takılmaları neredeyse yok. Diğerlerinde oyun için ayarlanmış G1.
+pub fn zgc_uygun(java: u64, ram: u32, yeni: bool) -> bool {
+    yeni && java >= 21 && ram >= 6 && crate::cekirdek::toplam_ram_gb() >= 16 && crate::cekirdek::cekirdek_sayisi() >= 8
+}
+
+pub fn java_bayraklari(java: u64, ram: u32, yeni: bool) -> Vec<String> {
+    if zgc_uygun(java, ram, yeni) {
+        let mut l = vec!["-XX:+UseZGC".to_string()];
+        if java < 23 {
+            l.push("-XX:+ZGenerational".into());
+        }
+        l.push("-XX:+DisableExplicitGC".into());
+        l.push("-XX:+PerfDisableSharedMem".into());
+        return l;
+    }
     [
         "-XX:+UseG1GC",
         "-XX:+ParallelRefProcEnabled",

@@ -370,9 +370,17 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
     let ozellik = move |f: &str| f == "is_quick_play_multiplayer" && hizli;
 
     let mut jvm: Vec<String> = vec![format!("-Xmx{}G", a.ayarlar.ram), format!("-Xms{}G", a.ayarlar.ram.min(2))];
+    // Java 25 hızlandırmaları ("Onar > Modsuz dene"de kapalı: en güvenli hali)
+    let java_ana = surumler::java_surumu(&vanilla);
+    let yeni = a.ayarlar.java_yeni && !a.modsuz;
     if a.ayarlar.java_ayar {
-        jvm.extend(performans::java_bayraklari());
+        jvm.extend(performans::java_bayraklari(java_ana, a.ayarlar.ram, yeni));
     }
+    // Sıkıştırılmış nesne başlıkları (Java 25): oyunun belleği ~%10-20 azalır, bellek temizliği seyrekleşir
+    if yeni && java_ana >= 25 {
+        jvm.push("-XX:+UseCompactObjectHeaders".into());
+    }
+    let yeni_kullanildi = yeni && (java_ana >= 25 || (a.ayarlar.java_ayar && performans::zgc_uygun(java_ana, a.ayarlar.ram, yeni)));
     let mut oyun_arg: Vec<String> = vec![];
     if vanilla["arguments"].is_object() {
         argumanlari_topla(&vanilla["arguments"]["jvm"], &ozellik, &mut jvm);
@@ -407,7 +415,37 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
     // Hızlı açılış: Java sınıf paylaşım arşivi (CDS). İlk açılışta oyun kapanırken oluşur, sonraki açılışlarda
     // sınıflar hazır yüklenir; sınıf yolu değişirse (sürüm/kütüphane) Java arşivi kendisi yeniler.
     // Sadece Java 19+: eski Java'lar bu seçeneği tanımaz ve hiç açılmaz.
-    if surumler::java_surumu(&vanilla) >= 19 {
+    if yeni && java_ana >= 25 {
+        // Java 25 AOT önbelleği (CDS'in gelişmişi): ilk açılışta oyun kapanırken oluşur, sonraki açılışlarda
+        // sınıflar hazır ve ilk dakikalardaki derleme takılmaları azalır. Sınıf yolu ya da bayraklar değişince
+        // adı değişir, yenisi oluşur; eski önbellekler silinir. Önbellek uymazsa Java onu kullanmadan açılır.
+        let aot = ana_klasor().join("aot");
+        if std::fs::create_dir_all(&aot).is_ok() {
+            let ad: String = surum_adi
+                .chars()
+                .map(|c| if c.is_ascii_alphanumeric() || "._-".contains(c) { c } else { '_' })
+                .collect();
+            use std::hash::{Hash, Hasher};
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            sinif_yolu.hash(&mut h);
+            jvm.hash(&mut h);
+            let dosya = aot.join(format!("{ad}-{:016x}.aot", h.finish()));
+            if let Ok(d) = std::fs::read_dir(&aot) {
+                for e in d.flatten() {
+                    let p = e.path();
+                    let n = p.file_name().and_then(|x| x.to_str()).unwrap_or("");
+                    if n.starts_with(&format!("{ad}-")) && p != dosya {
+                        let _ = std::fs::remove_file(&p);
+                    }
+                }
+            }
+            if dosya.exists() {
+                jvm.push(format!("-XX:AOTCache={}", dosya.display()));
+            } else {
+                jvm.push(format!("-XX:AOTCacheOutput={}", dosya.display()));
+            }
+        }
+    } else if java_ana >= 19 {
         let cds = ana_klasor().join("cds");
         if std::fs::create_dir_all(&cds).is_ok() {
             let ad: String = surum_adi
@@ -485,6 +523,8 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
         let _ = tokio::task::spawn_blocking(performans::guc_plani_ac).await;
     }
 
+    crate::isit::listeyi_yaz(&sinif_yolu, &java, &kok.join("mods"));
+
     let mut komut = tokio::process::Command::new(&java);
     if a.ayarlar.ekran_karti {
         for (k, v) in performans::ekran_karti_ortami() {
@@ -512,6 +552,10 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
             performans::oncelik_ver(pid);
         }
     }
+    if let Some(pid) = surec.id() {
+        crate::cekirdek::oyuna_uygula(pid, a.ayarlar.guclu_cekirdek);
+    }
+    let baslangic = std::time::Instant::now();
 
     let stdout = surec.stdout.take();
     let stderr = surec.stderr.take();
@@ -531,10 +575,13 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
     let surum_id = id.clone();
     tauri::async_runtime::spawn(async move {
         let acildi = std::sync::Arc::new(AtomicBool::new(false));
+        // Java yeni bayrakları tanımadıysa / sanal makine kurulamadıysa
+        let jvm_hata = std::sync::Arc::new(AtomicBool::new(false));
         let oku = |akis: Option<Box<dyn tokio::io::AsyncRead + Unpin + Send>>,
                    acildi: std::sync::Arc<AtomicBool>,
                    sid: String,
-                   olcum: std::sync::Arc<std::sync::Mutex<AcilisOlcumu>>| async move {
+                   olcum: std::sync::Arc<std::sync::Mutex<AcilisOlcumu>>,
+                   jvm_hata: std::sync::Arc<AtomicBool>| async move {
             let Some(akis) = akis else { return };
             // Satırları bayt olarak oku: Türkçe karakter gibi bozuk baytlar okumayı durdurmasın
             let mut okuyucu = BufReader::new(akis);
@@ -556,6 +603,12 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
                                 olcumu_yaz(&mut o);
                             }
                         }
+                        if s.contains("Unrecognized VM option")
+                            || s.contains("Could not create the Java Virtual Machine")
+                            || s.contains("Error occurred during initialization of VM")
+                        {
+                            jvm_hata.store(true, Ordering::SeqCst);
+                        }
                         log(s);
                         if !acildi.swap(true, Ordering::SeqCst) {
                             crate::oyun_durumu(json!({ "tur": "acik", "surum": sid }));
@@ -569,12 +622,14 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
             acildi.clone(),
             surum_id.clone(),
             olcum.clone(),
+            jvm_hata.clone(),
         );
         let o2 = oku(
             stderr.map(|s| Box::new(s) as Box<dyn tokio::io::AsyncRead + Unpin + Send>),
             acildi.clone(),
             surum_id.clone(),
             olcum.clone(),
+            jvm_hata.clone(),
         );
         let (_, _, kod) = tokio::join!(o1, o2, surec.wait());
         // Menüye varmadan kapandıysa (çökme) ölçüm yine yazılsın
@@ -585,7 +640,13 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
             let _ = tokio::task::spawn_blocking(performans::guc_plani_geri).await;
         }
         log(format!("Oyun kapandı (kod {kod})."));
-        crate::oyun_durumu(json!({ "tur": "kapandi", "surum": surum_id, "kod": kod }));
+        // Yeni Java ayarlarıyla hiç açılamadıysa: kapat ve arayüze "tekrar dene" de
+        let geri_al = yeni_kullanildi && kod != 0 && baslangic.elapsed().as_secs() < 30 && jvm_hata.load(Ordering::SeqCst);
+        if geri_al {
+            crate::ayarlar::kaydet(&json!({ "javaYeni": false }));
+            log("Java hızlandırmaları bu bilgisayarda çalışmadı, kapatıldı.");
+        }
+        crate::oyun_durumu(json!({ "tur": "kapandi", "surum": surum_id, "kod": kod, "javaGeriAlindi": geri_al }));
     });
     Ok(())
 }

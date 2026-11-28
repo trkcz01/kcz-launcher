@@ -123,6 +123,8 @@
     yedekKlasoru: () => cagir('yedek_klasor_ac'),
     tepsiOynaDinle: (f) => dinle('tepsi-oyna', f),
     performansUygula: (seviye) => cagir('performans_uygula', { seviye: String(seviye || '') }),
+    cekirdekBilgi: () => cagir('cekirdek_bilgi'),
+    oyunSecenegiYaz: (anahtar, deger) => cagir('oyun_secenegi_yaz', { anahtar: String(anahtar), deger: String(deger) }),
 
     sunucuListesi: () => cagir('sunucu_liste'),
     sunucuSorgula: (adres) => cagir('sunucu_sorgula', { adres: String(adres || '') }),

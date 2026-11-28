@@ -116,9 +116,9 @@ public final class Foto {
 	public static String boyutAdi(String b) {
 		if (b == null) return "";
 		return switch (b) {
-			case "minecraft:overworld" -> "Overworld";
-			case "minecraft:the_nether" -> "Nether";
-			case "minecraft:the_end" -> "End";
+			case "minecraft:overworld" -> Dil.t("Overworld");
+			case "minecraft:the_nether" -> Dil.t("Nether");
+			case "minecraft:the_end" -> Dil.t("End");
 			default -> b.contains(":") ? b.substring(b.indexOf(':') + 1) : b;
 		};
 	}
@@ -126,7 +126,7 @@ public final class Foto {
 	public static String konumYazisi(Konum k) {
 		if (k == null) return "";
 		String s = "X " + k.x() + "  Y " + k.y() + "  Z " + k.z() + " · " + boyutAdi(k.boyut());
-		return k.sunucu() == null || k.sunucu().isEmpty() ? s + " · tek oyunculu" : s + " · " + k.sunucu();
+		return k.sunucu() == null || k.sunucu().isEmpty() ? s + Dil.t(" · tek oyunculu") : s + " · " + k.sunucu();
 	}
 
 	public static Path sonDosya() {
@@ -198,7 +198,7 @@ public final class Foto {
 		while (KczClient.FOTO.consumeClick()) {
 			if (mc.gui.screen() != null) continue;
 			if (sonDosya == null || !Files.exists(sonDosya)) {
-				Arkadaslar.bildir(mc, "Önce fotoğraf çek", "F2'ye bas, sonra " + tus() + " ile arkadaşına gönder.");
+				Arkadaslar.bildir(mc, Dil.t("Önce fotoğraf çek"), Dil.t("F2'ye bas, sonra ") + tus() + Dil.t(" ile arkadaşına gönder."));
 			} else {
 				kartBitis = 0;
 				mc.gui.setScreen(new FotoPaylasEkrani(null, sonDosya, sonKonum));
@@ -208,7 +208,7 @@ public final class Foto {
 		if (hedef != null && mc.player != null && ayniYer(mc, hedef)) {
 			double dx = hedef.x() + 0.5 - mc.player.getX(), dz = hedef.z() + 0.5 - mc.player.getZ();
 			if (dx * dx + dz * dz < 16 && Math.abs(hedef.y() - mc.player.getY()) < 6) {
-				Arkadaslar.bildir(mc, "Vardın!", hedefAd == null ? "Anının çekildiği yer" : hedefAd + " burada çekmişti");
+				Arkadaslar.bildir(mc, Dil.t("Vardın!"), hedefAd == null ? Dil.t("Anının çekildiği yer") : hedefAd + Dil.t(" burada çekmişti"));
 				hedef = null;
 			}
 		}
@@ -307,9 +307,9 @@ public final class Foto {
 		if (hedef != null) {
 			String yazi;
 			if (!ayniSunucu(mc, hedef)) {
-				yazi = "Anı başka sunucuda: " + (hedef.sunucu().isEmpty() ? "tek oyunculu dünya" : hedef.sunucu());
+				yazi = Dil.t("Anı başka sunucuda: ") + (hedef.sunucu().isEmpty() ? Dil.t("tek oyunculu dünya") : hedef.sunucu());
 			} else if (!ayniYer(mc, hedef)) {
-				yazi = "Anı " + boyutAdi(hedef.boyut()) + "'da";
+				yazi = Dil.t("Anı ") + boyutAdi(hedef.boyut()) + Dil.t("'da");
 			} else {
 				double dx = hedef.x() + 0.5 - mc.player.getX(), dz = hedef.z() + 0.5 - mc.player.getZ();
 				double yon = Math.toDegrees(Math.atan2(-dx, dz));
@@ -317,8 +317,8 @@ public final class Foto {
 				int i = ((int) Math.round(fark / 45.0) % 8 + 8) % 8;
 				int mesafe = (int) Math.round(Math.sqrt(dx * dx + dz * dz));
 				int dy = hedef.y() - (int) Math.floor(mc.player.getY());
-				yazi = OKLAR[i] + "  " + mesafe + " blok" + (Math.abs(dy) > 3 ? (dy > 0 ? "  ·  ↑" + dy : "  ·  ↓" + (-dy)) : "")
-						+ (hedefAd == null ? "" : "  ·  " + hedefAd + "'in anısı");
+				yazi = OKLAR[i] + "  " + mesafe + Dil.t(" blok") + (Math.abs(dy) > 3 ? (dy > 0 ? "  ·  ↑" + dy : "  ·  ↓" + (-dy)) : "")
+						+ (hedefAd == null ? "" : "  ·  " + hedefAd + Dil.t("'in anısı"));
 			}
 			int w = mc.font.width(yazi) + 16;
 			int x = (sw - w) / 2, y = 22;
@@ -336,8 +336,8 @@ public final class Foto {
 		Doku dk = doku(sonDosya);
 		if (dk != null) ciz(g, dk, x + 8, y + 8, w - 14, 70);
 		else g.fill(x + 8, y + 8, x + w - 6, y + 78, 0x33FFFFFF);
-		g.text(mc.font, "Konumlu anı", x + 8, y + 82, 0xFFF1F5F9, false);
-		String alt = "[" + tus() + "] Arkadaşına gönder";
+		g.text(mc.font, Dil.t("Konumlu anı"), x + 8, y + 82, 0xFFF1F5F9, false);
+		String alt = "[" + tus() + Dil.t("] Arkadaşına gönder");
 		g.text(mc.font, mc.font.plainSubstrByWidth(alt, w - 14), x + 8, y + 95, vurgu, false);
 	}
 }

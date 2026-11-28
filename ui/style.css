@@ -2132,3 +2132,36 @@ body[data-dunya]:not([data-dunya=""]):not([data-dunya="sade"]) .oyna-blok.ustund
 
 /* Açık anahtarın topuzu vurgunun üstündeki yazı renginde (beyaz vurguda koyu, görünür kalsın) */
 .anahtar:checked::after { background: var(--vy); }
+
+/* =========================================================
+   OYUN SONU PERFORMANS ÖZETİ
+   ========================================================= */
+.ozet-kart { width: min(520px, 92vw); gap: 14px; text-align: left; align-items: stretch; }
+.ozet-ust { display: flex; flex-direction: column; gap: 4px; }
+.ozet-ust h2 { margin: 0; }
+.ozet-ust small { color: var(--soluk); font-size: 12.5px; }
+.ozet-rozet { align-self: flex-start; padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; background: color-mix(in srgb, var(--v) 22%, transparent); color: var(--v); }
+.ozet-izgara { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ozet-deger { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: 13px; background: rgba(255, 255, 255, .045); border: 1px solid rgba(255, 255, 255, .07); }
+.ozet-deger b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.ozet-deger small { font-size: 11px; color: var(--soluk); }
+.ozet-deger i { font-style: normal; font-size: 10.5px; font-weight: 600; }
+.ozet-deger i.iyi { color: #4ade80; }
+.ozet-deger i.kotu { color: #f87171; }
+.ozet-akicilik { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; font-size: 12.5px; color: var(--soluk); }
+.ozet-akicilik b { color: var(--yazi); font-size: 13px; }
+.ozet-cubuk { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.ozet-cubuk i { display: block; height: 100%; width: 0; border-radius: inherit; transition: width .8s var(--egri); background: #4ade80; }
+.ozet-cubuk i[data-seviye="iyi"] { background: #a3e635; }
+.ozet-cubuk i[data-seviye="orta"] { background: #facc15; }
+.ozet-cubuk i[data-seviye="kotu"] { background: #f87171; }
+.ozet-sebep { margin: 0; font-size: 12.5px; color: var(--soluk); line-height: 1.45; }
+.ozet-oneriler { display: flex; flex-direction: column; gap: 6px; }
+.ozet-oneri-baslik { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--cok-soluk); margin-top: 2px; }
+.ozet-oneri { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .07); }
+.ozet-oneri-yazi { display: flex; flex-direction: column; gap: 2px; }
+.ozet-oneri-yazi b { font-size: 13px; }
+.ozet-oneri-yazi small { font-size: 11.5px; color: var(--soluk); }
+.ozet-oneri button.uygulandi { color: #4ade80; border-color: rgba(74, 222, 128, .35); }
+.ozet-tamam { padding: 12px; border-radius: 12px; background: rgba(74, 222, 128, .08); border: 1px solid rgba(74, 222, 128, .2); color: #bbf7d0; font-size: 12.5px; }
+.ozet-alt-satir { justify-content: space-between; align-items: center; }

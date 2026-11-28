@@ -15,6 +15,10 @@
 		{
 			"config": "kcz-client.mixins.json",
 			"environment": "client"
+		},
+		{
+			"config": "kcz-client-performans.mixins.json",
+			"environment": "client"
 		}
 	],
 	"depends": {

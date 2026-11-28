@@ -456,6 +456,22 @@
                 <input id="gucSec" type="checkbox" class="anahtar">
               </label>
               <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Güçlü çekirdekleri kullan</b><small id="cekirdekAciklama">Yeni Intel işlemcilerde oyun güçlü (P) çekirdeklerde, AMD X3D'de büyük önbellekli çekirdeklerde çalışır. Windows'un oyunu yavaşlatması da kapanır.</small></div>
+                <input id="gucluCekirdekSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Java hızlandırmaları</b><small>Daha az bellek, daha az takılma, daha hızlı açılış (Java 25). Bilgisayarında sorun çıkarsa kendiliğinden kapanır.</small></div>
+                <input id="javaYeniSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyun dosyalarını önceden hazırla</b><small>Launcher açıkken oyun dosyaları belleğe alınır, OYNA'dan sonra oyun daha hızlı açılır.</small></div>
+                <input id="dosyaIsitSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyun sonunda performans özeti</b><small>Oyun kapanınca FPS, takılmalar ve bilgisayarına göre öneriler.</small></div>
+                <input id="performansOzetiSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
                 <div class="ayar-yazi"><b>Sade görünüm</b><small>Performans ile birlikte en sade hali: ortada sadece OYNA, süs ve animasyon yok. Kapatınca önceki temana döner.</small></div>
                 <input id="sadeSec" type="checkbox" class="anahtar">
               </label>
@@ -511,6 +527,8 @@
                 <label class="ayar-kart"><div class="ayar-yazi"><b>Kenarlıksız tam ekran</b><small>F11 çerçevesiz pencere olur; Alt-Tab'da kararma yok</small></div><input data-ist="kenarliksiz" type="checkbox" class="anahtar"></label>
                 <label class="ayar-kart"><div class="ayar-yazi"><b>Alt-Tab'da oyunu durdurma</b><small>Pencereden çıkınca Esc menüsü açılmaz, donma olmaz</small></div><input data-ist="alttabDurdurmaKapali" type="checkbox" class="anahtar"></label>
                 <label class="ayar-kart"><div class="ayar-yazi"><b>Arka planda FPS düşür</b><small>Oyun arkadayken 15 FPS: daha az ısı ve pil</small></div><input data-ist="arkaplanFps" type="checkbox" class="anahtar"></label>
+                <div class="ayar-kart"><div class="ayar-yazi"><b>Akıllı FPS sınırı</b><small>FPS ekranın Hz'ine sabitlenir; menüde 60, AFK'de 30. Daha akıcı, daha az ısı</small></div>
+                  <select class="secim kucuk-secim" id="istAkilliFps"><option value="kapali">Kapalı</option><option value="hz">Ekranın Hz'i</option><option value="pil">Pil tasarrufu</option></select></div>
                 <label class="ayar-kart"><div class="ayar-yazi"><b>Esc menüsünde bulanıklık kapalı</b><small>Menü açılırken olan takılmayı azaltır</small></div><input data-ist="bulaniklikKapali" type="checkbox" class="anahtar"></label>
                 <label class="ayar-kart"><div class="ayar-yazi"><b>Düşük sistem</b><small>Zayıf bilgisayar için kısılır. Ayrıntısı oyunda KCZ Menü'de</small></div><input data-ist="dusukSistem" type="checkbox" class="anahtar"></label>
                 <label class="ayar-kart"><div class="ayar-yazi"><b>Güçlü sistem</b><small>Kenar yumuşatma ve keskinlik. Ayrıntısı oyunda KCZ Menü'de</small></div><input data-ist="gucluSistem" type="checkbox" class="anahtar"></label>
@@ -536,7 +554,7 @@
                 <input data-ist="uzakGorus" type="checkbox" class="anahtar">
               </label>
               <label class="ayar-kart">
-                <div class="ayar-yazi"><b>Oyun kaydı</b><small>Flashback: kaydet, serbest kamerayla izle, video çıkar. Sadece Fabric</small></div>
+                <div class="ayar-yazi"><b data-en="Replay recording">Oyun kaydı</b><small>Flashback: kaydet, serbest kamerayla izle, video çıkar. Sadece Fabric</small></div>
                 <input data-ist="kayit" type="checkbox" class="anahtar">
               </label>
             </div>
@@ -573,6 +591,10 @@
           <div class="ayar-bolum" data-bolum="launcher">
             <h3 class="bolum-baslik">Launcher</h3>
             <div class="ayar-grup">
+              <div class="ayar-kart" data-ara="dil language english türkçe ingilizce">
+                <div class="ayar-yazi"><b>Dil</b><small>Launcher ve oyun içi KCZ menüsünün dili.</small></div>
+                <select class="secim kucuk-secim" id="dilSec" translate="no"><option value="tr">Türkçe</option><option value="en">English</option></select>
+              </div>
               <label class="ayar-kart">
                 <div class="ayar-yazi"><b>Kapatınca tepsiye küçült</b><small>Saatin yanındaki simgede bekler, tek tıkla açılır.</small></div>
                 <input id="tepsiSec" type="checkbox" class="anahtar">
@@ -639,7 +661,7 @@
     <!-- EKRAN GÖRÜNTÜLERİ -->
     <section class="sayfa" id="sayfa-galeri">
       <div class="sayfa-baslik surukle">
-        <div><h2>Ekran görüntüleri</h2><p class="soluk">Oyunda <kbd>F2</kbd> ile aldıkların. Oyundayken aldığın görüntü panoya da kopyalanır; Discord'a direkt yapıştırabilirsin.</p></div>
+        <div><h2>Ekran görüntüleri</h2><p class="soluk" data-en="Screenshots you take in-game with F2. They're also copied to your clipboard, so you can paste them straight into Discord.">Oyunda <kbd>F2</kbd> ile aldıkların. Oyundayken aldığın görüntü panoya da kopyalanır; Discord'a direkt yapıştırabilirsin.</p></div>
         <button class="ikincil kucuk" id="galeriKlasor">Klasörü aç</button>
       </div>
       <div class="galeri" id="galeri"></div>
@@ -757,6 +779,31 @@
     <h2>Yeni neler var?</h2>
     <ul class="yeni-liste" id="yeniListe"></ul>
     <button class="birincil genis-btn" id="yeniTamam">Harika!</button>
+  </div>
+</div>
+
+<!-- Oyun sonu performans özeti -->
+<div class="perde" id="ozetPerde" hidden>
+  <div class="giris-kart cam ozet-kart">
+    <div class="ozet-ust">
+      <span class="ozet-rozet">Oyun sonu</span>
+      <h2>Performans özeti</h2>
+      <small id="ozetAlt"></small>
+    </div>
+    <div class="ozet-izgara">
+      <div class="ozet-deger"><b id="ozetFps">—</b><small>Ortalama FPS</small><i id="ozetFark"></i></div>
+      <div class="ozet-deger"><b id="ozetFps1">—</b><small>En kötü %1</small></div>
+      <div class="ozet-deger"><b id="ozetTakilma">—</b><small>Takılma</small></div>
+      <div class="ozet-deger"><b id="ozetEnUzun">—</b><small>En uzun takılma</small></div>
+    </div>
+    <div class="ozet-akicilik">
+      <span>Akıcılık</span>
+      <div class="ozet-cubuk"><i id="ozetCubuk"></i></div>
+      <b id="ozetNot"></b>
+    </div>
+    <p class="ozet-sebep" id="ozetSebep"></p>
+    <div class="ozet-oneriler" id="ozetOneriler"></div>
+    <div class="satir ozet-alt-satir"><button class="bag" id="ozetGosterme">Bir daha gösterme</button><button class="birincil" id="ozetTamam">Tamam</button></div>
   </div>
 </div>
 
@@ -953,6 +1000,8 @@
 <div class="kenar" data-kenar="ne"></div><div class="kenar" data-kenar="nw"></div>
 <div class="kenar" data-kenar="se"></div><div class="kenar" data-kenar="sw"></div>
 
+<script src="dil-en.js"></script>
+<script src="dil.js"></script>
 <script src="kopru.js"></script>
 <script src="ikonlar.js"></script>
 <script src="skin3d.js"></script>

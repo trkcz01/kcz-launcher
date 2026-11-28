@@ -113,7 +113,7 @@ public final class Hesaplar {
 	private static UUID uuidCoz(String s) {
 		String t = s.replace("-", "");
 		if (t.length() != 32) {
-			throw new IllegalArgumentException("Geçersiz uuid: " + s);
+			throw new IllegalArgumentException(Dil.t("Geçersiz uuid: ") + s);
 		}
 		return UUID.fromString(t.substring(0, 8) + "-" + t.substring(8, 12) + "-" + t.substring(12, 16) + "-"
 				+ t.substring(16, 20) + "-" + t.substring(20));
@@ -163,7 +163,7 @@ public final class Hesaplar {
 						gecisId = girisId;
 						gecisZamani = System.currentTimeMillis();
 						gecisAd = yazi(g, "ad");
-						durumYaz(gecisAd + " eklendi, hesaba geçiliyor…", false);
+						durumYaz(gecisAd + Dil.t(" eklendi, hesaba geçiliyor…"), false);
 					}
 					surum++;
 				}
@@ -193,7 +193,7 @@ public final class Hesaplar {
 			gecisId = id;
 			gecisZamani = System.currentTimeMillis();
 			gecisAd = h.ad();
-			durumYaz(h.ad() + " hesabına geçiliyor…", false);
+			durumYaz(h.ad() + Dil.t(" hesabına geçiliyor…"), false);
 		}
 	}
 
@@ -239,7 +239,7 @@ public final class Hesaplar {
 		}
 		if (System.currentTimeMillis() - gecisZamani > GECIS_ZAMAN_ASIMI) {
 			gecisId = 0;
-			durumYaz("Launcher cevap vermedi. KÇZ Launcher açık mı?", true);
+			durumYaz(Dil.t("Launcher cevap vermedi. KÇZ Launcher açık mı?"), true);
 			return;
 		}
 		Path p = oturumDosyasi();
@@ -268,14 +268,14 @@ public final class Hesaplar {
 		try {
 			uuid = uuidCoz(yazi(o, "uuid"));
 		} catch (Exception e) {
-			durumYaz("Launcher'dan gelen hesap bilgisi bozuk.", true);
+			durumYaz(Dil.t("Launcher'dan gelen hesap bilgisi bozuk."), true);
 			return;
 		}
 		degistir(mc, ad, uuid, erisim, false);
 	}
 
 	/* ---------- İsimle giriş (çevrimdışı) ----------
-	   Launcher'daki "Çevrimdışı Oyna" ile aynı: Microsoft girişi yok, UUID isimden hesaplanır
+	   Launcher'daki Dil.t("Çevrimdışı Oyna") ile aynı: Microsoft girişi yok, UUID isimden hesaplanır
 	   (vanilla: MD5("OfflinePlayer:<ad>")), böylece aynı isim her zaman aynı oyuncudur.
 	   Sadece çevrimdışı (premium istemeyen) sunucularda ve tek oyunculuda geçerlidir.
 	   Kullanılan isimler config/kcz-cevrimdisi.json'da durur (anahtar yok, sadece isim). */
@@ -338,7 +338,7 @@ public final class Hesaplar {
 			return;
 		}
 		if (!gecerliAd(ad)) {
-			durumYaz("İsim 3-16 karakter olmalı: harf, rakam veya _", true);
+			durumYaz(Dil.t("İsim 3-16 karakter olmalı: harf, rakam veya _"), true);
 			return;
 		}
 		List<String> l = cevrimdisiAdlar();
@@ -361,7 +361,7 @@ public final class Hesaplar {
 	/** Hazırlık arka planda (ağ), uygulama ana thread'de. */
 	private static void degistir(Minecraft mc, String ad, UUID uuid, String erisim, boolean cevrimdisi) {
 		degistiriliyor = true;
-		durumYaz(ad + " hesabına geçiliyor…", false);
+		durumYaz(ad + Dil.t(" hesabına geçiliyor…"), false);
 		User yeni = new User(ad, uuid, erisim, Optional.empty(), Optional.empty());
 		MinecraftHesapErisim e = (MinecraftHesapErisim) mc;
 		CompletableFuture.supplyAsync(() -> {
@@ -371,26 +371,26 @@ public final class Hesaplar {
 			degistiriliyor = false;
 			if (hata != null) {
 				KczClient.LOG.warn("Hesap değiştirilemedi", hata);
-				durumYaz("Hesap değiştirilemedi: " + (hata.getMessage() == null ? hata.toString() : hata.getMessage()), true);
+				durumYaz(Dil.t("Hesap değiştirilemedi: ") + (hata.getMessage() == null ? hata.toString() : hata.getMessage()), true);
 				return;
 			}
 			ServerData sunucu = mc.level != null && !mc.isLocalServer() ? mc.getCurrentServer() : null;
 			boolean dunyada = mc.level != null;
 			try {
 				if (dunyada) {
-					mc.disconnectFromWorld(Component.literal("Hesap değiştiriliyor…"));
+					mc.disconnectFromWorld(Component.literal(Dil.t("Hesap değiştiriliyor…")));
 				}
 				uygula(mc, e, yeni, (SurumServisi) sonuc[0], (UserApiService) sonuc[1]);
 			} catch (Throwable t) {
 				KczClient.LOG.error("Hesap değiştirilirken hata", t);
-				durumYaz("Hesap değiştirilemedi: " + t, true);
+				durumYaz(Dil.t("Hesap değiştirilemedi: ") + t, true);
 				if (dunyada) {
 					mc.gui.setScreen(new TitleScreen());
 				}
 				return;
 			}
-			durumYaz(ad + " hesabına geçildi.", false);
-			Arkadaslar.bildir(mc, "Hesap değiştirildi", ad);
+			durumYaz(ad + Dil.t(" hesabına geçildi."), false);
+			Arkadaslar.bildir(mc, Dil.t("Hesap değiştirildi"), ad);
 			if (sunucu != null) {
 				ConnectScreen.startConnecting(new TitleScreen(), mc, ServerAddress.parseString(sunucu.ip), sunucu, false, null);
 			} else if (dunyada) {

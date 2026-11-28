@@ -27,7 +27,7 @@ public class FotoPaylasEkrani extends Screen {
 	private int px, py, pw, ph, resimW;
 
 	public FotoPaylasEkrani(Screen onceki, Path dosya, Foto.Konum konum) {
-		super(Component.literal("Konumlu anı"));
+		super(Component.literal(Dil.t("Konumlu anı")));
 		this.onceki = onceki;
 		this.dosya = dosya;
 		this.konum = konum;
@@ -41,9 +41,9 @@ public class FotoPaylasEkrani extends Screen {
 		py = (this.height - ph) / 2;
 		resimW = (int) (pw * 0.6f);
 		String eski = not != null ? not.getValue() : "";
-		not = new EditBox(this.font, px + 10, py + ph - 28, resimW - 10, 18, Component.literal("Not"));
+		not = new EditBox(this.font, px + 10, py + ph - 28, resimW - 10, 18, Component.literal(Dil.t("Not")));
 		not.setMaxLength(200);
-		not.setHint(Component.literal("Not ekle (isteğe bağlı)"));
+		not.setHint(Component.literal(Dil.t("Not ekle (isteğe bağlı)")));
 		not.setValue(eski);
 		addRenderableWidget(not);
 		konumDugme = addRenderableWidget(Button.builder(Component.empty(), b -> {
@@ -66,7 +66,7 @@ public class FotoPaylasEkrani extends Screen {
 			}).bounds(sx, y + i * 22, sw, 20).build());
 			kisiler.add(b);
 		}
-		gonder = addRenderableWidget(Button.builder(Component.literal("Gönder"), b -> gonder())
+		gonder = addRenderableWidget(Button.builder(Component.literal(Dil.t("Gönder")), b -> gonder())
 				.bounds(px + resimW + 10, py + ph - 29, pw - resimW - 20, 20).build());
 		addRenderableWidget(Button.builder(Component.literal("✕"), b -> onClose()).bounds(px + pw - 24, py + 6, 18, 18).build());
 		yazilariGuncelle();
@@ -79,10 +79,10 @@ public class FotoPaylasEkrani extends Screen {
 			String durum = a.oyunda() ? "§a● " : a.cevrimici() ? "§e● " : "§8● ";
 			kisiler.get(i).setMessage(Component.literal((secili.contains(a.uuid()) ? "§b✔ " : durum) + "§r" + a.ad()));
 		}
-		if (konumDugme != null) konumDugme.setMessage(Component.literal(konumEkle ? "✔ Konumu ekle" : "Konumu ekleme"));
+		if (konumDugme != null) konumDugme.setMessage(Component.literal(konumEkle ? Dil.t("✔ Konumu ekle") : Dil.t("Konumu ekleme")));
 		if (gonder != null) {
 			gonder.active = !secili.isEmpty() && Arkadaslar.bagli();
-			gonder.setMessage(Component.literal(secili.size() > 1 ? secili.size() + " kişiye gönder" : "Gönder"));
+			gonder.setMessage(Component.literal(secili.size() > 1 ? secili.size() + Dil.t(" kişiye gönder") : Dil.t("Gönder")));
 		}
 	}
 
@@ -97,7 +97,7 @@ public class FotoPaylasEkrani extends Screen {
 			}
 		}
 		if (n > 0) {
-			Arkadaslar.bildir(this.minecraft, "Fotoğraf gidiyor", n == 1 ? ad + " adlı arkadaşına" : n + " arkadaşına");
+			Arkadaslar.bildir(this.minecraft, Dil.t("Fotoğraf gidiyor"), n == 1 ? ad + Dil.t(" adlı arkadaşına") : n + Dil.t(" arkadaşına"));
 			onClose();
 		}
 	}
@@ -131,7 +131,7 @@ public class FotoPaylasEkrani extends Screen {
 		g.fill(px - 1, py - 1, px + pw + 1, py + ph + 1, Ayar.ac(zemin, 0.09f));
 		g.fill(px, py, px + pw, py + ph, zemin);
 		g.fill(px, py, px + 2, py + ph, vurgu);
-		g.text(this.font, "Konumlu anı", px + 10, py + 10, 0xFFF1F5F9, false);
+		g.text(this.font, Dil.t("Konumlu anı"), px + 10, py + 10, 0xFFF1F5F9, false);
 		g.fill(px + resimW, py + 24, px + resimW + 1, py + ph - 8, cizgi);
 		// Fotoğraf
 		int rx = px + 10, ry = py + 28, rw = resimW - 10, rh = ph - 28 - 60;
@@ -139,17 +139,17 @@ public class FotoPaylasEkrani extends Screen {
 		g.fill(rx, ry, rx + rw, ry + rh, 0xFF0B0B0D);
 		Foto.Doku dk = Foto.doku(dosya);
 		if (dk != null) Foto.ciz(g, dk, rx, ry, rw, rh);
-		else g.centeredText(this.font, "Yükleniyor…", rx + rw / 2, ry + rh / 2 - 4, 0xFF9CA3AF);
+		else g.centeredText(this.font, Dil.t("Yükleniyor…"), rx + rw / 2, ry + rh / 2 - 4, 0xFF9CA3AF);
 		if (konum != null) {
 			String k = this.font.plainSubstrByWidth(Foto.konumYazisi(konum), resimW - 10 - 118);
 			g.text(this.font, k, px + 126, py + ph - 47, konumEkle ? 0xFFCBD5E1 : 0xFF6B7280, false);
 		}
 		// Sağ: arkadaşlar
-		g.text(this.font, "Kime?", px + resimW + 10, py + 14, 0xFF9CA3AF, false);
+		g.text(this.font, Dil.t("Kime?"), px + resimW + 10, py + 14, 0xFF9CA3AF, false);
 		if (Arkadaslar.liste().isEmpty()) {
-			g.text(this.font, "Henüz arkadaşın yok.", px + resimW + 10, py + 32, 0xFF9CA3AF, false);
+			g.text(this.font, Dil.t("Henüz arkadaşın yok."), px + resimW + 10, py + 32, 0xFF9CA3AF, false);
 		} else if (!Arkadaslar.bagli()) {
-			g.text(this.font, "Launcher kapalı.", px + resimW + 10, py + ph - 44, 0xFFF87171, false);
+			g.text(this.font, Dil.t("Launcher kapalı."), px + resimW + 10, py + ph - 44, 0xFFF87171, false);
 		}
 	}
 

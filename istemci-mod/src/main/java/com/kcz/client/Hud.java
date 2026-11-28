@@ -25,7 +25,7 @@ public final class Hud {
 	}
 
 	public static final String[] PARCALAR = { "bilgi", "tuslar", "zirh", "iksir", "esya" };
-	public static final String[] PARCA_ADI = { "Bilgi", "Tuşlar", "Zırh", "İksirler", "Eşya" };
+	public static final String[] PARCA_ADI = { Dil.t("Bilgi"), Dil.t("Tuşlar"), Dil.t("Zırh"), Dil.t("İksirler"), Dil.t("Eşya") };
 
 	/** Düzenleme ekranı açıkken: her parça boş olsa bile örnekle çizilir ve çerçevelenir */
 	public static boolean duzenleme = false;
@@ -164,9 +164,9 @@ public final class Hud {
 			if (p >= 0 || duzenleme) {
 				if (p != sonPing) {
 					sonPing = p;
-					pingYazisi = p < 0 ? "–" : p + " ms";
+					pingYazisi = p < 0 ? "–" : p + Dil.t(" ms");
 				}
-				w = Math.max(w, kutu(g, font, "Ping", pingYazisi, x, y + h, yazi, olc));
+				w = Math.max(w, kutu(g, font, Dil.t("Ping"), pingYazisi, x, y + h, yazi, olc));
 				h += SATIR;
 			}
 		}
@@ -186,7 +186,7 @@ public final class Hud {
 			}
 			w = Math.max(w, kutu(g, font, "XYZ", xyzYazisi, x, y + h, yazi, olc));
 			h += SATIR;
-			w = Math.max(w, kutu(g, font, "Yön", yon(mc.player.getYRot()), x, y + h, yazi, olc));
+			w = Math.max(w, kutu(g, font, Dil.t("Yön"), yon(mc.player.getYRot()), x, y + h, yazi, olc));
 			h += SATIR;
 		}
 		return new int[] { w, Math.max(0, h - 2) };
@@ -220,8 +220,8 @@ public final class Hud {
 		tus(g, font, "D", mc.options.keyRight, x + (TUS + ARA) * 2, yy, TUS, TUS, null);
 		yy += TUS + ARA;
 		int yarim = (genis - ARA) / 2;
-		tus(g, font, "LMB", mc.options.keyAttack, x, yy, yarim, fareH, a.cps ? solCps + " CPS" : null);
-		tus(g, font, "RMB", mc.options.keyUse, x + yarim + ARA, yy, genis - yarim - ARA, fareH, a.cps ? sagCps + " CPS" : null);
+		tus(g, font, "LMB", mc.options.keyAttack, x, yy, yarim, fareH, a.cps ? solCps + Dil.t(" CPS") : null);
+		tus(g, font, "RMB", mc.options.keyUse, x + yarim + ARA, yy, genis - yarim - ARA, fareH, a.cps ? sagCps + Dil.t(" CPS") : null);
 		yy += fareH + ARA;
 		tus(g, font, "—", mc.options.keyJump, x, yy, genis, 9, null);
 		return new int[] { genis, h };
@@ -273,7 +273,7 @@ public final class Hud {
 			h += 20;
 		}
 		if (h == 0 && duzenleme) {
-			w = kutu(g, font, "Zırh", "100%", x, y, yazi, olc);
+			w = kutu(g, font, Dil.t("Zırh"), "100%", x, y, yazi, olc);
 			h = 15;
 		}
 		return new int[] { w, Math.max(0, h - 2) };
@@ -291,7 +291,7 @@ public final class Hud {
 			h += SATIR;
 		}
 		if (h == 0 && duzenleme) {
-			w = kutu(g, font, "İksir", "1:30", x, y, yazi, olc);
+			w = kutu(g, font, Dil.t("İksir"), "1:30", x, y, yazi, olc);
 			h = SATIR;
 		}
 		return new int[] { w, Math.max(0, h - 2) };
@@ -304,6 +304,19 @@ public final class Hud {
 	private static long sonHizZamani = 0L;
 	private static String hizYazisi = "0.0";
 	private static final java.time.format.DateTimeFormatter SAAT = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+	/** Saat ve hız yazıları her karede yeniden oluşturulmasın (bellek temizliği yükü) */
+	private static String saatYazisi = "";
+	private static long saatZamani = 0L;
+	private static String hizEtiketi = "0.0 b/s";
+
+	private static String saat() {
+		long s = System.currentTimeMillis();
+		if (s - saatZamani >= 1000L) {
+			saatZamani = s;
+			saatYazisi = java.time.LocalTime.now().format(SAAT);
+		}
+		return saatYazisi;
+	}
 
 	private static void say(Minecraft mc) {
 		long simdi = System.currentTimeMillis();
@@ -326,6 +339,7 @@ public final class Hud {
 			if (sonHizZamani != 0L) {
 				double m = Math.sqrt((x - sonX2) * (x - sonX2) + (z - sonZ2) * (z - sonZ2));
 				hizYazisi = String.format(java.util.Locale.ROOT, "%.1f", m * 1000.0 / (simdi - sonHizZamani));
+				hizEtiketi = hizYazisi + " b/s";
 			}
 			sonX2 = x;
 			sonZ2 = z;
@@ -354,26 +368,26 @@ public final class Hud {
 			}
 		}
 		if (a.okSayisi) {
-			w = Math.max(w, kutu(g, font, "Ok", String.valueOf(okAdet), x, y + h, okAdet == 0 ? 0xFFF87171 : yazi, olc));
+			w = Math.max(w, kutu(g, font, Dil.t("Ok"), String.valueOf(okAdet), x, y + h, okAdet == 0 ? 0xFFF87171 : yazi, olc));
 			h += SATIR;
 		}
 		if (a.totem) {
-			w = Math.max(w, kutu(g, font, "Totem", String.valueOf(totemAdet), x, y + h, totemAdet == 0 ? 0xFFF87171 : yazi, olc));
+			w = Math.max(w, kutu(g, font, Dil.t("Totem"), String.valueOf(totemAdet), x, y + h, totemAdet == 0 ? 0xFFF87171 : yazi, olc));
 			h += SATIR;
 		}
 		if (a.hiz) {
-			w = Math.max(w, kutu(g, font, "Hız", hizYazisi + " b/s", x, y + h, yazi, olc));
+			w = Math.max(w, kutu(g, font, Dil.t("Hız"), hizEtiketi, x, y + h, yazi, olc));
 			h += SATIR;
 		}
 		if (a.saat) {
-			w = Math.max(w, kutu(g, font, "Saat", java.time.LocalTime.now().format(SAAT), x, y + h, yazi, olc));
+			w = Math.max(w, kutu(g, font, Dil.t("Saat"), saat(), x, y + h, yazi, olc));
 			h += SATIR;
 		}
 		return new int[] { w, Math.max(0, h - 2) };
 	}
 
 	/* ---------- Yardımcılar ---------- */
-	private static final String[] YONLER = { "Güney", "Güneybatı", "Batı", "Kuzeybatı", "Kuzey", "Kuzeydoğu", "Doğu", "Güneydoğu" };
+	private static final String[] YONLER = { Dil.t("Güney"), Dil.t("Güneybatı"), Dil.t("Batı"), Dil.t("Kuzeybatı"), Dil.t("Kuzey"), Dil.t("Kuzeydoğu"), Dil.t("Doğu"), Dil.t("Güneydoğu") };
 	private static int sonX = Integer.MIN_VALUE, sonY, sonZ;
 	private static String xyzYazisi = "";
 
