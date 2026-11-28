@@ -422,7 +422,11 @@ pub async fn baslat(a: Acilis) -> Sonuc<()> {
     if aot.exists() {
         let _ = std::fs::remove_dir_all(&aot);
     }
-    if java_ana >= 19 {
+    // CDS arşivi sadece G1 ve normal nesne başlıklarıyla. ZGC ya da compact headers açıkken (eski G1 ile oluşmuş)
+    // arşiv Java'yı açılışta ~2 dakika uğraştırıyor (ölçüldü: Fabric'in ilk satırı 0,8 sn → 130 sn).
+    // Bu bayraklarla CDS'siz açılış zaten 0,8 sn.
+    let cds_uygun = !jvm.iter().any(|x| x == "-XX:+UseZGC" || x == "-XX:+UseCompactObjectHeaders");
+    if java_ana >= 19 && cds_uygun {
         let cds = ana_klasor().join("cds");
         if std::fs::create_dir_all(&cds).is_ok() {
             let ad: String = surum_adi
