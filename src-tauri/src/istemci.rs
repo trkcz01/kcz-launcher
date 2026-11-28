@@ -40,6 +40,7 @@ fn tema_renkleri(tema: &str) -> (&'static str, &'static str) {
         "nether" => ("#43100c", "#120404"),
         "dunya" => ("#123a31", "#0a1620"),
         "performans" => ("#141416", "#0a0a0b"),
+        "sade" => ("#121215", "#08080a"),
         _ => ("#232328", "#0d0d10"),
     }
 }

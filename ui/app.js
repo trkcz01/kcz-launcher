@@ -56,7 +56,8 @@ const TEMALAR = {
   end: { ad: 'End', alt: 'Yıldızlar ve adalar · Enderman', v: '#c084fc', v2: '#fde68a' },
   nether: { ad: 'Nether', alt: 'Lav ve kül · Ghast', v: '#f97316', v2: '#ef4444' },
   dunya: { ad: 'Normal Dünya', alt: 'Gökyüzü ve bulutlar · Creeper', v: '#4ade80', v2: '#38bdf8' },
-  performans: { ad: 'Performans', alt: 'Animasyonsuz, en hafif', v: '#22c55e', v2: '#a3e635' }
+  performans: { ad: 'Performans', alt: 'Animasyonsuz, en hafif', v: '#22c55e', v2: '#a3e635' },
+  sade: { ad: 'Sade', alt: 'Sadece OYNA, en sade', v: '#fafafa', v2: '#a1a1aa' }
 };
 const RENKLER = [['Gri', '#a1a1aa'], ['Beyaz', '#fafafa'], ['Mor', '#8b5cf6'], ['Mavi', '#3b82f6'], ['Turkuaz', '#06b6d4'],
   ['Yeşil', '#22c55e'], ['Sarı', '#eab308'], ['Turuncu', '#f97316'], ['Kırmızı', '#ef4444'], ['Pembe', '#ec4899']];
@@ -271,9 +272,31 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* =========================================================
+   SADE TEMA: OYNA'nın altındaki sunucu yazısına tıklayınca küçük sunucu listesi
+   ========================================================= */
+$('oynaAlt').addEventListener('click', (e) => {
+  if (document.body.dataset.tema !== 'sade') return;
+  e.stopPropagation();
+  document.body.classList.toggle('sade-liste');
+});
+document.addEventListener('click', (e) => {
+  if (!document.body.classList.contains('sade-liste')) return;
+  // Sekmeler (Profiller/Sunucular/Arkadaşlar) ve formlar arasında gezinirken açık kalsın
+  if (e.target.closest('.yan-baslik, .sunucu-form, #oynaAlt')) return;
+  const listede = e.target.closest('.sunucular');
+  if (listede && e.target.closest('button, input, .sunucu-ekle, .sk-ekle')) return;
+  setTimeout(() => document.body.classList.remove('sade-liste'), listede ? 160 : 0);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('sade-liste')) document.body.classList.remove('sade-liste');
+});
+
+/* =========================================================
    SEKMELER
    ========================================================= */
 function sayfaAc(ad) {
+  document.body.dataset.sayfa = ad;
+  document.body.classList.remove('sade-liste');
   document.querySelectorAll('.sekme').forEach((x) => x.classList.toggle('aktif', x.dataset.sayfa === ad));
   document.querySelectorAll('.sayfa').forEach((s) => s.classList.toggle('aktif', s.id === 'sayfa-' + ad));
   if (ad === 'surumler') surumListesiCiz();

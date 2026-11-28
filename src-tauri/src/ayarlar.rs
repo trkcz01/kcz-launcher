@@ -257,7 +257,7 @@ fn duzelt(mut t: Ayarlar) -> Ayarlar {
     if !YUKLEYICILER.contains(&t.yukleyici.as_str()) {
         t.yukleyici = "fabric".into();
     }
-    if !["gri", "siyah", "end", "nether", "dunya", "performans"].contains(&t.tema.as_str()) {
+    if !["gri", "siyah", "end", "nether", "dunya", "performans", "sade"].contains(&t.tema.as_str()) {
         t.tema = "gri".into();
     }
     t.vurgu = if RENK_RE.is_match(&t.vurgu) {

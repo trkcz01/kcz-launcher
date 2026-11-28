@@ -364,6 +364,7 @@ public class KczEkrani extends Screen {
 			case "dunya" -> "Dünya teması";
 			case "siyah" -> "Siyah tema";
 			case "performans" -> "Performans teması";
+			case "sade" -> "Sade tema";
 			default -> "Gri tema";
 		};
 	}
