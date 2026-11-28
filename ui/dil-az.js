@@ -656,7 +656,9 @@
   "Ort. FPS": "Orta FPS",
   "Son oyunların FPS grafiği": "Son oyunların FPS qrafiki",
   "açık": "açıq",
-  "kapalı": "söndürülüb"
+  "kapalı": "söndürülüb",
+  "Komut çarkı": "Komanda çarxı",
+  "Oyunda G'yi basılı tut, fareyle seç, bırak. Komutları KCZ Menü'de Hareket sekmesinden düzenle.": "Oyunda G-ni basılı saxla, siçanla seç, burax. Komandaları KCZ Menyuda Hərəkət bölməsindən düzənlə."
  },
  "kalip": {
   "Giriş yapıldı: {}": "Daxil oldun: {1}",

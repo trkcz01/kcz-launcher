@@ -77,6 +77,7 @@ pub fn ayar_yaz(a: &Ayarlar) {
         ("saat", json!(i.saat)),
         ("surekliKos", json!(i.surekli_kos)),
         ("egilmeTut", json!(i.egilme_tut)),
+        ("komutCarki", json!(i.komut_carki)),
         // Özel nişangah kaldırıldı: oyunun kendi nişangahı kullanılır
         ("nisangah", json!(false)),
         ("konum", json!(i.konum)),
@@ -210,6 +211,7 @@ pub fn ayar_geri_oku() {
         "saat",
         "surekliKos",
         "egilmeTut",
+        "komutCarki",
         "konum",
         "shader",
         "sesliSohbet",

@@ -701,7 +701,9 @@
   "Son oyunların FPS grafiği": "FPS-Diagramm deiner letzten Sessions",
   "oyun": "Sessions",
   "açık": "an",
-  "kapalı": "aus"
+  "kapalı": "aus",
+  "Komut çarkı": "Befehlsrad",
+  "Oyunda G'yi basılı tut, fareyle seç, bırak. Komutları KCZ Menü'de Hareket sekmesinden düzenle.": "Im Spiel G halten, mit der Maus wählen, loslassen. Befehle im KCZ-Menü unter Bewegung bearbeiten."
  },
  "kalip": {
   "Giriş yapıldı: {}": "Angemeldet als {1}",

@@ -38,6 +38,12 @@ public class Ayar {
 	public boolean saat = false;        // gerçek saat
 	public boolean surekliKos = false;  // ileri giderken kendiliğinden koş
 	public boolean egilmeTut = false;   // eğilme: bir kere bas, açık kalsın
+	/** Komut çarkı: G basılı tutulunca açılır, fareyle seçilip bırakılınca komut gider */
+	public boolean komutCarki = true;
+	/** "G'yi basılı tut" ipucu bir kere gösterildi mi */
+	public boolean carkIpucu = false;
+	/** Çarkın dilimleri (saat 12'den başlayıp saat yönünde) */
+	public java.util.List<CarkDilim> cark = varsayilanCark();
 	public boolean nisangah = false;    // özel nişangah
 	public String nisangahSekil = "arti";
 	public String nisangahRenk = "beyaz";
@@ -100,6 +106,42 @@ public class Ayar {
 
 	public Tema tema = new Tema();
 
+	public static final int CARK_DILIM = 8;
+
+	/** Çarkın bir dilimi. komut "/" ile başlarsa komut olarak, değilse sohbete mesaj olarak gider. */
+	public static class CarkDilim {
+		public String ad = "";
+		public String komut = "";
+		/** Eşya kimliği (ör. minecraft:compass) */
+		public String simge = "";
+
+		public CarkDilim() {
+		}
+
+		public CarkDilim(String ad, String komut, String simge) {
+			this.ad = ad;
+			this.komut = komut;
+			this.simge = simge;
+		}
+
+		public boolean bos() {
+			return komut == null || komut.isBlank();
+		}
+	}
+
+	/** Varsayılan çark: OxeS'te en çok yazılan komutlar, son dilim oyuncuya boş bırakılır */
+	public static java.util.List<CarkDilim> varsayilanCark() {
+		return new java.util.ArrayList<>(java.util.List.of(
+				new CarkDilim("Spawn", "/spawn", "minecraft:compass"),
+				new CarkDilim("Ev", "/home", "minecraft:red_bed"),
+				new CarkDilim("Market", "/market", "minecraft:emerald"),
+				new CarkDilim("Açık Artırma", "/ah", "minecraft:gold_ingot"),
+				new CarkDilim("Sipariş", "/siparis", "minecraft:chest"),
+				new CarkDilim("Teslimat", "/teslimat", "minecraft:barrel"),
+				new CarkDilim("Kazı yarışı", "/kazi", "minecraft:diamond_pickaxe"),
+				new CarkDilim()));
+	}
+
 	public static class Tema {
 		public String zemin = "#232328";
 		public String zemin2 = "#0d0d10";
@@ -141,6 +183,16 @@ public class Ayar {
 					if (a.dusukSistem && a.gucluSistem) a.gucluSistem = false;
 					if (!"hz".equals(a.akilliFps) && !"pil".equals(a.akilliFps)) a.akilliFps = "kapali";
 					if (a.dil == null || !java.util.List.of("en", "az", "de").contains(a.dil)) a.dil = "tr";
+					if (a.cark == null) a.cark = varsayilanCark();
+					a.cark = new java.util.ArrayList<>(a.cark);
+					a.cark.replaceAll(x -> x == null ? new CarkDilim() : x);
+					for (CarkDilim x : a.cark) {
+						if (x.ad == null) x.ad = "";
+						if (x.komut == null) x.komut = "";
+						if (x.simge == null) x.simge = "";
+					}
+					while (a.cark.size() < CARK_DILIM) a.cark.add(new CarkDilim());
+					while (a.cark.size() > CARK_DILIM) a.cark.remove(a.cark.size() - 1);
 					mevcut = a;
 				}
 			}

@@ -30,7 +30,7 @@ public class KczEkrani extends Screen {
 			Dil.t("Göstergeler · hemen uygulanır"),
 			Dil.t("Eşya göstergeleri · HUD'u düzenle ile taşı"),
 			Dil.t("Ortadaki nişan işareti"),
-			Dil.t("Koşma ve eğilme"),
+			Dil.t("Koşma, eğilme ve komut çarkı"),
 			Dil.t("C basılı tut · tekerlekle yaklaş / uzaklaş"),
 			Dil.t("Hemen uygulanır · ⋮ ile ayrıntılar"),
 			Dil.t("Oyunu kapatıp açınca uygulanır"),
@@ -103,6 +103,9 @@ public class KczEkrani extends Screen {
 			case 3 -> {
 				satirlar.add(anahtar(Dil.t("Koşmayı açık tut"), Dil.t("Ctrl'e basmadan koş"), () -> a.surekliKos, () -> a.surekliKos = !a.surekliKos));
 				satirlar.add(anahtar(Dil.t("Eğilmeyi açık tut"), Dil.t("Shift'e bir kere bas"), () -> a.egilmeTut, () -> a.egilmeTut = !a.egilmeTut));
+				satirlar.add(new Satir(Dil.t("Komut çarkı"), Dil.t("{tus} basılı tut · ⋮ ile komutları düzenle").replace("{tus}", KczClient.FOTO.getTranslatedKeyMessage().getString()),
+						() -> a.komutCarki, null, () -> a.komutCarki = !a.komutCarki,
+						() -> this.minecraft.gui.setScreen(new CarkDuzenleEkrani(this, 0))));
 			}
 			case 4 -> {
 				satirlar.add(anahtar(Dil.t("Yakınlaştırma"), Dil.t("C tuşu, tekerlekle ayarla"), () -> a.zoom, () -> a.zoom = !a.zoom));

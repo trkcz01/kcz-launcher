@@ -197,6 +197,9 @@ public final class Foto {
 		dokulariKaydet(mc);
 		while (KczClient.FOTO.consumeClick()) {
 			if (mc.gui.screen() != null) continue;
+			// Aynı tuş: F2'den sonraki kart ekrandayken fotoğrafı gönderir, diğer zamanlarda komut çarkını açar
+			boolean kartAcik = sonDosya != null && System.currentTimeMillis() <= kartBitis && Files.exists(sonDosya);
+			if (!kartAcik && CarkEkrani.ac(mc)) continue;
 			if (sonDosya == null || !Files.exists(sonDosya)) {
 				Arkadaslar.bildir(mc, Dil.t("Önce fotoğraf çek"), Dil.t("F2'ye bas, sonra ") + tus() + Dil.t(" ile arkadaşına gönder."));
 			} else {

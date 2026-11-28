@@ -705,7 +705,9 @@
   "Son oyunların FPS grafiği": "FPS chart of your recent sessions",
   "oyun": "sessions",
   "açık": "on",
-  "kapalı": "off"
+  "kapalı": "off",
+  "Komut çarkı": "Command wheel",
+  "Oyunda G'yi basılı tut, fareyle seç, bırak. Komutları KCZ Menü'de Hareket sekmesinden düzenle.": "In game, hold G, aim with the mouse and release. Edit the commands in the KCZ Menu's Movement tab."
  },
  "kalip": {
   "Giriş yapıldı: {}": "Signed in as {1}",

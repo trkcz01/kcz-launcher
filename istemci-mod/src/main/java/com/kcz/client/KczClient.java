@@ -37,7 +37,7 @@ public class KczClient implements ClientModInitializer {
 	public static final KeyMapping MENU = new KeyMapping("key.kcz-client.menu", InputConstants.UNKNOWN.getValue(), KATEGORI);
 	public static final KeyMapping ZOOM = new KeyMapping("key.kcz-client.zoom", InputConstants.KEY_C, KATEGORI);
 	/** KCZ yakınlık sesli sohbeti: basılı tutunca konuşursun */
-	// Konumlu anı: F2'den sonra son fotoğrafı arkadaşa gönder
+	// Komut çarkı (basılı tut); F2'den hemen sonra, fotoğraf kartı ekrandayken: son fotoğrafı arkadaşa gönder
 	public static final KeyMapping FOTO = new KeyMapping("key.kcz-client.foto", InputConstants.KEY_G, KATEGORI);
 	public static final KeyMapping KONUS = new KeyMapping("key.kcz-client.konus", InputConstants.KEY_B, KATEGORI);
 
@@ -110,6 +110,7 @@ public class KczClient implements ClientModInitializer {
 			KczOyunculari.tick(mc);
 			Ses.tick(mc);
 			Foto.tick(mc);
+			CarkEkrani.tick(mc);
 		});
 		// Oyun kapanırken FPS ve görüş ayarlarını eski hâline getir (geçici değerler kaydedilmesin)
 		ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> {

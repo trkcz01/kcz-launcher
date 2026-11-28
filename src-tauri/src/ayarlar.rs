@@ -63,6 +63,8 @@ pub struct Istemci {
     pub saat: bool,
     pub surekli_kos: bool,
     pub egilme_tut: bool,
+    /// Komut çarkı: oyunda G basılı tutulunca açılır (komutlar oyun içinden düzenlenir)
+    pub komut_carki: bool,
     pub nisangah: bool,
     /// Oyunda F2 ile alınan ekran görüntüsü panoya da kopyalanır
     pub ss_panoya: bool,
@@ -118,6 +120,7 @@ impl Default for Istemci {
             saat: false,
             surekli_kos: false,
             egilme_tut: false,
+            komut_carki: true,
             nisangah: false,
             ss_panoya: true,
             shader_paketi: None,
