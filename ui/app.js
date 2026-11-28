@@ -51,13 +51,14 @@ function bildirim(metin, hata = false) {
    TEMA, RENK, SAYDAMLIK
    ========================================================= */
 const TEMALAR = {
-  gri: { ad: 'Gri', alt: 'Sade · Kedi', v: '#a1a1aa', v2: '#e4e4e7' },
+  gri: { ad: 'Gri', alt: 'Ana tema · Kedi', v: '#a1a1aa', v2: '#e4e4e7' },
   siyah: { ad: 'Siyah', alt: 'Tam karanlık · Yarasa', v: '#fafafa', v2: '#737373' },
   end: { ad: 'End', alt: 'Yıldızlar ve adalar · Enderman', v: '#c084fc', v2: '#fde68a' },
   nether: { ad: 'Nether', alt: 'Lav ve kül · Ghast', v: '#f97316', v2: '#ef4444' },
   dunya: { ad: 'Normal Dünya', alt: 'Gökyüzü ve bulutlar · Creeper', v: '#4ade80', v2: '#38bdf8' },
   performans: { ad: 'Performans', alt: 'Animasyonsuz, en hafif', v: '#22c55e', v2: '#a3e635' },
-  sade: { ad: 'Sade', alt: 'Sadece OYNA, en sade', v: '#fafafa', v2: '#a1a1aa' }
+  // Sade: ayrı kart değil, Performans'ın alt seçeneği (Performans seçiliyken altta "Sade görünüm")
+  sade: { ad: 'Sade', alt: 'Sadece OYNA, en sade', v: '#fafafa', v2: '#a1a1aa', kartYok: true }
 };
 const RENKLER = [['Gri', '#a1a1aa'], ['Beyaz', '#fafafa'], ['Mor', '#8b5cf6'], ['Mavi', '#3b82f6'], ['Turkuaz', '#06b6d4'],
   ['Yeşil', '#22c55e'], ['Sarı', '#eab308'], ['Turuncu', '#f97316'], ['Kırmızı', '#ef4444'], ['Pembe', '#ec4899']];
@@ -112,7 +113,7 @@ function kafaKoy(img, kimlik, boyut = 68) {
    animasyonlar, bulanık cam ve süsler kapanır; skinler durur (zayıf bilgisayarda kasmasın). */
 if (window.__KCZ_DUZ) document.documentElement.classList.add('duz');
 function hafifMi() {
-  return ayarlar.tema === 'performans' || ['cokdusuk', 'dusuk'].includes(ayarlar.performansSeviye)
+  return ayarlar.tema === 'performans' || ayarlar.tema === 'sade' || ['cokdusuk', 'dusuk'].includes(ayarlar.performansSeviye)
     || (!ayarlar.performansSeviye && ayarlar.sistemZayif === true);
 }
 let hafifOnceki = null;
@@ -167,6 +168,7 @@ function temaPaneliCiz() {
   const tk = $('temalar');
   if (!tk.children.length) {
     for (const [id, t] of Object.entries(TEMALAR)) {
+      if (t.kartYok) continue;
       const b = el('button', 'tema');
       b.dataset.tema = id;
       const on = el('span', 'tema-onizleme');
@@ -203,7 +205,7 @@ function temaPaneliCiz() {
     $('ozelRenk').addEventListener('input', (e) => temaKaydet({ vurgu: e.target.value }));
     $('maskotSec').addEventListener('change', (e) => temaKaydet({ maskot: e.target.checked }));
     // Performans > Sade görünüm: açınca Sade tema, kapatınca önceki tema (bu bilgisayarda hatırlanır)
-    $('sadeSec').addEventListener('change', (e) => {
+    const sadeDegis = (e) => {
       if (e.target.checked) {
         if (ayarlar.tema !== 'sade') try { localStorage.setItem('sadeOncekiTema', ayarlar.tema || 'gri'); } catch { /* yok */ }
         temaKaydet({ tema: 'sade', vurgu: TEMALAR.sade.v });
@@ -213,11 +215,15 @@ function temaPaneliCiz() {
         if (!TEMALAR[onceki] || onceki === 'sade') onceki = 'gri';
         temaKaydet({ tema: onceki, vurgu: TEMALAR[onceki].v });
       }
-    });
+    };
+    $('sadeSec').addEventListener('change', sadeDegis);
+    $('sadeSec2').addEventListener('change', sadeDegis);
   }
   $('maskotSec').checked = ayarlar.maskot !== false;
   $('sadeSec').checked = ayarlar.tema === 'sade';
-  document.querySelectorAll('.tema').forEach((b) => b.classList.toggle('aktif', b.dataset.tema === ayarlar.tema));
+  document.querySelectorAll('.tema').forEach((b) => b.classList.toggle('aktif', b.dataset.tema === ayarlar.tema || (b.dataset.tema === 'performans' && ayarlar.tema === 'sade')));
+  $('sadeAltKart').hidden = !['performans', 'sade'].includes(ayarlar.tema);
+  $('sadeSec2').checked = ayarlar.tema === 'sade';
   document.querySelectorAll('.renk').forEach((b) => b.classList.toggle('secili', b.dataset.renk === ayarlar.vurgu));
   document.querySelectorAll('.saydam-btn').forEach((b) => b.classList.toggle('aktif', Number(b.dataset.s) === ayarlar.saydamlik));
   $('ozelRenk').value = ayarlar.vurgu || '#a1a1aa';

@@ -428,6 +428,7 @@ impl Ayarlar {
     /// bilgisayar. Launcher'da animasyonlar, bulanık cam ve pencere saydamlığı kapanır.
     pub fn hafif_mi(&self) -> bool {
         self.tema == "performans"
+            || self.tema == "sade"
             || ["cokdusuk", "dusuk"].contains(&self.performans_seviye.as_str())
             || (self.performans_seviye.is_empty() && self.sistem_zayif == Some(true))
     }
