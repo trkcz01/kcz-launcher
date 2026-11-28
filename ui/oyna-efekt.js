@@ -92,13 +92,7 @@
     sonTema = t;
     kap.replaceChildren();
     kap.dataset.tema = t;
-    if (t === 'dunya') {
-      let ot = '<div class="ot-serit">';
-      for (let i = 0; i < 9; i++) ot += '<span style="animation-delay:' + (-i * 0.3) + 's">' + izgara(OT.s, OT.p, 2) + '</span>';
-      ot += '</div><div class="cicekler">';
-      [0.18, 0.5, 0.82].forEach((o, i) => { ot += '<span style="left:' + (o * 100) + '%;transition-delay:' + (i * 0.06) + 's">' + izgara(CICEK[i].s, CICEK[i].p, 3) + '</span>'; });
-      kap.innerHTML = ot + '</div>';
-    } else if (t === 'nether') {
+    if (t === 'nether') {
       let a = '<div class="alev-serit">';
       for (let i = 0; i < 7; i++) a += '<span class="alev" style="animation-delay:' + (-i * 0.11) + 's">' + izgara(ALEV[0].s, ALEV[0].p, 3) + izgara(ALEV[1].s, ALEV[1].p, 3) + '</span>';
       kap.innerHTML = a + '</div>';

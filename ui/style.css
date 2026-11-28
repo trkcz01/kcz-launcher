@@ -1870,48 +1870,6 @@ body[data-dunya="siyah"] .yan, body[data-dunya="siyah"] .kutu, body[data-dunya="
 
 /* ---------- OYNA düğmesi temaya göre ---------- */
 .oyna > svg, .oyna-yazi { z-index: 1; }
-/* End: hareketli End portalı */
-body[data-dunya="end"] .oyna:not(.acik):not(.yukleniyor):not(.giris) {
-  color: #f5d0fe; text-shadow: 0 0 10px #a855f7, 0 0 2px #c084fc;
-  background-color: #060a14;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Crect x='3' y='5' width='2' height='2' fill='%235eead4'/%3E%3Crect x='15' y='2' width='1' height='1' fill='%23a78bfa'/%3E%3Crect x='19' y='14' width='2' height='2' fill='%2367e8f9'/%3E%3Crect x='8' y='18' width='1' height='1' fill='%23c4b5fd'/%3E%3Crect x='12' y='11' width='1' height='1' fill='%2322d3ee'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Crect x='10' y='3' width='1' height='1' fill='%2399f6e4'/%3E%3Crect x='2' y='15' width='2' height='1' fill='%23818cf8'/%3E%3Crect x='17' y='20' width='1' height='1' fill='%23e879f9'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #0c1528, #05070f);
-  background-size: 40px 40px, 62px 62px, 100% 100%;
-  image-rendering: pixelated;
-  animation: portal 10s linear infinite;
-  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .55), inset 0 0 18px rgba(94, 234, 212, .12), 0 8px 28px rgba(126, 34, 206, .5);
-}
-@keyframes portal { to { background-position: 40px 80px, -62px 124px, 0 0; } }
-/* Nether: akan lav */
-body[data-dunya="nether"] .oyna:not(.acik):not(.yukleniyor):not(.giris) {
-  color: #2a0a00; text-shadow: 0 1px 0 rgba(255, 237, 160, .5);
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23f97316'/%3E%3Crect x='2' y='3' width='4' height='2' fill='%23fb923c'/%3E%3Crect x='9' y='1' width='3' height='3' fill='%23fcd34d'/%3E%3Crect x='5' y='9' width='5' height='2' fill='%23fdba74'/%3E%3Crect x='12' y='10' width='3' height='3' fill='%23fde047'/%3E%3Crect x='1' y='13' width='3' height='2' fill='%23ea580c'/%3E%3Crect x='10' y='6' width='2' height='1' fill='%23fff7ae'/%3E%3C/svg%3E") 0 0 / 40px 40px;
-  image-rendering: pixelated;
-  animation: lav-ak 12s linear infinite;
-  box-shadow: inset 0 2px 0 rgba(255, 247, 174, .6), inset 0 -3px 0 rgba(124, 45, 18, .45), 0 8px 30px rgba(249, 115, 22, .6);
-}
-/* Dünya: çimen bloğu */
-body[data-dunya="dunya"] .oyna:not(.acik):not(.yukleniyor):not(.giris) {
-  color: #fff; text-shadow: 0 2px 0 rgba(20, 60, 20, .55);
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%2316a34a'/%3E%3Crect x='3' y='2' width='2' height='1' fill='%2322c55e'/%3E%3Crect x='10' y='5' width='3' height='1' fill='%234ade80'/%3E%3Crect x='6' y='10' width='2' height='1' fill='%2315803d'/%3E%3Crect x='12' y='12' width='2' height='1' fill='%2322c55e'/%3E%3Crect x='1' y='8' width='1' height='2' fill='%2315803d'/%3E%3C/svg%3E") 0 0 / 32px 32px;
-  image-rendering: pixelated;
-  box-shadow: inset 0 2px 0 rgba(187, 247, 208, .55), inset 0 -6px 0 #7c4a24, inset 0 -8px 0 #15803d, 0 8px 26px rgba(34, 197, 94, .45);
-}
-/* Gri: klasik Minecraft taş düğmesi */
-body[data-dunya="gri"] .oyna:not(.acik):not(.yukleniyor):not(.giris) {
-  color: #fff; text-shadow: 2px 2px 0 #3f3f46; border-radius: 6px;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%23757580'/%3E%3Crect x='1' y='1' width='2' height='1' fill='%23848490'/%3E%3Crect x='5' y='4' width='1' height='2' fill='%23686872'/%3E%3Crect x='2' y='6' width='2' height='1' fill='%236c6c76'/%3E%3C/svg%3E") 0 0 / 24px 24px;
-  image-rendering: pixelated;
-  box-shadow: inset 3px 3px 0 rgba(255, 255, 255, .28), inset -3px -4px 0 rgba(0, 0, 0, .38), 0 0 0 2px #111, 0 8px 22px rgba(0, 0, 0, .35);
-}
-body[data-dunya="gri"] .oyna:not(.acik):not(.yukleniyor):not(.giris):hover { box-shadow: inset 3px 3px 0 rgba(255, 255, 255, .32), inset -3px -4px 0 rgba(0, 0, 0, .35), 0 0 0 2px #fff, 0 10px 26px rgba(0, 0, 0, .4); }
-/* Siyah: ay ışığında beyaz */
-body[data-dunya="siyah"] .oyna:not(.acik):not(.yukleniyor):not(.giris) { box-shadow: 0 0 0 1px rgba(255, 255, 255, .6), 0 0 24px rgba(255, 255, 255, .25), 0 8px 26px rgba(0, 0, 0, .5); }
 
 /* =========================================================
    SADE TEMA: her yer en sade, neredeyse sadece OYNA.
@@ -2107,9 +2065,7 @@ body:not([data-tema="performans"]):not(.hafif) .oyna-blok.ustunde .oyna-efekt { 
 body:not([data-tema="performans"]):not(.hafif) .oyna-blok .oyna:active:not(:disabled) { transform: translateY(0) scale(.97); transition-duration: .08s; }
 body:not([data-tema="performans"]):not(.hafif) .oyna-blok.ustunde .oyna-parlama { animation-duration: 1.4s; }
 /* End: portal hızlanır, mor ışık */
-body[data-dunya="end"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) { animation-duration: 2.5s; box-shadow: inset 0 0 0 1px rgba(196, 181, 253, .8), inset 0 0 24px rgba(94, 234, 212, .25), 0 0 0 3px rgba(168, 85, 247, .25), 0 12px 40px rgba(126, 34, 206, .75); }
 /* Nether: lav hızlanır, alevler yükselir */
-body[data-dunya="nether"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) { animation-duration: 4s; box-shadow: inset 0 2px 0 rgba(255, 247, 174, .7), inset 0 -3px 0 rgba(124, 45, 18, .45), 0 0 0 3px rgba(249, 115, 22, .25), 0 12px 40px rgba(249, 115, 22, .85); }
 .oyna-efekt .alev-serit { position: absolute; left: 12px; right: 12px; top: -14px; display: flex; justify-content: space-between; opacity: 0; transform: translateY(8px) scaleY(.4); transform-origin: bottom; transition: opacity .25s, transform .3s var(--egri); filter: drop-shadow(0 0 6px rgba(249, 115, 22, .9)); }
 .oyna-blok.ustunde .oyna-efekt .alev-serit { opacity: 1; transform: none; }
 .oyna-efekt .alev { position: relative; display: block; }
@@ -2122,11 +2078,53 @@ body[data-dunya="nether"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):n
 .oyna-blok.ustunde .oyna-efekt .ot-serit span { animation-duration: .9s; }
 .oyna-efekt .cicekler span { position: absolute; top: -13px; display: block; transform: translateX(-50%) scale(0); transform-origin: 50% 100%; transition: transform .4s var(--egri); }
 .oyna-blok.ustunde .oyna-efekt .cicekler span { transform: translateX(-50%) scale(1); }
-body[data-dunya="dunya"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) { box-shadow: inset 0 2px 0 rgba(187, 247, 208, .7), inset 0 -6px 0 #7c4a24, inset 0 -8px 0 #15803d, 0 0 0 3px rgba(74, 222, 128, .22), 0 12px 34px rgba(34, 197, 94, .65); }
 /* Siyah: köşelerde parıltı */
 .oyna-efekt .parilti-yildiz { position: absolute; display: block; transform: translate(-50%, -50%) scale(0); opacity: 0; filter: drop-shadow(0 0 4px #fff); }
 .oyna-blok.ustunde .oyna-efekt .parilti-yildiz { animation: parilti-yildiz 1.4s ease-in-out infinite; }
 @keyframes parilti-yildiz { 0%, 100% { transform: translate(-50%, -50%) scale(.3) rotate(0); opacity: 0; } 50% { transform: translate(-50%, -50%) scale(1) rotate(45deg); opacity: 1; } }
-body[data-dunya="siyah"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) { box-shadow: 0 0 0 1px rgba(255, 255, 255, .9), 0 0 36px rgba(255, 255, 255, .45), 0 10px 30px rgba(0, 0, 0, .5); }
 /* Sade: hafif ışıltı */
 body[data-tema="sade"] .oyna-blok.ustunde .oyna:not(:disabled) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--v) 14%, transparent), 0 20px 54px color-mix(in srgb, var(--v) 34%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3) !important; }
+
+/* =========================================================
+   OYNA DÜĞMESİ (11-28 c): akan renk geçişli, ışıltılı, profesyonel.
+   Her tema kendi renginde; Sade ve Performans kendi sade düğmesini kullanır.
+   ========================================================= */
+body[data-dunya="end"] { --o1: #3b0764; --o2: #7c3aed; --o3: #c026d3; --o4: #6d28d9; --oy: #fff; --ois: rgba(168, 85, 247, .6); --oic: rgba(232, 121, 249, .55); }
+body[data-dunya="nether"] { --o1: #7c2d12; --o2: #ea580c; --o3: #f59e0b; --o4: #dc2626; --oy: #fff; --ois: rgba(249, 115, 22, .6); --oic: rgba(253, 186, 116, .6); }
+body[data-dunya="dunya"] { --o1: #14532d; --o2: #16a34a; --o3: #4ade80; --o4: #15803d; --oy: #fff; --ois: rgba(34, 197, 94, .55); --oic: rgba(187, 247, 208, .6); }
+body[data-dunya="gri"] { --o1: #71717a; --o2: #d4d4d8; --o3: #fafafa; --o4: #a1a1aa; --oy: #18181b; --ois: rgba(212, 212, 216, .35); --oic: rgba(255, 255, 255, .7); }
+body[data-dunya="siyah"] { --o1: #d4d4d8; --o2: #ffffff; --o3: #f4f4f5; --o4: #e4e4e7; --oy: #09090b; --ois: rgba(255, 255, 255, .35); --oic: rgba(255, 255, 255, .9); }
+body[data-dunya]:not([data-dunya=""]):not([data-dunya="sade"]) .oyna:not(.acik):not(.yukleniyor):not(.giris) {
+  color: var(--oy);
+  background: linear-gradient(115deg, var(--o1) 0%, var(--o2) 28%, var(--o3) 50%, var(--o2) 72%, var(--o4) 100%);
+  background-size: 260% 100%;
+  animation: oyna-akis 7s ease-in-out infinite;
+  border-radius: 14px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .38),
+    inset 0 -2px 0 rgba(0, 0, 0, .2),
+    0 0 0 1px rgba(255, 255, 255, .1),
+    0 12px 30px -8px var(--ois),
+    0 0 22px -6px var(--oic);
+}
+body[data-dunya="gri"] .oyna:not(.acik):not(.yukleniyor):not(.giris),
+body[data-dunya="siyah"] .oyna:not(.acik):not(.yukleniyor):not(.giris) { text-shadow: 0 1px 0 rgba(255, 255, 255, .5); }
+@keyframes oyna-akis { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+/* İçte yumuşak bir ışık (üstten) */
+body[data-dunya]:not([data-dunya=""]):not([data-dunya="sade"]) .oyna:not(.acik):not(.yukleniyor):not(.giris)::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% -20%, rgba(255, 255, 255, .32), transparent 55%);
+}
+/* Üstüne gelince: daha hızlı akış, daha güçlü ışık */
+body[data-dunya]:not([data-dunya=""]):not([data-dunya="sade"]) .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) {
+  animation-duration: 2.6s;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .45),
+    inset 0 -2px 0 rgba(0, 0, 0, .18),
+    0 0 0 1px rgba(255, 255, 255, .18),
+    0 0 0 4px color-mix(in srgb, var(--oic) 35%, transparent),
+    0 16px 40px -8px var(--ois),
+    0 0 34px -4px var(--oic);
+}
+.oyna-parlama { z-index: 1; }

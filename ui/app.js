@@ -178,7 +178,10 @@ function temaPaneliCiz() {
         on.append(s);
       }
       b.append(on, el('b', '', t.ad), el('small', '', t.alt));
-      b.addEventListener('click', () => temaKaydet({ tema: id, vurgu: t.v }));
+      b.addEventListener('click', () => {
+        if (id === 'sade' && ayarlar.tema !== 'sade') try { localStorage.setItem('sadeOncekiTema', ayarlar.tema || 'gri'); } catch { /* yok */ }
+        temaKaydet({ tema: id, vurgu: t.v });
+      });
       tk.append(b);
     }
     for (const [ad, h] of RENKLER) {
@@ -199,8 +202,21 @@ function temaPaneliCiz() {
     });
     $('ozelRenk').addEventListener('input', (e) => temaKaydet({ vurgu: e.target.value }));
     $('maskotSec').addEventListener('change', (e) => temaKaydet({ maskot: e.target.checked }));
+    // Performans > Sade görünüm: açınca Sade tema, kapatınca önceki tema (bu bilgisayarda hatırlanır)
+    $('sadeSec').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        if (ayarlar.tema !== 'sade') try { localStorage.setItem('sadeOncekiTema', ayarlar.tema || 'gri'); } catch { /* yok */ }
+        temaKaydet({ tema: 'sade', vurgu: TEMALAR.sade.v });
+      } else {
+        let onceki = 'gri';
+        try { onceki = localStorage.getItem('sadeOncekiTema') || 'gri'; } catch { /* yok */ }
+        if (!TEMALAR[onceki] || onceki === 'sade') onceki = 'gri';
+        temaKaydet({ tema: onceki, vurgu: TEMALAR[onceki].v });
+      }
+    });
   }
   $('maskotSec').checked = ayarlar.maskot !== false;
+  $('sadeSec').checked = ayarlar.tema === 'sade';
   document.querySelectorAll('.tema').forEach((b) => b.classList.toggle('aktif', b.dataset.tema === ayarlar.tema));
   document.querySelectorAll('.renk').forEach((b) => b.classList.toggle('secili', b.dataset.renk === ayarlar.vurgu));
   document.querySelectorAll('.saydam-btn').forEach((b) => b.classList.toggle('aktif', Number(b.dataset.s) === ayarlar.saydamlik));
