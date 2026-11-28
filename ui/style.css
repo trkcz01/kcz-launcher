@@ -1732,3 +1732,183 @@ mark.ara-isaret { background: color-mix(in srgb, var(--v) 40%, transparent); col
 body[data-tema="performans"] .ayar-kart:has(#maskotSec) { display: none; }
 .ayar-icerik .bolum-baslik { text-transform: none; letter-spacing: -.01em; color: var(--yazi); font-size: 18px; font-weight: 700; margin: 0 0 2px; }
 .ayar-menu.araniyor .ayar-kategori.aktif { background: transparent; box-shadow: none; }
+
+/* =========================================================
+   TEMA DÜNYALARI (tema-sus.js): sahne, maskot köşesi, dokular, OYNA düğmesi
+   Hafif modda (body.hafif) hepsi kapalı.
+   ========================================================= */
+body.hafif .dunya-sus, body.hafif .serit-kap { display: none !important; }
+
+/* ---------- Maskotun köşesi (sol üst şerit ve süsler) ---------- */
+.serit-kap { position: absolute; left: 0; top: 0; pointer-events: none; }
+.serit-kap .serit, .serit-kap .sus, .serit-kap .sarkit, .serit-kap .liken { position: absolute; display: block; }
+.serit-kap svg { display: block; }
+.serit { overflow: hidden; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35));
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 12px), transparent); }
+.serit-kap .end-cubugu { animation: end-cubugu 3s ease-in-out infinite; filter: drop-shadow(0 0 3px #f5d0fe) drop-shadow(0 0 6px rgba(216, 180, 254, .6)); }
+@keyframes end-cubugu { 50% { filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 10px rgba(216, 180, 254, .85)); } }
+.serit-kap .chorus { transform-origin: 50% 100%; animation: sallan-ot 4.5s ease-in-out infinite; }
+.serit-kap .ates { display: block; position: relative; }
+.serit-kap .ates svg + svg { position: absolute; left: 0; top: 0; }
+.serit-kap .ates svg:first-child { animation: ates-kare .32s steps(1) infinite; }
+.serit-kap .ates svg + svg { animation: ates-kare .32s steps(1) infinite reverse; }
+@keyframes ates-kare { 0% { opacity: 1; } 50% { opacity: 0; } }
+.serit-kap .ates-kap { filter: drop-shadow(0 0 4px rgba(249, 115, 22, .85)); }
+.serit-kap .ates-kap.kucuk { transform: scale(.7); transform-origin: 50% 100%; }
+.serit-kap .cicek, .serit-kap .ot { transform-origin: 50% 100%; animation: sallan-ot 3.2s ease-in-out infinite; }
+.serit-kap .ot { animation-duration: 2.4s; animation-delay: -.8s; }
+@keyframes sallan-ot { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+.serit-kap .fener { animation: fener 2.6s ease-in-out infinite; }
+@keyframes fener { 0%, 100% { filter: drop-shadow(0 0 3px rgba(251, 191, 36, .55)); } 45% { filter: drop-shadow(0 0 7px rgba(251, 191, 36, .95)); } 55% { filter: drop-shadow(0 0 4px rgba(251, 191, 36, .6)); } }
+.serit-kap .sarkit { top: 1px; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .5)); }
+.serit-kap .liken { top: 4px; width: 3px; height: 3px; background: #bef264; box-shadow: 0 0 6px #a3e635; opacity: .7; animation: liken 3s ease-in-out infinite; }
+@keyframes liken { 50% { opacity: .25; } }
+
+/* ---------- Maskotlar: kontur, yer gölgesi ---------- */
+.maskot-govde svg { filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .35)); }
+.maskot[data-tur="enderman"] .maskot-govde > svg { filter: drop-shadow(0 0 1.2px rgba(192, 132, 252, .75)) drop-shadow(0 1px 0 rgba(0, 0, 0, .4)); }
+.maskot[data-tur="yarasa"] .maskot-govde > svg, .maskot[data-tur="yarasa"] .ucan svg { filter: drop-shadow(0 0 1px rgba(255, 255, 255, .35)); }
+.maskot:not([data-tur="yarasa"]):not([data-tur="ghast"])::after {
+  content: ''; position: absolute; left: 10%; right: 10%; bottom: -2px; height: 4px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, .45), transparent 70%); z-index: -1;
+}
+.maskot[data-tur="ghast"]::after {
+  content: ''; position: absolute; left: 18%; right: 18%; bottom: -9px; height: 4px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, .3), transparent 70%); animation: gh-golge 3.4s ease-in-out infinite;
+}
+@keyframes gh-golge { 50% { transform: scaleX(.75); opacity: .6; } }
+
+/* ---------- Ana sahne ---------- */
+.dunya-sus { position: absolute; pointer-events: none; }
+.dunya-sus svg { display: block; }
+.dunya-sus.arazi { left: 0; right: 0; bottom: 0; }
+.dunya-sus.arazi svg { width: 100% !important; }
+body[data-dunya="dunya"] .sahne-dekor::after, body[data-dunya="nether"] .sahne-dekor::after { display: none; }
+/* End */
+.dunya-sus.end-ada { bottom: -10px; opacity: .55; }
+.dunya-sus.end-ada svg { height: 96px !important; }
+.dunya-sus.sutun { bottom: 44px; display: flex; flex-direction: column; align-items: center; gap: 14px; opacity: .6; }
+.dunya-sus.sutun .kristal-kap { animation: kristal-don 3s ease-in-out infinite; filter: drop-shadow(0 0 4px #f5d0fe) drop-shadow(0 0 14px #c084fc); }
+@keyframes kristal-don { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-5px) rotate(8deg); } }
+.dunya-sus.ejder { top: 9%; left: 110%; opacity: .5; animation: ejder 48s linear infinite; animation-delay: -30s; }
+.dunya-sus.ejder .kanat { display: block; }
+.dunya-sus.ejder .kanat.b { position: absolute; left: 0; top: 0; }
+.dunya-sus.ejder .kanat.a { animation: ates-kare .9s steps(1) infinite; }
+.dunya-sus.ejder .kanat.b { animation: ates-kare .9s steps(1) infinite reverse; }
+@keyframes ejder { 0% { left: 108%; transform: translateY(0); } 20% { transform: translateY(18px); } 40% { left: -20%; transform: translateY(-6px); } 100% { left: -20%; } }
+/* Nether */
+.dunya-sus.lav {
+  left: 0; right: 0; bottom: 0; height: 40px; opacity: .9;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23ea580c'/%3E%3Crect x='2' y='3' width='4' height='2' fill='%23f97316'/%3E%3Crect x='9' y='1' width='3' height='3' fill='%23fbbf24'/%3E%3Crect x='5' y='9' width='5' height='2' fill='%23fb923c'/%3E%3Crect x='12' y='10' width='3' height='3' fill='%23fde047'/%3E%3Crect x='1' y='13' width='3' height='2' fill='%23c2410c'/%3E%3Crect x='10' y='6' width='2' height='1' fill='%23fff7ae'/%3E%3C/svg%3E") 0 0 / 48px 48px;
+  image-rendering: pixelated; animation: lav-ak 14s linear infinite;
+  box-shadow: 0 -14px 40px rgba(249, 115, 22, .5), inset 0 3px 0 rgba(255, 237, 160, .5);
+}
+@keyframes lav-ak { to { background-position: 96px 48px; } }
+.dunya-sus.kayalik { bottom: 28px; opacity: .85; }
+.dunya-sus.kayalik.sol { left: -6px; }
+.dunya-sus.kayalik.sag { right: -6px; transform: scaleX(-1); }
+.dunya-sus.lav-selale {
+  left: 8px; top: 0; bottom: 36px; width: 12px; opacity: .85;
+  background: repeating-linear-gradient(180deg, #f97316 0 6px, #fbbf24 6px 9px, #ea580c 9px 15px); background-size: 12px 15px;
+  animation: selale .5s linear infinite; box-shadow: 0 0 22px rgba(249, 115, 22, .7);
+}
+@keyframes selale { to { background-position: 0 15px; } }
+.dunya-sus.parilti { top: 0; animation: parilti 4.5s ease-in-out infinite; filter: drop-shadow(0 0 10px rgba(253, 230, 138, .8)); }
+@keyframes parilti { 50% { filter: drop-shadow(0 0 16px rgba(253, 230, 138, 1)); } }
+/* Dünya */
+.dunya-sus.tepe-arka { bottom: 46px; opacity: .6; }
+.dunya-sus.tepe-arka svg { height: 154px !important; }
+.dunya-sus.tepe-on { bottom: -4px; }
+.dunya-sus.tepe-on svg { height: 84px !important; }
+.dunya-sus.agac { bottom: 96px; opacity: .9; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .3)); }
+.dunya-sus.cicek-sahne { display: none; }
+/* Siyah: gece */
+.dunya-sus.ay { right: 150px; top: 26px; opacity: .9; }
+.dunya-sus.ay .ay-isik { position: absolute; inset: -40px; border-radius: 50%; background: radial-gradient(circle, rgba(245, 245, 244, .22), transparent 65%); }
+.dunya-sus.ay svg { position: relative; filter: drop-shadow(0 0 12px rgba(245, 245, 244, .45)); }
+.dunya-sus.dag { opacity: .95; }
+.dunya-sus.dag svg { height: 126px !important; }
+.dunya-sus.yildiz-gece { width: 2px; height: 2px; background: #fff; animation: yildiz var(--sure, 3s) ease-in-out infinite; animation-delay: var(--gecikme, 0s); }
+/* Gri: yağmur */
+.dunya-sus.yagmur { top: -30px; width: 1px; background: linear-gradient(transparent, rgba(226, 232, 240, .5)); animation: yagmur var(--sure, 1.2s) linear infinite; animation-delay: var(--gecikme, 0s); }
+@keyframes yagmur { from { transform: translate(0, 0) rotate(12deg); } to { transform: translate(-90px, 560px) rotate(12deg); } }
+
+/* ---------- Panellerde tema dokusu ---------- */
+.kutu { isolation: isolate; }
+.yan::before, .kutu::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1; opacity: 0; transition: opacity .6s; }
+body[data-dunya="end"] .yan::before, body[data-dunya="end"] .kutu::before {
+  opacity: .9;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' shape-rendering='crispEdges'%3E%3Crect x='5' y='7' width='1' height='1' fill='%23e9d5ff' fill-opacity='.5'/%3E%3Crect x='27' y='3' width='1' height='1' fill='%23a78bfa' fill-opacity='.6'/%3E%3Crect x='17' y='22' width='1' height='1' fill='%23fff' fill-opacity='.35'/%3E%3Crect x='34' y='31' width='1' height='1' fill='%23c4b5fd' fill-opacity='.5'/%3E%3Crect x='9' y='34' width='1' height='1' fill='%2367e8f9' fill-opacity='.35'/%3E%3C/svg%3E"),
+    radial-gradient(120% 60% at 50% 0%, rgba(168, 85, 247, .14), transparent 70%);
+}
+body[data-dunya="end"] .yan, body[data-dunya="end"] .kutu, body[data-dunya="end"] .sahne { border-color: rgba(192, 132, 252, .28); }
+body[data-dunya="nether"] .yan::before, body[data-dunya="nether"] .kutu::before {
+  opacity: 1;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8' shape-rendering='crispEdges'%3E%3Crect width='16' height='1' fill='%23000' fill-opacity='.22'/%3E%3Crect y='4' width='16' height='1' fill='%23000' fill-opacity='.22'/%3E%3Crect x='3' y='1' width='1' height='3' fill='%23000' fill-opacity='.22'/%3E%3Crect x='11' y='5' width='1' height='3' fill='%23000' fill-opacity='.22'/%3E%3Crect x='6' y='2' width='3' height='1' fill='%23fb923c' fill-opacity='.05'/%3E%3C/svg%3E") 0 0 / 32px 16px,
+    linear-gradient(0deg, rgba(249, 115, 22, .16), transparent 45%);
+  image-rendering: pixelated;
+}
+body[data-dunya="nether"] .yan, body[data-dunya="nether"] .kutu, body[data-dunya="nether"] .sahne { border-color: rgba(251, 146, 60, .26); }
+body[data-dunya="dunya"] .yan::before, body[data-dunya="dunya"] .kutu::before {
+  opacity: 1;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Crect x='2' y='3' width='1' height='1' fill='%2386efac' fill-opacity='.08'/%3E%3Crect x='8' y='9' width='1' height='1' fill='%2386efac' fill-opacity='.07'/%3E%3Crect x='9' y='2' width='1' height='1' fill='%23000' fill-opacity='.07'/%3E%3C/svg%3E") 0 0 / 24px 24px,
+    linear-gradient(180deg, rgba(125, 211, 252, .1), transparent 40%);
+  image-rendering: pixelated;
+}
+body[data-dunya="dunya"] .yan, body[data-dunya="dunya"] .kutu, body[data-dunya="dunya"] .sahne { border-color: rgba(134, 239, 172, .24); }
+body[data-dunya="gri"] .yan::before, body[data-dunya="gri"] .kutu::before {
+  opacity: 1;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' shape-rendering='crispEdges'%3E%3Crect x='1' y='1' width='2' height='1' fill='%23fff' fill-opacity='.035'/%3E%3Crect x='5' y='4' width='1' height='2' fill='%23000' fill-opacity='.1'/%3E%3Crect x='2' y='6' width='2' height='1' fill='%23000' fill-opacity='.08'/%3E%3C/svg%3E") 0 0 / 24px 24px;
+  image-rendering: pixelated;
+}
+body[data-dunya="siyah"] .yan, body[data-dunya="siyah"] .kutu, body[data-dunya="siyah"] .sahne { border-color: rgba(255, 255, 255, .18); }
+
+/* ---------- OYNA düğmesi temaya göre ---------- */
+.oyna > svg, .oyna-yazi { z-index: 1; }
+/* End: hareketli End portalı */
+body[data-dunya="end"] .oyna:not(.acik):not(.yukleniyor):not(.giris) {
+  color: #f5d0fe; text-shadow: 0 0 10px #a855f7, 0 0 2px #c084fc;
+  background-color: #060a14;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Crect x='3' y='5' width='2' height='2' fill='%235eead4'/%3E%3Crect x='15' y='2' width='1' height='1' fill='%23a78bfa'/%3E%3Crect x='19' y='14' width='2' height='2' fill='%2367e8f9'/%3E%3Crect x='8' y='18' width='1' height='1' fill='%23c4b5fd'/%3E%3Crect x='12' y='11' width='1' height='1' fill='%2322d3ee'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Crect x='10' y='3' width='1' height='1' fill='%2399f6e4'/%3E%3Crect x='2' y='15' width='2' height='1' fill='%23818cf8'/%3E%3Crect x='17' y='20' width='1' height='1' fill='%23e879f9'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #0c1528, #05070f);
+  background-size: 40px 40px, 62px 62px, 100% 100%;
+  image-rendering: pixelated;
+  animation: portal 10s linear infinite;
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .55), inset 0 0 18px rgba(94, 234, 212, .12), 0 8px 28px rgba(126, 34, 206, .5);
+}
+@keyframes portal { to { background-position: 40px 80px, -62px 124px, 0 0; } }
+/* Nether: akan lav */
+body[data-dunya="nether"] .oyna:not(.acik):not(.yukleniyor):not(.giris) {
+  color: #2a0a00; text-shadow: 0 1px 0 rgba(255, 237, 160, .5);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23f97316'/%3E%3Crect x='2' y='3' width='4' height='2' fill='%23fb923c'/%3E%3Crect x='9' y='1' width='3' height='3' fill='%23fcd34d'/%3E%3Crect x='5' y='9' width='5' height='2' fill='%23fdba74'/%3E%3Crect x='12' y='10' width='3' height='3' fill='%23fde047'/%3E%3Crect x='1' y='13' width='3' height='2' fill='%23ea580c'/%3E%3Crect x='10' y='6' width='2' height='1' fill='%23fff7ae'/%3E%3C/svg%3E") 0 0 / 40px 40px;
+  image-rendering: pixelated;
+  animation: lav-ak 12s linear infinite;
+  box-shadow: inset 0 2px 0 rgba(255, 247, 174, .6), inset 0 -3px 0 rgba(124, 45, 18, .45), 0 8px 30px rgba(249, 115, 22, .6);
+}
+/* Dünya: çimen bloğu */
+body[data-dunya="dunya"] .oyna:not(.acik):not(.yukleniyor):not(.giris) {
+  color: #fff; text-shadow: 0 2px 0 rgba(20, 60, 20, .55);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%2316a34a'/%3E%3Crect x='3' y='2' width='2' height='1' fill='%2322c55e'/%3E%3Crect x='10' y='5' width='3' height='1' fill='%234ade80'/%3E%3Crect x='6' y='10' width='2' height='1' fill='%2315803d'/%3E%3Crect x='12' y='12' width='2' height='1' fill='%2322c55e'/%3E%3Crect x='1' y='8' width='1' height='2' fill='%2315803d'/%3E%3C/svg%3E") 0 0 / 32px 32px;
+  image-rendering: pixelated;
+  box-shadow: inset 0 2px 0 rgba(187, 247, 208, .55), inset 0 -6px 0 #7c4a24, inset 0 -8px 0 #15803d, 0 8px 26px rgba(34, 197, 94, .45);
+}
+/* Gri: klasik Minecraft taş düğmesi */
+body[data-dunya="gri"] .oyna:not(.acik):not(.yukleniyor):not(.giris) {
+  color: #fff; text-shadow: 2px 2px 0 #3f3f46; border-radius: 6px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%23757580'/%3E%3Crect x='1' y='1' width='2' height='1' fill='%23848490'/%3E%3Crect x='5' y='4' width='1' height='2' fill='%23686872'/%3E%3Crect x='2' y='6' width='2' height='1' fill='%236c6c76'/%3E%3C/svg%3E") 0 0 / 24px 24px;
+  image-rendering: pixelated;
+  box-shadow: inset 3px 3px 0 rgba(255, 255, 255, .28), inset -3px -4px 0 rgba(0, 0, 0, .38), 0 0 0 2px #111, 0 8px 22px rgba(0, 0, 0, .35);
+}
+body[data-dunya="gri"] .oyna:not(.acik):not(.yukleniyor):not(.giris):hover { box-shadow: inset 3px 3px 0 rgba(255, 255, 255, .32), inset -3px -4px 0 rgba(0, 0, 0, .35), 0 0 0 2px #fff, 0 10px 26px rgba(0, 0, 0, .4); }
+/* Siyah: ay ışığında beyaz */
+body[data-dunya="siyah"] .oyna:not(.acik):not(.yukleniyor):not(.giris) { box-shadow: 0 0 0 1px rgba(255, 255, 255, .6), 0 0 24px rgba(255, 255, 255, .25), 0 8px 26px rgba(0, 0, 0, .5); }

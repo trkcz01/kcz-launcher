@@ -261,6 +261,7 @@ final class Maskot {
 		donukParca(g, sp, "kolS", 1, 8, -kol, alfa);
 		donukParca(g, sp, "kolD", 9, 8, kol, alfa);
 		parca(g, sp, "gozler", 0, alfa);
+		parca(g, sp, "gozAlt", 0, alfa);
 		// gözler parlar (kızınca daha çok)
 		float parla = kizgin ? 0.75f : 0.25f + 0.25f * (float) (0.5 + 0.5 * Math.sin(simdi / 3000.0 * Math.PI * 2));
 		parca(g, sp, "gozler", 0xFFFFFFFF, parla * alfa * 0.6f);

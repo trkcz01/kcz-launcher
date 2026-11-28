@@ -17,22 +17,23 @@
      Her parça ya satır dizisi ya da { x, y, s: [satırlar] } (ızgarada x,y'den başlar). '.' boş. */
   const SPRITE = {
     enderman: {
-      w: 10, h: 27, olcek: 1.5,
-      palet: { k: '#0b0a10', d: '#211c2b', a: '#17131e', p: '#9d2fc0', e: '#e57cf6', E: '#fde7ff' },
+      w: 10, h: 27, olcek: 1.6,
+      palet: { k: '#0b0a10', d: '#211c2b', s: '#15121c', a: '#17131e', p: '#9d2fc0', e: '#e57cf6', E: '#fde7ff', q: '#4a1660' },
       parcalar: {
         govde: [
-          '.kkkkkkkk.', '.kdkkkkdk.', '.kkkkkkkk.', '.kkkkkkkk.', '.kkkkkkkk.', '.kkkkkkkk.', '.kkkkkkkk.', '.kkkkkkkk.',
-          '..kkkkkk..', '..kkkkkk..', '..kkkkkk..', '..kkkkkk..', '..kkkkkk..', '..kkkkkk..', '..kkkkkk..',
+          '.ddddddds.', '.dkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.',
+          '..dkkkks..', '..kkkkks..', '..kkkkks..', '..kkkkks..', '..kkkkks..', '..kkkkks..', '..kkkkks..',
           '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..',
           '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..', '..dk..kd..',
         ],
         kolS: { x: 0, y: 8, s: ['aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'da'] },
         kolD: { x: 8, y: 8, s: ['aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'ad'] },
         gozler: { x: 1, y: 4, s: ['peE..Eep'] },
+        gozAlt: { x: 1, y: 5, s: ['qpq..qpq'] },
       },
     },
     creeper: {
-      w: 8, h: 19, olcek: 1.75,
+      w: 8, h: 19, olcek: 1.9,
       palet: { g: '#5fb34d', G: '#418c35', l: '#93d575', s: '#2f6a27', k: '#101010' },
       parcalar: {
         kafa: ['glgGglGg', 'GglggGgl', 'gkkggkkg', 'lkkGlkkg', 'gGgkkgGg', 'Ggkkkkgl', 'glkkkkGg', 'ggkGgkgG'],
@@ -41,7 +42,7 @@
       },
     },
     ghast: {
-      w: 12, h: 18, olcek: 1.6,
+      w: 12, h: 18, olcek: 1.75,
       palet: { w: '#f4f4f5', W: '#d4d4d8', o: '#a1a1aa', f: '#3f3f46', r: '#b91c1c', R: '#f87171' },
       parcalar: {
         govde: ['.wwwwwwwwww.', 'wwwwwwwwwwwW', 'wwwwwwwwwwwW', 'wwwwwwwwwwwW', 'wwwwwwwwwwwW', 'wwwwwwwwwwwW',
@@ -56,14 +57,14 @@
       },
     },
     yarasa: {
-      w: 8, h: 10, olcek: 1.8,
+      w: 8, h: 10, olcek: 2,
       palet: { b: '#8a6a52', B: '#4f3b2d', k: '#1f1712' },
       parcalar: {
         asili: ['...kk...', '..BbbB..', '.BBbbBB.', 'BBBbbBBB', 'BBBbbBBB', '.BBbbBB.', '..BbbB..', '..bbbb..', '.bkbbkb.', '.b....b.'],
       },
     },
     yarasaUcan: {
-      w: 15, h: 7, olcek: 1.8,
+      w: 15, h: 7, olcek: 2,
       palet: { b: '#8a6a52', B: '#5c4535', e: '#fca5a5' },
       parcalar: {
         kanatA: ['B.....b.b.....B', 'BB....bbb....BB', 'BBB..bebeb..BBB', '.BBBBbbbbbBBBB.', '..BBBbbbbbBBB..', '......bbb......', '.......b.......'],
@@ -71,7 +72,7 @@
       },
     },
     kedi: {
-      w: 11, h: 13, olcek: 1.9,
+      w: 11, h: 13, olcek: 2,
       palet: { g: '#a1a1aa', G: '#6b7280', w: '#f4f4f5', p: '#f9a8d4', e: '#86efac', k: '#18181b' },
       parcalar: {
         kuyruk: { x: 7, y: 5, s: ['...G', '..gg', '..g.', '.gg.', '.g..', 'gg..', 'g...'] },
@@ -190,13 +191,15 @@
     // Yarasa tavanda: sağda panelin yuvarlak köşesine denk gelmesin
     let x = t === 'sol' ? y.sol : y.sag - b.w - (tur === 'yarasa' ? 16 : 0);
     if (y.sag - y.sol < b.w * 2 + 16) x = y.sol; // yer yoksa tek yerde kalır
-    let top = y.zemin - b.h; // ayakta duranlar menü çubuğunun üstünde
-    if (tur === 'ghast') top = y.zemin - b.h - 5;
+    const serit = document.body.dataset.serit && document.body.dataset.serit !== 'siyah' ? 8 : 0;
+    let top = y.zemin - serit - b.h; // ayakta duranlar menü çubuğunun (varsa tema şeridinin) üstünde
+    if (tur === 'ghast') top = y.zemin - serit - b.h - 5;
     if (tur === 'yarasa') top = 3; // panelin tavanına asılı (kenar çizgisinin hemen altı)
     return { x: Math.round(x), y: Math.round(top) };
   }
 
   function yerlestir() {
+    if (window.kczTemaSus && !mesgul) window.kczTemaSus.seritYenile();
     if (!maskot || mesgul) return;
     const k = konum(taraf);
     maskot.style.left = k.x + 'px';
@@ -417,11 +420,14 @@
   }
 
   window.kczMaskot = {
+    yerler: () => yerler(),
     /** Temaya göre maskotu kur/kaldır. acik: Ayarlar'daki "Tema maskotu", hafif: hafif mod */
     uygula(tema, acik, hafif) {
       const yeni = acik && !hafif ? TEMA_MASKOT[tema] || null : null;
       if (yeni !== tur || !alan) kur(yeni);
       sahneSus(hafif ? null : tema);
+      if (window.kczTemaSus) window.kczTemaSus.uygula(tema, hafif);
+      requestAnimationFrame(yerlestir);
     },
     /** Tema kartı önizlemesi için duran küçük çizim (yoksa boş) */
     onizleme(tema) {

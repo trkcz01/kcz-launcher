@@ -373,6 +373,31 @@ public class KczEkrani extends Screen {
 		return (float) (v - Math.floor(v));
 	}
 
+	/** Maskotun durduğu küçük blok şeridi (launcher'daki gibi): End taşı, netherrack, çimen, taş. Yüksekliğini döndürür. */
+	private int seritCiz(GuiGraphicsExtractor g, String tema, int x0, int x1, int zeminY) {
+		int[] p = switch (tema == null ? "" : tema) {
+			case "end" -> new int[] { 0xE8E4A9, 0xCFCA8E, 0xA8A36F, 0x8F8A5C };
+			case "nether" -> new int[] { 0xB91C1C, 0x7F1D1D, 0x5B1414, 0x3F0D0D };
+			case "dunya" -> new int[] { 0x5FBF4A, 0x3E8E35, 0x8B5A2B, 0x6B4423 };
+			case "gri" -> new int[] { 0x8A8A92, 0x6B6B73, 0x5A5A62, 0x46464D };
+			default -> null;
+		};
+		if (p == null || x1 - x0 < 20) return 0;
+		int h = 4;
+		for (int x = x0; x < x1; x++) {
+			float kenar = Math.min(1, Math.min(x - x0, x1 - 1 - x) / 8f);
+			for (int r = 0; r < h; r++) {
+				float z = sabitRastgele(x * 4 + r, 5);
+				int renk = r == 0 ? (tema.equals("dunya") && z < 0.18f ? p[1] : p[0])
+						: r == 1 ? (z < 0.15f ? p[2] : p[1]) : (z < 0.22f ? p[3] : p[2]);
+				if (tema.equals("gri") && r > 0 && (x + (r == 1 ? 0 : 3)) % 6 == 0) renk = p[3];
+				g.fill(x, zeminY - h + r, x + 1, zeminY - h + r + 1, alfa(renk, kenar));
+			}
+		}
+		g.fill(x0 + 4, zeminY, x1 - 4, zeminY + 1, alfa(0, 0.25f));
+		return h;
+	}
+
 	/** Temaya göre panelin zemininde hafif süs: End yıldızları, Nether korları, Dünya bulutları */
 	private void temaSusu(GuiGraphicsExtractor g, String tema, long simdi) {
 		if (tema == null) return;
@@ -579,7 +604,8 @@ public class KczEkrani extends Screen {
 		else if (maskot == null || !maskot.tur().equals(mt)) maskot = new Maskot(mt);
 		if (maskot != null) {
 			float sol = lx + 26 + Math.max(this.font.width("KCZ Client"), this.font.width(temaYazi) * 0.75f) + 14;
-			maskot.ciz(g, sol, ex - 14, py + BASLIK_H, py + 1, mx, my);
+			int serit = seritCiz(g, a.tema.ad, (int) sol - 8, ex - 6, py + BASLIK_H);
+			maskot.ciz(g, sol, ex - 14, py + BASLIK_H - serit, py + 1, mx, my);
 		}
 	}
 

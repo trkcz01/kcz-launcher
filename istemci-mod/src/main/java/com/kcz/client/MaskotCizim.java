@@ -58,11 +58,12 @@ final class MaskotCizim {
 	}
 
 	static {
-		HEPSI.put("enderman", new Sprite(10, 27, paletYap('k', 0xFF0B0A10, 'd', 0xFF211C2B, 'a', 0xFF17131E, 'p', 0xFF9D2FC0, 'e', 0xFFE57CF6, 'E', 0xFFFDE7FF), new Parca[] {
-				new Parca("govde", 0, 0, new String[] { ".kkkkkkkk.", ".kdkkkkdk.", ".kkkkkkkk.", ".kkkkkkkk.", ".kkkkkkkk.", ".kkkkkkkk.", ".kkkkkkkk.", ".kkkkkkkk.", "..kkkkkk..", "..kkkkkk..", "..kkkkkk..", "..kkkkkk..", "..kkkkkk..", "..kkkkkk..", "..kkkkkk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..dk..kd.." }),
+		HEPSI.put("enderman", new Sprite(10, 27, paletYap('k', 0xFF0B0A10, 'd', 0xFF211C2B, 's', 0xFF15121C, 'a', 0xFF17131E, 'p', 0xFF9D2FC0, 'e', 0xFFE57CF6, 'E', 0xFFFDE7FF, 'q', 0xFF4A1660), new Parca[] {
+				new Parca("govde", 0, 0, new String[] { ".ddddddds.", ".dkkkkkks.", ".kkkkkkks.", ".kkkkkkks.", ".kkkkkkks.", ".kkkkkkks.", ".kkkkkkks.", ".kkkkkkks.", "..dkkkks..", "..kkkkks..", "..kkkkks..", "..kkkkks..", "..kkkkks..", "..kkkkks..", "..kkkkks..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..kk..kk..", "..dk..kd.." }),
 				new Parca("kolS", 0, 8, new String[] { "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "da" }),
 				new Parca("kolD", 8, 8, new String[] { "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "ad" }),
-				new Parca("gozler", 1, 4, new String[] { "peE..Eep" }) }));
+				new Parca("gozler", 1, 4, new String[] { "peE..Eep" }),
+				new Parca("gozAlt", 1, 5, new String[] { "qpq..qpq" }) }));
 		HEPSI.put("creeper", new Sprite(8, 19, paletYap('g', 0xFF5FB34D, 'G', 0xFF418C35, 'l', 0xFF93D575, 's', 0xFF2F6A27, 'k', 0xFF101010), new Parca[] {
 				new Parca("kafa", 0, 0, new String[] { "glgGglGg", "GglggGgl", "gkkggkkg", "lkkGlkkg", "gGgkkgGg", "Ggkkkkgl", "glkkkkGg", "ggkGgkgG" }),
 				new Parca("govde", 1, 8, new String[] { "gGgglG", "lggGgg", "GgsgGl", "gglgGg", "gGggsg", "sgGlgg", "ggGgsG" }),
