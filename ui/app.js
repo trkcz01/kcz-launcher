@@ -333,7 +333,7 @@ function hesabiGoster(d) {
   hesapAdi = girisli ? d.ad || 'Oyuncu' : '';
   if (girisli) {
     yaz('hesapAd', hesapAdi);
-    yaz('hesapTur', 'Microsoft hesabı · hesap değiştir');
+    yaz('hesapTur', d.cevrimdisi ? 'Çevrimdışı · hesap değiştir' : 'Microsoft hesabı · hesap değiştir');
     setTimeout(() => { kimlikGoster(''); kimlikYukle(); }, 0);
     $('hesapBtn').title = 'Hesaplar';
     yaz('hesapHarf', hesapAdi[0].toUpperCase());
@@ -442,11 +442,11 @@ $('cevrimdisiKaydetBtn').addEventListener('click', () => {
     return;
   }
   localStorage.setItem('kcz_cevrimdisi_ad', ad);
-  yaz('hesapAd', ad);
-  yaz('hesapHarf', ad[0].toUpperCase());
-  yaz('hesapTur', 'Çevrimdışı Mod · Oyna\'ya bas');
-  bildirim('Çevrimdışı ad kaydedildi: ' + ad);
-  oynaGuncelle();
+  api.cevrimdisiGiris(ad).then((d) => {
+    hesabiGoster(d);
+    if (d.girisli) bildirim('Hesap eklendi: ' + ad + ' (çevrimdışı)');
+    else bildirim(d.hata || 'Hesap eklenemedi.', true);
+  });
 });
 $('cevrimdisiAdInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') $('cevrimdisiKaydetBtn').click();
@@ -464,7 +464,7 @@ async function hesapMenusuCiz() {
     kafaKoy(img, h.uuid);
     img.alt = '';
     const ad = el('b', '', h.ad);
-    s.append(img, ad, el('small', '', aktif ? 'Açık' : 'Geç'));
+    s.append(img, ad, el('small', '', aktif ? 'Açık' : h.cevrimdisi ? 'Çevrimdışı' : 'Geç'));
     const sil = el('button', 'mini-ikon', '×');
     sil.title = 'Bu hesabı launcher\'dan kaldır';
     sil.addEventListener('click', async (e) => {

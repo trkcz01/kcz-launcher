@@ -79,6 +79,9 @@ struct HesapListesi {
 struct HesapOzeti {
     uuid: String,
     ad: String,
+    /// İsimle (Microsoft'suz) eklenen hesap: anahtarı yok, sadece adı
+    #[serde(default)]
+    cevrimdisi: bool,
 }
 
 fn liste_dosyasi() -> std::path::PathBuf {
@@ -114,7 +117,7 @@ fn hatirla(o: &Oturum) {
     let mut l = liste_oku();
     match l.liste.iter_mut().find(|x| x.uuid == o.uuid) {
         Some(x) => x.ad = o.ad.clone(),
-        None => l.liste.push(HesapOzeti { uuid: o.uuid.clone(), ad: o.ad.clone() }),
+        None => l.liste.push(HesapOzeti { uuid: o.uuid.clone(), ad: o.ad.clone(), cevrimdisi: false }),
     }
     l.aktif = o.uuid.clone();
     liste_yaz(&l);
@@ -122,11 +125,16 @@ fn hatirla(o: &Oturum) {
 
 pub fn hesaplar() -> Value {
     let l = liste_oku();
-    json!({ "aktif": l.aktif, "liste": l.liste.iter().map(|x| json!({ "uuid": x.uuid, "ad": x.ad })).collect::<Vec<_>>() })
+    json!({ "aktif": l.aktif, "liste": l.liste.iter().map(|x| json!({ "uuid": x.uuid, "ad": x.ad, "cevrimdisi": x.cevrimdisi })).collect::<Vec<_>>() })
 }
 
 /// Kayıtlı başka bir hesaba geçer (yeniden giriş gerekmez)
 pub async fn hesaba_gec(uuid: &str) -> Value {
+    // İsimle eklenmiş hesap: giriş gerekmez, doğrudan o isimle açılır
+    let l = liste_oku();
+    if let Some(h) = l.liste.iter().find(|x| x.uuid == uuid && x.cevrimdisi) {
+        return cevrimdisi_giris(&h.ad.clone());
+    }
     let Some(m) = hesap_kasasi(uuid).and_then(|e| e.get_password().ok()) else {
         return json!({ "girisli": false, "hata": "Bu hesabın girişi bulunamadı, tekrar ekle." });
     };
@@ -172,7 +180,7 @@ pub fn mevcut() -> Option<(String, String)> {
 
 /* ---------- Yardımcılar ---------- */
 fn profil_json(o: &Oturum) -> Value {
-    json!({ "girisli": true, "ad": o.ad, "uuid": o.uuid })
+    json!({ "girisli": true, "ad": o.ad, "uuid": o.uuid, "cevrimdisi": o.erisim.is_empty() })
 }
 
 fn xbox_hata(kod: u64) -> String {
@@ -478,9 +486,15 @@ async fn pencere_girisi_ic(app: AppHandle) -> Sonuc<Oturum> {
 pub async fn oturumu_yenile() -> Value {
     let mevcut = OTURUM.lock().unwrap().clone();
     if let Some(o) = mevcut {
-        // Son 30 dakikada yenilendiyse tekrar sormaya gerek yok
-        if o.zaman.elapsed() < Duration::from_secs(30 * 60) {
+        // İsimle açılmış hesap yenilenmez; Microsoft hesabı son 30 dakikada yenilendiyse tekrar sormaya gerek yok
+        if o.erisim.is_empty() || o.zaman.elapsed() < Duration::from_secs(30 * 60) {
             return profil_json(&o);
+        }
+    } else {
+        // Launcher açılırken: son açık hesap isimle eklenmişse onunla devam et
+        let l = liste_oku();
+        if let Some(h) = l.liste.iter().find(|x| x.uuid == l.aktif && x.cevrimdisi) {
+            return cevrimdisi_giris(&h.ad.clone());
         }
     }
     let Some(k) = oku() else { return json!({ "girisli": false }) };
@@ -552,6 +566,17 @@ pub fn cevrimdisi_giris(ad: &str) -> Value {
         zaman: Instant::now(),
     };
     *OTURUM.lock().unwrap() = Some(o.clone());
+    // Hesap listesine kalıcı yaz (hesap menüsünde görünsün, launcher yeniden açılınca hatırlansın)
+    let mut l = liste_oku();
+    match l.liste.iter_mut().find(|x| x.uuid == o.uuid) {
+        Some(x) => {
+            x.ad = o.ad.clone();
+            x.cevrimdisi = true;
+        }
+        None => l.liste.push(HesapOzeti { uuid: o.uuid.clone(), ad: o.ad.clone(), cevrimdisi: true }),
+    }
+    l.aktif = o.uuid.clone();
+    liste_yaz(&l);
     profil_json(&o)
 }
 
