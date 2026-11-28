@@ -1,5 +1,5 @@
-/* KCZ Launcher İngilizce sözlüğü (dil.js kullanır). Anahtar: ekrandaki Türkçe yazı. */
-window.DIL_EN = {
+/* KCZ Launcher sözlüğü: en (dil.js kullanır). Anahtar: ekrandaki Türkçe yazı. */
+(window.DIL_SOZLUKLERI = window.DIL_SOZLUKLERI || {}).en = {
  "sabit": {
   "Profiller": "Profiles",
   "Senin ID'n": "Your ID",
@@ -672,7 +672,40 @@ window.DIL_EN = {
   "Per": "Thu",
   "Cum": "Fri",
   "Cmt": "Sat",
-  "Paz": "Sun"
+  "Paz": "Sun",
+  "Otomatik ayar": "Auto-tune",
+  "Her oyundan sonra FPS'e bakar, ayarları küçük adımlarla bilgisayarına göre düzeltir. Kendi seçtiğin görüş mesafesini asla geçmez.": "Checks your FPS after every session and adjusts settings in small steps to fit your PC. Never goes above the render distance you picked.",
+  "Performans geçmişi": "Performance history",
+  "Son oyunlarının FPS'i ve ayar değişikliklerinin etkisi.": "FPS of your recent sessions and how setting changes affected it.",
+  "Tablo": "Table",
+  "Grafik": "Chart",
+  "Otomatik ayarlandı": "Auto-tuned",
+  "Son oyunların çok rahat geçti, görüş biraz açıldı.": "Your last sessions ran smoothly, so render distance was raised a bit.",
+  "Takılmalar bellek yetmemesinden.": "The stutters came from running low on memory.",
+  "FPS düşüktü ya da sık takıldı.": "FPS was low or the game stuttered often.",
+  "Geri al": "Undo",
+  "Geri alındı ✓": "Undone ✓",
+  "Geri alınamadı.": "Couldn't undo.",
+  "Görüş": "Render distance",
+  "Simülasyon": "Simulation distance",
+  "Akıllı FPS": "Smart FPS",
+  "Güçlü çekirdekler": "Performance cores",
+  "FPS sınırı": "FPS limit",
+  "Sınırsız": "Unlimited",
+  "Bir oyun daha oyna, burada FPS grafiğin çıkacak.": "Play one more session and your FPS chart will appear here.",
+  "Birkaç oyun oynayınca burada FPS grafiğin ve ayar değişikliklerinin etkisi görünür.": "Play a few sessions and your FPS chart and the effect of setting changes will show up here.",
+  "Ayar değişikliklerinin etkisi": "Effect of setting changes",
+  "Otomatik": "Auto",
+  "Ortalama": "Average",
+  "en kötü %1": "worst 1%",
+  "farklı sunucular": "different servers",
+  "Tarih": "Date",
+  "Süre": "Duration",
+  "Ort. FPS": "Avg FPS",
+  "Son oyunların FPS grafiği": "FPS chart of your recent sessions",
+  "oyun": "sessions",
+  "açık": "on",
+  "kapalı": "off"
  },
  "kalip": {
   "Giriş yapıldı: {}": "Signed in as {1}",

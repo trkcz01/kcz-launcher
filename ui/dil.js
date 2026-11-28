@@ -1,20 +1,26 @@
 /* =========================================================
-   DİL: launcher Türkçe yazılır; "English" seçiliyse ekrandaki yazılar dil-en.js sözlüğüyle çevrilir.
+   DİL: launcher Türkçe yazılır; başka dil seçiliyse ekrandaki yazılar dil-<dil>.js sözlüğüyle çevrilir
+   (en, az, de).
    Sabit yazılar birebir, değişkenli yazılar ("{} sunucusuna bağlan") kalıpla eşleşir. Sonradan
    eklenen/değişen yazıları MutationObserver yakalar. Karşılığı olmayan yazı Türkçe kalır.
    Dil seçimi: localStorage (ilk boyamada titreme olmasın) + ayarlar.dil (oyun içi menü için).
    ========================================================= */
 (function () {
   const ANAHTAR = 'kcz-dil';
+  const DILLER = ['tr', 'en', 'az', 'de'];
   function otomatik() {
-    // Türkiye saat dilimi ya da Türkçe tarayıcı dili: Türkçe; değilse İngilizce
-    try { if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Europe/Istanbul') return 'tr'; } catch { /* yok */ }
+    // Saat dilimi ya da bilgisayarın dili: Türkiye → Türkçe, Azerbaycan → Azərbaycanca, Almanca → Deutsch, değilse İngilizce
+    let bolge = '';
+    try { bolge = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { /* yok */ }
     const l = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
-    return l.some((x) => /^tr\b/i.test(x)) ? 'tr' : 'en';
+    if (bolge === 'Europe/Istanbul' || l.some((x) => /^tr\b/i.test(x))) return 'tr';
+    if (bolge === 'Asia/Baku' || l.some((x) => /^az\b/i.test(x))) return 'az';
+    if (l.length && /^de\b/i.test(l[0])) return 'de';
+    return 'en';
   }
   let kayitli = null;
   try { kayitli = localStorage.getItem(ANAHTAR); } catch { /* yok */ }
-  const aktif = kayitli === 'en' || kayitli === 'tr' ? kayitli : otomatik();
+  const aktif = DILLER.includes(kayitli) ? kayitli : otomatik();
 
   const DIL = {
     aktif,
@@ -22,7 +28,7 @@
     t: (s) => s,
     /** Ayarlardaki dil: boşsa bu bilgisayar için seçileni kaydeder; farklıysa yeni dille yeniden yükler */
     esitle(ayarDili, kaydet) {
-      if (ayarDili !== 'tr' && ayarDili !== 'en') { if (kaydet) kaydet(aktif); return; }
+      if (!DILLER.includes(ayarDili)) { if (kaydet) kaydet(aktif); return; }
       try { localStorage.setItem(ANAHTAR, ayarDili); } catch { /* yok */ }
       if (ayarDili !== aktif) location.reload();
     },
@@ -32,10 +38,10 @@
     },
   };
   window.DIL = DIL;
-  if (aktif !== 'en') return;
+  if (aktif === 'tr') return;
 
-  document.documentElement.lang = 'en';
-  const S = window.DIL_EN || { sabit: {}, kalip: {} };
+  document.documentElement.lang = aktif;
+  const S = (window.DIL_SOZLUKLERI || {})[aktif] || { sabit: {}, kalip: {} };
   const sabit = new Map(Object.entries(S.sabit));
   const kacis = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const harf = /[A-Za-zÇĞİÖŞÜçğıöşü]/;
@@ -88,9 +94,10 @@
   function agacCevir(kok) {
     if (kok.nodeType === 3) { metinCevir(kok); return; }
     if (kok.nodeType !== 1 || atlanir(kok)) return;
-    // Bağlama göre farklı çevrilen yazılar: HTML'de data-en ile verilir
-    const ozeller = kok.matches('[data-en]') ? [kok, ...kok.querySelectorAll('[data-en]')] : kok.querySelectorAll('[data-en]');
-    for (const e of ozeller) { if (e.dataset.en) { e.textContent = e.dataset.en; delete e.dataset.en; } }
+    // Bağlama göre farklı çevrilen yazılar: HTML'de data-en / data-az / data-de ile verilir
+    const sec = '[data-' + aktif + ']';
+    const ozeller = kok.matches(sec) ? [kok, ...kok.querySelectorAll(sec)] : kok.querySelectorAll(sec);
+    for (const e of ozeller) { const v = e.dataset[aktif]; if (v) { e.textContent = v; delete e.dataset[aktif]; } }
     const y = document.createTreeWalker(kok, NodeFilter.SHOW_TEXT);
     let d;
     while ((d = y.nextNode())) metinCevir(d);

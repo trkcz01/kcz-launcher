@@ -124,6 +124,8 @@
     tepsiOynaDinle: (f) => dinle('tepsi-oyna', f),
     performansUygula: (seviye) => cagir('performans_uygula', { seviye: String(seviye || '') }),
     cekirdekBilgi: () => cagir('cekirdek_bilgi'),
+    performansGecmisi: () => cagir('performans_gecmisi'),
+    otomatikGeriAl: (tur, eski) => cagir('otomatik_geri_al', { tur: String(tur), eski }),
     oyunSecenegiYaz: (anahtar, deger) => cagir('oyun_secenegi_yaz', { anahtar: String(anahtar), deger: String(deger) }),
 
     sunucuListesi: () => cagir('sunucu_liste'),

@@ -93,9 +93,8 @@ pub fn ayar_yaz(a: &Ayarlar) {
         ("dusukSistem", json!(i.dusuk_sistem)),
         ("gucluSistem", json!(i.guclu_sistem)),
         ("akilliFps", json!(i.akilli_fps)),
-        // Oyun sonu özeti kapalıysa oyunda ölçüm de yapılmaz
-        ("olcum", json!(i.olcum && a.performans_ozeti)),
-        ("dil", json!(if a.dil == "en" { "en" } else { "tr" })),
+        ("olcum", json!(i.olcum)),
+        ("dil", json!(if ["en", "az", "de"].contains(&a.dil.as_str()) { a.dil.as_str() } else { "tr" })),
         // ad: temanın adı (oyun içi menüdeki maskot ve süsler için), maskot: kapalıysa çizilmez
         ("tema", json!({ "zemin": zemin, "zemin2": zemin2, "vurgu": a.vurgu, "ad": a.tema, "maskot": a.maskot })),
     ] {

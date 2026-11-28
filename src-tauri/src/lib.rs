@@ -15,6 +15,7 @@ mod modlar;
 mod onar;
 mod ortak;
 mod oyun;
+mod otoayar;
 mod performans;
 mod ping;
 mod profil;
@@ -202,9 +203,19 @@ pub fn oyun_durumu(mut veri: Value) {
             goruntu::izlemeyi_durdur();
             // Oyunun içindeki KCZ menüsünden yapılan değişiklikleri al
             istemci::ayar_geri_oku();
-            // Oyun sonu performans özeti (KCZ Client ölçtüyse)
-            if ayarlar::getir().performans_ozeti {
-                if let Some(o) = istemci::oturum_oku(OYUN_BASLADI_MS.load(std::sync::atomic::Ordering::SeqCst)) {
+            // KCZ Client ölçtüyse: otomatik ayar, geçmiş ve oyun sonu özeti
+            if let Some(o) = istemci::oturum_oku(OYUN_BASLADI_MS.load(std::sync::atomic::Ordering::SeqCst)) {
+                let otomatik = otoayar::calistir(&o);
+                let sunucu = SON_ACILIS
+                    .lock()
+                    .unwrap()
+                    .as_ref()
+                    .and_then(|a| a.get("hedefSunucu").and_then(Value::as_str).map(String::from));
+                otoayar::gecmise_ekle(&o, otomatik.as_ref(), sunucu);
+                if let Some(d) = otomatik {
+                    veri["otomatik"] = d;
+                }
+                if ayarlar::getir().performans_ozeti {
                     veri["performans"] = o;
                     if let Some(p) = istemci::onceki_oturum() {
                         veri["oncekiPerformans"] = p;
@@ -844,6 +855,16 @@ fn oyun_secenegi_yaz(anahtar: String, deger: String) -> Value {
 }
 
 #[tauri::command]
+fn performans_gecmisi() -> Value {
+    otoayar::gecmis()
+}
+
+#[tauri::command]
+fn otomatik_geri_al(tur: String, eski: Value) -> Value {
+    otoayar::geri_al(&tur, &eski)
+}
+
+#[tauri::command]
 async fn performans_uygula(seviye: String) -> Value {
     performans::uygula(&seviye).await
 }
@@ -1218,6 +1239,8 @@ pub fn run() {
             oyun_klasor_ac,
             sistem_tara,
             performans_uygula,
+            performans_gecmisi,
+            otomatik_geri_al,
             cekirdek_bilgi,
             oyun_secenegi_yaz,
             istemci_bilgi,

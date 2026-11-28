@@ -59,7 +59,7 @@ public class Ayar {
 	public String akilliFps = "kapali";
 	/** Oyun sonu performans özeti için ölçüm */
 	public boolean olcum = true;
-	/** Menü dili: "tr" ya da "en" (launcher'dan gelir) */
+	/** Menü dili: "tr", "en", "az", "de" (launcher'dan gelir) */
 	public String dil = "tr";
 
 	/** Zayıf bilgisayarlar: FPS için kısılanlar */
@@ -140,7 +140,7 @@ public class Ayar {
 					if (a.hedefFps != 30 && a.hedefFps != 60 && a.hedefFps != 100) a.hedefFps = 60;
 					if (a.dusukSistem && a.gucluSistem) a.gucluSistem = false;
 					if (!"hz".equals(a.akilliFps) && !"pil".equals(a.akilliFps)) a.akilliFps = "kapali";
-					if (!"en".equals(a.dil)) a.dil = "tr";
+					if (a.dil == null || !java.util.List.of("en", "az", "de").contains(a.dil)) a.dil = "tr";
 					mevcut = a;
 				}
 			}

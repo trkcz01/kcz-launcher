@@ -205,8 +205,12 @@ pub struct Ayarlar {
     pub dosya_isit: bool,
     /// Oyun kapanınca performans özeti göster
     pub performans_ozeti: bool,
-    /// Arayüz dili: "tr", "en" ya da "" (ilk açılışta bilgisayarın diline göre seçilir)
+    /// Arayüz dili: "tr", "en", "az", "de" ya da "" (ilk açılışta bilgisayarın diline göre seçilir)
     pub dil: String,
+    /// Her oyundan sonra ölçüme göre ayarları küçük adımlarla düzelt (otoayar.rs)
+    pub otomatik_ayar: bool,
+    /// Otomatik ayarın hafızası: tavan görüş, son yazılan değerler, iyi oyun serisi, bekleme
+    pub oto_durum: serde_json::Value,
 }
 
 impl Default for Ayarlar {
@@ -251,6 +255,8 @@ impl Default for Ayarlar {
             dosya_isit: true,
             performans_ozeti: true,
             dil: String::new(),
+            otomatik_ayar: true,
+            oto_durum: serde_json::Value::Null,
         }
     }
 }
@@ -292,7 +298,7 @@ fn duzelt(mut t: Ayarlar) -> Ayarlar {
     if !YUKLEYICILER.contains(&t.yukleyici.as_str()) {
         t.yukleyici = "fabric".into();
     }
-    if !["", "tr", "en"].contains(&t.dil.as_str()) {
+    if !["", "tr", "en", "az", "de"].contains(&t.dil.as_str()) {
         t.dil = String::new();
     }
     if !["kapali", "hz", "pil"].contains(&t.istemci.akilli_fps.as_str()) {

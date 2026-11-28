@@ -2241,8 +2241,10 @@ api.durumDinle((d) => {
       if (d.kod && d.kod !== 0) sonHata = 'Oyun bir hatayla kapandı. Ayrıntılar: Ayarlar > Oyun kaydı.';
       if (d.modHatasi) modHatasiGoster(d.modHatasi);
       else if (d.cokme) cokmeGoster(d.cokme);
-      else if (d.performans) setTimeout(() => ozetGoster(d.performans, d.oncekiPerformans, d.sistem), 600);
+      else if (d.performans) setTimeout(() => ozetGoster(d.performans, d.oncekiPerformans, d.sistem, d.otomatik), 600);
+      else if (d.otomatik) bildirim(`${dilT('Otomatik ayar')}: ${degisimYazisi(d.otomatik)}`);
     }
+    gecmisCiz();
     sunuculariYukle();
     haftayiCiz();
   }
@@ -2265,26 +2267,28 @@ function sureYazisi(sn) {
 }
 function oneriler(p, s) {
   const l = [];
+  // Otomatik ayar açıksa görüş, simülasyon, RAM ve Düşük sistem önerilerini o yapıyor
+  const oto = ayarlar.otomatikAyar !== false;
   const a = p.ayar || {}, i = ayarlar.istemci || {};
   const hz = a.ekranHz || 60;
   const sebep = p.sebep || {};
   const dakika = Math.max(1, (p.sure || 60) / 60);
   const takilmaDk = (p.takilma || 0) / dakika;
-  if (p.fps < 30 && !i.dusukSistem) {
+  if (!oto && p.fps < 30 && !i.dusukSistem) {
     l.push({ baslik: 'Düşük sistem modunu aç', aciklama: 'FPS düşük: parçacık, uzak yaratık ve animasyonlar kısılır.', uygula: () => istemciKaydet({ dusukSistem: true, gucluSistem: false }) });
   }
-  if (p.fps < 50 && (a.gorus || 0) > 10) {
+  if (oto) { /* otomatik ayar halleder */ } else if (p.fps < 50 && (a.gorus || 0) > 10) {
     const yeni = Math.max(8, a.gorus - 4);
     l.push({ baslik: `Görüş mesafesini ${yeni} yap`, aciklama: `Şu an ${a.gorus}. Görüş, FPS'i en çok etkileyen ayar.`, uygula: () => api.oyunSecenegiYaz('renderDistance', yeni) });
   } else if ((sebep.yukleme || 0) >= 5 && (a.gorus || 0) > 8) {
     const yeni = Math.max(8, a.gorus - 2);
     l.push({ baslik: `Görüş mesafesini ${yeni} yap`, aciklama: 'Hızlı giderken yeni bölge yüklenirken takılıyor.', uygula: () => api.oyunSecenegiYaz('renderDistance', yeni) });
   }
-  if (a.tekOyunculu && (a.simulasyon || 0) > 8 && p.fps < 60) {
+  if (!oto && a.tekOyunculu && (a.simulasyon || 0) > 8 && p.fps < 60) {
     l.push({ baslik: 'Simülasyon mesafesini 6 yap', aciklama: 'Tek oyunculuda işlemciyi en çok yoran ayarlardan biri.', uygula: () => api.oyunSecenegiYaz('simulationDistance', 6) });
   }
   const bellekSikinti = (sebep.gc || 0) >= 3 || ((p.bellek || {}).enCokYuzde || 0) >= 92;
-  if (bellekSikinti) {
+  if (bellekSikinti && !oto) {
     const sistemRam = (s && s.ram) || 8;
     const yeni = Math.min(ayarlar.ram + 2, Math.max(4, Math.floor(sistemRam / 2)));
     if (yeni > ayarlar.ram) {
@@ -2312,8 +2316,28 @@ function oneriler(p, s) {
   }
   return l.slice(0, 3);
 }
-function ozetGoster(p, once, s) {
+function ozetGoster(p, once, s, otomatik) {
   if (!p || (p.sure || 0) < 60) return;
+  const ok = $('ozetOtomatik');
+  ok.replaceChildren();
+  ok.hidden = !otomatik;
+  if (otomatik) {
+    const y = el('div', 'ozet-oneri-yazi');
+    y.append(el('b', '', `${dilT('Otomatik ayarlandı')}: ${degisimYazisi(otomatik)}`),
+      el('small', '', dilT(otomatik.sebep === 'rahat' ? 'Son oyunların çok rahat geçti, görüş biraz açıldı.' : otomatik.sebep === 'bellek' ? 'Takılmalar bellek yetmemesinden.' : 'FPS düşüktü ya da sık takıldı.')));
+    const b = el('button', 'ikincil kucuk', 'Geri al');
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      const r = await api.otomatikGeriAl(otomatik.tur, otomatik.eski).catch(() => null);
+      if (r && r.ok) {
+        b.textContent = 'Geri alındı ✓';
+        ayarlar = await api.ayarlariGetir();
+        oyunAyarlariniDoldur();
+        gecmisCiz();
+      } else { b.disabled = false; bildirim('Geri alınamadı.', true); }
+    });
+    ok.append(y, b);
+  }
   yaz('ozetAlt', `${sureYazisi(p.sure)} oyun${p.ayar && p.ayar.gorus ? ` · görüş ${p.ayar.gorus}` : ''}`);
   yaz('ozetFps', Math.round(p.fps));
   yaz('ozetFps1', Math.round(p.fps1));
@@ -2362,6 +2386,207 @@ function ozetGoster(p, once, s) {
   $('ozetPerde').hidden = false;
 }
 $('ozetTamam').addEventListener('click', () => { $('ozetPerde').hidden = true; });
+
+/* =========================================================
+   PERFORMANS GEÇMİŞİ: son 30 oyunun FPS'i (ortalama ve en kötü %1) + ayar değişikliklerinin etkisi
+   ========================================================= */
+const AYAR_ADI = {
+  gorus: 'Görüş', simulasyon: 'Simülasyon', ram: 'RAM', dusukSistem: 'Düşük sistem', akilliFps: 'Akıllı FPS',
+  javaYeni: 'Java hızlandırmaları', gucluCekirdek: 'Güçlü çekirdekler', vsync: 'VSync', fpsSiniri: 'FPS sınırı',
+};
+const DEGISIM_TUR = { gorus: 'gorus', sim: 'simulasyon', ram: 'ram', dusukSistem: 'dusukSistem' };
+function ayarDegeri(k, v) {
+  if (v === true) return dilT('açık');
+  if (v === false) return dilT('kapalı');
+  if (k === 'ram') return `${v} GB`;
+  if (k === 'fpsSiniri') return v >= 260 ? dilT('Sınırsız') : String(v);
+  if (k === 'akilliFps') return dilT(v === 'hz' ? 'Ekranın Hz\'i' : v === 'pil' ? 'Pil tasarrufu' : 'Kapalı');
+  return String(v);
+}
+/** {tur, eski, yeni} → "Görüş 16 → 14" */
+function degisimYazisi(o) {
+  const k = DEGISIM_TUR[o.tur] || o.tur;
+  return `${dilT(AYAR_ADI[k] || k)} ${ayarDegeri(k, o.eski)} → ${ayarDegeri(k, o.yeni)}`;
+}
+function ayarFarki(a, b) {
+  const f = [];
+  for (const k of Object.keys(AYAR_ADI)) {
+    const x = (a || {})[k], y = (b || {})[k];
+    if (x == null || y == null || x === y) continue;
+    f.push(`${dilT(AYAR_ADI[k])} ${ayarDegeri(k, x)} → ${ayarDegeri(k, y)}`);
+  }
+  return f;
+}
+const ayniAyar = (a, b) => ayarFarki(a, b).length === 0;
+const ortalama = (l, k) => l.reduce((t, x) => t + (x[k] || 0), 0) / l.length;
+/** Her ayar değişikliği için önceki ve sonraki (en çok 3) oyunun ortalaması */
+function etkiler(liste) {
+  const sonuc = [];
+  for (let i = 1; i < liste.length; i++) {
+    const fark = ayarFarki(liste[i - 1].ayar, liste[i].ayar);
+    if (!fark.length) continue;
+    const once = [], sonra = [];
+    for (let j = i - 1; j >= 0 && once.length < 3 && ayniAyar(liste[j].ayar, liste[i - 1].ayar); j--) once.push(liste[j]);
+    for (let j = i; j < liste.length && sonra.length < 3 && ayniAyar(liste[j].ayar, liste[i].ayar); j++) sonra.push(liste[j]);
+    const fo = ortalama(once, 'fps'), fs = ortalama(sonra, 'fps');
+    const yo = ortalama(once, 'fps1'), ys = ortalama(sonra, 'fps1');
+    const sunucular = new Set([...once, ...sonra].map((x) => x.sunucu || ''));
+    sonuc.push({
+      no: i, fark, otomatik: !!liste[i - 1].otomatik, once: once.length, sonra: sonra.length,
+      fps: [fo, fs], fps1: [yo, ys], yuzde: fo > 0 ? Math.round(((fs - fo) / fo) * 100) : 0, karisik: sunucular.size > 1,
+    });
+  }
+  return sonuc;
+}
+let gecmisVeri = [];
+let gecmisTablo = false;
+$('gecmisTabloBtn').addEventListener('click', () => { gecmisTablo = !gecmisTablo; gecmisCizIc(); });
+async function gecmisCiz() {
+  try { gecmisVeri = await api.performansGecmisi(); } catch { gecmisVeri = []; }
+  if (!Array.isArray(gecmisVeri)) gecmisVeri = [];
+  gecmisCizIc();
+}
+function gecmisCizIc() {
+  const k = $('gecmisGovde');
+  k.replaceChildren();
+  const l = gecmisVeri.filter((x) => x && x.fps > 0);
+  $('gecmisTabloBtn').hidden = l.length < 2;
+  $('gecmisTabloBtn').textContent = dilT(gecmisTablo ? 'Grafik' : 'Tablo');
+  if (l.length < 2) {
+    k.append(el('div', 'gecmis-bos', l.length ? 'Bir oyun daha oyna, burada FPS grafiğin çıkacak.' : 'Birkaç oyun oynayınca burada FPS grafiğin ve ayar değişikliklerinin etkisi görünür.'));
+    return;
+  }
+  const etki = etkiler(l);
+  if (gecmisTablo) k.append(gecmisTablosu(l));
+  else k.append(gecmisGrafigi(l, etki));
+  // Değişikliklerin etkisi (en yeniler üstte)
+  if (etki.length) {
+    const kutu = el('div', 'gecmis-etkiler');
+    kutu.append(el('div', 'ozet-oneri-baslik', 'Ayar değişikliklerinin etkisi'));
+    for (const e of etki.slice(-5).reverse()) {
+      const s = el('div', 'gecmis-etki');
+      const sol = el('div', 'gecmis-etki-yazi');
+      const ust = el('b', '');
+      ust.append(el('span', 'gecmis-no', String(e.no)), document.createTextNode(e.fark.join(', ')));
+      if (e.otomatik) ust.append(el('span', 'gecmis-oto', 'Otomatik'));
+      const alt = `${dilT('Ortalama')} ${Math.round(e.fps[0])} → ${Math.round(e.fps[1])} FPS · ${dilT('en kötü %1')} ${Math.round(e.fps1[0])} → ${Math.round(e.fps1[1])}`
+        + ` · ${e.once}+${e.sonra} ${dilT('oyun')}${e.karisik ? ' · ' + dilT('farklı sunucular') : ''}`;
+      sol.append(ust, el('small', '', alt));
+      const iyi = e.yuzde >= 0;
+      const rozet = el('span', 'gecmis-yuzde ' + (Math.abs(e.yuzde) < 5 ? 'notr' : iyi ? 'iyi' : 'kotu'),
+        `${Math.abs(e.yuzde) < 5 ? '≈' : iyi ? '▲' : '▼'} ${iyi && e.yuzde > 0 ? '+' : ''}${e.yuzde}%`);
+      s.append(sol, rozet);
+      kutu.append(s);
+    }
+    k.append(kutu);
+  }
+}
+function gecmisTablosu(l) {
+  const t = el('table', 'gecmis-tablo');
+  const bas = el('tr', '');
+  for (const h of ['Tarih', 'Süre', 'Ort. FPS', 'En kötü %1', 'Takılma', 'Görüş']) bas.append(el('th', '', h));
+  t.append(bas);
+  for (const x of [...l].reverse()) {
+    const r = el('tr', '');
+    const tarih = x.bitis ? new Date(x.bitis).toLocaleString(DIL.aktif === 'tr' ? 'tr-TR' : DIL.aktif, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+    for (const v of [tarih, sureYazisi(x.sure || 0), Math.round(x.fps), Math.round(x.fps1 || 0), x.takilma ?? '—', (x.ayar || {}).gorus ?? '—']) r.append(el('td', '', String(v)));
+    t.append(r);
+  }
+  return t;
+}
+function gecmisGrafigi(l, etki) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = 560, H = 190, SOL = 34, SAG = 62, UST = 16, ALT = 22;
+  const kap = el('div', 'gecmis-grafik');
+  // Gösterge: iki seri (renk + çizgi deseni)
+  const gosterge = el('div', 'gecmis-gosterge');
+  const g1 = el('span', 'gg ort'); g1.append(el('i', ''), document.createTextNode(dilT('Ortalama FPS')));
+  const g2 = el('span', 'gg dusuk'); g2.append(el('i', ''), document.createTextNode(dilT('En kötü %1')));
+  gosterge.append(g1, g2);
+  kap.append(gosterge);
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('class', 'gecmis-svg');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', dilT('Son oyunların FPS grafiği'));
+  const yap = (ad, oz) => { const e = document.createElementNS(NS, ad); for (const [a, v] of Object.entries(oz)) e.setAttribute(a, v); return e; };
+  const enCok = Math.max(...l.map((x) => x.fps));
+  const adim = enCok > 400 ? 100 : enCok > 160 ? 50 : enCok > 80 ? 20 : 10;
+  const tepe = Math.ceil((enCok * 1.08) / adim) * adim;
+  const x = (i) => SOL + (l.length === 1 ? 0 : (i * (W - SOL - SAG)) / (l.length - 1));
+  const y = (v) => UST + (H - UST - ALT) * (1 - Math.min(v, tepe) / tepe);
+  // Izgara ve eksen yazıları (sönük)
+  for (let v = 0; v <= tepe; v += adim) {
+    svg.append(yap('line', { x1: SOL, x2: W - SAG + 8, y1: y(v), y2: y(v), class: 'gc-izgara' }));
+    const t = yap('text', { x: SOL - 6, y: y(v) + 3.5, class: 'gc-eksen', 'text-anchor': 'end' });
+    t.textContent = v;
+    svg.append(t);
+  }
+  // Ayar değişiklikleri: ince dikey çizgi + numara (aşağıdaki listeyle aynı)
+  for (const e of etki) {
+    const cx = (x(e.no - 1) + x(e.no)) / 2;
+    svg.append(yap('line', { x1: cx, x2: cx, y1: UST, y2: H - ALT, class: 'gc-degisim' }));
+    const c = yap('circle', { cx, cy: UST - 4, r: 7, class: 'gc-no-daire' });
+    const t = yap('text', { x: cx, y: UST - 0.5, class: 'gc-no', 'text-anchor': 'middle' });
+    t.textContent = e.no;
+    svg.append(c, t);
+  }
+  // Alt eksen: ilk ve son oyunun tarihi
+  const kisaTarih = (t) => (t ? new Date(t).toLocaleDateString(DIL.aktif === 'tr' ? 'tr-TR' : DIL.aktif, { day: 'numeric', month: 'short' }) : '');
+  for (const [i, yon] of [[0, 'start'], [l.length - 1, 'end']]) {
+    const t = yap('text', { x: x(i), y: H - 6, class: 'gc-eksen', 'text-anchor': yon });
+    t.textContent = kisaTarih(l[i].bitis);
+    svg.append(t);
+  }
+  const yol = (k) => l.map((s, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(s[k] || 0).toFixed(1)}`).join(' ');
+  svg.append(yap('path', { d: yol('fps1'), class: 'gc-cizgi dusuk' }), yap('path', { d: yol('fps'), class: 'gc-cizgi ort' }));
+  // Son noktalar ve doğrudan etiketler
+  const son = l.length - 1;
+  const ey1 = y(l[son].fps), ey2 = y(l[son].fps1 || 0);
+  const ayir = Math.abs(ey1 - ey2) < 14 ? (14 - Math.abs(ey1 - ey2)) / 2 : 0;
+  for (const [k, ey, kay] of [['ort', ey1, -ayir], ['dusuk', ey2, ayir]]) {
+    svg.append(yap('circle', { cx: x(son), cy: ey, r: 4, class: 'gc-nokta ' + k }));
+    const t = yap('text', { x: x(son) + 9, y: ey + 4 + kay, class: 'gc-etiket' });
+    t.textContent = Math.round(k === 'ort' ? l[son].fps : l[son].fps1 || 0) + ' FPS';
+    svg.append(t);
+  }
+  // Fareyle üzerine gelince: dikey çizgi + o oyunun bilgisi
+  const imlec = yap('line', { x1: 0, x2: 0, y1: UST, y2: H - ALT, class: 'gc-imlec', visibility: 'hidden' });
+  const n1 = yap('circle', { r: 4, class: 'gc-nokta ort', visibility: 'hidden' });
+  const n2 = yap('circle', { r: 4, class: 'gc-nokta dusuk', visibility: 'hidden' });
+  svg.append(imlec, n1, n2);
+  const ipucu = el('div', 'gecmis-ipucu');
+  ipucu.hidden = true;
+  const alan = yap('rect', { x: SOL, y: 0, width: W - SOL - SAG + 8, height: H, fill: 'transparent' });
+  svg.append(alan);
+  const goster = (olay) => {
+    const r = svg.getBoundingClientRect();
+    const vx = ((olay.clientX - r.left) / r.width) * W;
+    const i = Math.max(0, Math.min(son, Math.round(((vx - SOL) / (W - SOL - SAG)) * son)));
+    const s = l[i];
+    for (const [e, v] of [[imlec, null], [n1, s.fps], [n2, s.fps1 || 0]]) {
+      e.setAttribute('visibility', 'visible');
+      if (v == null) { e.setAttribute('x1', x(i)); e.setAttribute('x2', x(i)); } else { e.setAttribute('cx', x(i)); e.setAttribute('cy', y(v)); }
+    }
+    const tarih = s.bitis ? new Date(s.bitis).toLocaleString(DIL.aktif === 'tr' ? 'tr-TR' : DIL.aktif, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    ipucu.replaceChildren(
+      el('b', '', tarih + (s.sure ? ' · ' + sureYazisi(s.sure) : '')),
+      el('span', 'gi ort', `${dilT('Ortalama FPS')}: ${Math.round(s.fps)}`),
+      el('span', 'gi dusuk', `${dilT('En kötü %1')}: ${Math.round(s.fps1 || 0)}`),
+      el('span', '', `${dilT('Takılma')}: ${s.takilma ?? 0} · ${dilT('Görüş')} ${(s.ayar || {}).gorus ?? '—'}`),
+    );
+    if (s.sunucu) ipucu.append(el('span', 'gi-sunucu', s.sunucu));
+    if (s.otomatik) ipucu.append(el('span', 'gi-oto', `${dilT('Otomatik ayar')}: ${degisimYazisi(s.otomatik)}`));
+    ipucu.hidden = false;
+    const px = (x(i) / W) * r.width;
+    // Noktaları örtmesin: imlecin sağına, sığmazsa soluna
+    ipucu.style.left = (px + 14 + 190 <= r.width ? px + 14 : Math.max(0, px - 204)) + 'px';
+  };
+  alan.addEventListener('mousemove', goster);
+  alan.addEventListener('mouseleave', () => { ipucu.hidden = true; for (const e of [imlec, n1, n2]) e.setAttribute('visibility', 'hidden'); });
+  kap.append(svg, ipucu);
+  return kap;
+}
 $('ozetGosterme').addEventListener('click', async () => {
   $('ozetPerde').hidden = true;
   ayarlar = await api.ayarlariKaydet({ performansOzeti: false });
@@ -2950,10 +3175,10 @@ const SEVIYE_AD = { cokdusuk: 'Çok düşük', dusuk: 'Düşük', orta: 'Orta', 
 /* ---------- Dil ---------- */
 /** Parça parça kurulan yazılar için: her parçayı ayrı çevir (DOM çevirisi birleşik yazıyı tanımaz) */
 const dilT = (s) => (window.DIL ? DIL.t(s) : s);
-const KAPALI_SUNUCU = window.DIL && DIL.aktif === 'en' ? 'Offline' : 'Kapalı';
+const KAPALI_SUNUCU = (window.DIL && { en: 'Offline', az: 'Oflayn', de: 'Offline' }[DIL.aktif]) || 'Kapalı';
 $('dilSec').value = window.DIL ? DIL.aktif : 'tr';
 $('dilSec').addEventListener('change', async (e) => {
-  const yeni = e.target.value === 'en' ? 'en' : 'tr';
+  const yeni = ['en', 'az', 'de'].includes(e.target.value) ? e.target.value : 'tr';
   try { ayarlar = await api.ayarlariKaydet({ dil: yeni }); } catch { /* yine de değiştir */ }
   DIL.degistir(yeni);
 });
@@ -2968,6 +3193,7 @@ const PERFORMANS_ANAHTARLARI = [
   ['hafifSec', 'hafifMod'], ['ekranKartiSec', 'ekranKarti'], ['javaSec', 'javaAyar'],
   ['oncelikSec', 'oncelik'], ['gucSec', 'gucPlani'],
   ['gucluCekirdekSec', 'gucluCekirdek'], ['javaYeniSec', 'javaYeni'], ['dosyaIsitSec', 'dosyaIsit'], ['performansOzetiSec', 'performansOzeti'],
+  ['otomatikAyarSec', 'otomatikAyar'],
 ];
 // İşlemciye göre "Güçlü çekirdekleri kullan" açıklaması
 let sistemBilgisi = null;
@@ -3809,6 +4035,7 @@ const bekle = (ms) => new Promise((r) => setTimeout(r, ms));
   yaz('acilisDurum', 'Ayarlar yükleniyor…');
   ayarlar = await api.ayarlariGetir();
   dilEsitle();
+  gecmisCiz();
   temaUygula();
   solSekmeAc(ayarlar.solSekme || 'sunucu', false);
   oyunAyarlariniDoldur();

@@ -10,31 +10,37 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
- * Menü dili. Launcher "English" seçiliyse config/kcz-client.json'a "dil": "en" yazar; o zaman
- * menüdeki Türkçe yazılar assets/kcz-client/dil/en.json'daki karşılıklarıyla gösterilir.
+ * Menü dili. Launcher'da Türkçe dışında bir dil seçiliyse config/kcz-client.json'a "dil": "en" / "az" / "de"
+ * yazılır; menüdeki Türkçe yazılar assets/kcz-client/dil/<dil>.json'daki karşılıklarıyla gösterilir.
  * Karşılığı olmayan yazı Türkçe kalır (oyun bozulmaz).
  */
 public final class Dil {
 	private Dil() {
 	}
 
-	private static volatile Map<String, String> en = null;
+	private static volatile Map<String, String> sozluk = null;
+	private static volatile String sozlukDili = null;
 
-	public static boolean ingilizce() {
-		return "en".equals(Ayar.get().dil);
+	public static boolean ceviriVar() {
+		return !"tr".equals(Ayar.get().dil);
 	}
 
 	public static String t(String s) {
-		if (s == null || !ingilizce()) return s;
-		Map<String, String> m = en;
-		if (m == null) en = m = yukle();
+		if (s == null || !ceviriVar()) return s;
+		String dil = Ayar.get().dil;
+		Map<String, String> m = sozluk;
+		if (m == null || !dil.equals(sozlukDili)) {
+			m = yukle(dil);
+			sozlukDili = dil;
+			sozluk = m;
+		}
 		String c = m.get(s);
 		return c != null ? c : s;
 	}
 
-	private static Map<String, String> yukle() {
+	private static Map<String, String> yukle(String dil) {
 		Map<String, String> m = new HashMap<>();
-		try (InputStream in = Dil.class.getResourceAsStream("/assets/kcz-client/dil/en.json")) {
+		try (InputStream in = Dil.class.getResourceAsStream("/assets/kcz-client/dil/" + dil + ".json")) {
 			if (in == null) return m;
 			JsonObject o = JsonParser.parseString(new String(in.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
 			for (Map.Entry<String, JsonElement> e : o.entrySet()) {

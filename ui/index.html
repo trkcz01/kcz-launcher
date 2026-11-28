@@ -427,6 +427,19 @@
               </div>
             </div>
             <div class="ayar-grup">
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Otomatik ayar</b><small>Her oyundan sonra FPS'e bakar, ayarları küçük adımlarla bilgisayarına göre düzeltir. Kendi seçtiğin görüş mesafesini asla geçmez.</small></div>
+                <input id="otomatikAyarSec" type="checkbox" class="anahtar">
+              </label>
+              <div class="ayar-kart dikey" data-ara="performans geçmişi grafik fps geçmiş">
+                <div class="gecmis-ust">
+                  <div class="ayar-yazi"><b>Performans geçmişi</b><small id="gecmisAlt">Son oyunlarının FPS'i ve ayar değişikliklerinin etkisi.</small></div>
+                  <button type="button" class="bag" id="gecmisTabloBtn" hidden>Tablo</button>
+                </div>
+                <div class="gecmis-govde" id="gecmisGovde"></div>
+              </div>
+            </div>
+            <div class="ayar-grup">
               <div class="ayar-kart">
                 <div class="ayar-yazi"><b>Oyun açılınca launcher</b><small id="oyunAcilincaAciklama">Oyun kapanınca launcher geri gelir.</small></div>
                 <select class="secim kucuk-secim" id="oyunAcilincaSec" aria-label="Oyun açılınca launcher">
@@ -554,7 +567,7 @@
                 <input data-ist="uzakGorus" type="checkbox" class="anahtar">
               </label>
               <label class="ayar-kart">
-                <div class="ayar-yazi"><b data-en="Replay recording">Oyun kaydı</b><small>Flashback: kaydet, serbest kamerayla izle, video çıkar. Sadece Fabric</small></div>
+                <div class="ayar-yazi"><b data-en="Replay recording" data-az="Təkrar yazısı" data-de="Replay-Aufnahme">Oyun kaydı</b><small>Flashback: kaydet, serbest kamerayla izle, video çıkar. Sadece Fabric</small></div>
                 <input data-ist="kayit" type="checkbox" class="anahtar">
               </label>
             </div>
@@ -591,9 +604,9 @@
           <div class="ayar-bolum" data-bolum="launcher">
             <h3 class="bolum-baslik">Launcher</h3>
             <div class="ayar-grup">
-              <div class="ayar-kart" data-ara="dil language english türkçe ingilizce">
+              <div class="ayar-kart" data-ara="dil language sprache english türkçe ingilizce azərbaycan azerice deutsch almanca">
                 <div class="ayar-yazi"><b>Dil</b><small>Launcher ve oyun içi KCZ menüsünün dili.</small></div>
-                <select class="secim kucuk-secim" id="dilSec" translate="no"><option value="tr">Türkçe</option><option value="en">English</option></select>
+                <select class="secim kucuk-secim" id="dilSec" translate="no"><option value="tr">Türkçe</option><option value="en">English</option><option value="az">Azərbaycanca</option><option value="de">Deutsch</option></select>
               </div>
               <label class="ayar-kart">
                 <div class="ayar-yazi"><b>Kapatınca tepsiye küçült</b><small>Saatin yanındaki simgede bekler, tek tıkla açılır.</small></div>
@@ -661,7 +674,7 @@
     <!-- EKRAN GÖRÜNTÜLERİ -->
     <section class="sayfa" id="sayfa-galeri">
       <div class="sayfa-baslik surukle">
-        <div><h2>Ekran görüntüleri</h2><p class="soluk" data-en="Screenshots you take in-game with F2. They're also copied to your clipboard, so you can paste them straight into Discord.">Oyunda <kbd>F2</kbd> ile aldıkların. Oyundayken aldığın görüntü panoya da kopyalanır; Discord'a direkt yapıştırabilirsin.</p></div>
+        <div><h2>Ekran görüntüleri</h2><p class="soluk" data-en="Screenshots you take in-game with F2. They're also copied to your clipboard, so you can paste them straight into Discord." data-az="Oyunda F2 ilə çəkdiyin ekran görüntüləri. Oyunda çəkdiyin görüntü panoya da kopyalanır, Discord-a birbaşa yapışdıra bilərsən." data-de="Screenshots, die du im Spiel mit F2 machst. Sie landen auch in der Zwischenablage, sodass du sie direkt in Discord einfügen kannst.">Oyunda <kbd>F2</kbd> ile aldıkların. Oyundayken aldığın görüntü panoya da kopyalanır; Discord'a direkt yapıştırabilirsin.</p></div>
         <button class="ikincil kucuk" id="galeriKlasor">Klasörü aç</button>
       </div>
       <div class="galeri" id="galeri"></div>
@@ -802,6 +815,7 @@
       <b id="ozetNot"></b>
     </div>
     <p class="ozet-sebep" id="ozetSebep"></p>
+    <div class="ozet-otomatik" id="ozetOtomatik" hidden></div>
     <div class="ozet-oneriler" id="ozetOneriler"></div>
     <div class="satir ozet-alt-satir"><button class="bag" id="ozetGosterme">Bir daha gösterme</button><button class="birincil" id="ozetTamam">Tamam</button></div>
   </div>
@@ -1001,6 +1015,8 @@
 <div class="kenar" data-kenar="se"></div><div class="kenar" data-kenar="sw"></div>
 
 <script src="dil-en.js"></script>
+<script src="dil-az.js"></script>
+<script src="dil-de.js"></script>
 <script src="dil.js"></script>
 <script src="kopru.js"></script>
 <script src="ikonlar.js"></script>
