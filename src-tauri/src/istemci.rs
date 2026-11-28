@@ -91,7 +91,8 @@ pub fn ayar_yaz(a: &Ayarlar) {
         ("kenarliksiz", json!(i.kenarliksiz)),
         ("dusukSistem", json!(i.dusuk_sistem)),
         ("gucluSistem", json!(i.guclu_sistem)),
-        ("tema", json!({ "zemin": zemin, "zemin2": zemin2, "vurgu": a.vurgu })),
+        // ad: temanın adı (oyun içi menüdeki maskot ve süsler için), maskot: kapalıysa çizilmez
+        ("tema", json!({ "zemin": zemin, "zemin2": zemin2, "vurgu": a.vurgu, "ad": a.tema, "maskot": a.maskot })),
     ] {
         j[k] = v;
     }

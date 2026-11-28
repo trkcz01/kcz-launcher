@@ -151,6 +151,8 @@ pub struct Ayarlar {
     pub tema: String,
     pub vurgu: String,
     pub saydamlik: u32,
+    /// Sol üstteki tema maskotu (Enderman, Ghast, Creeper, yarasa, kedi); oyun içi menüde de görünür
+    pub maskot: bool,
     pub secili_sunucu: String,
     pub skinler: Vec<Skin>,
     /// Vitrinden kaldırılan skinler (hesap geçmişi, Minecraft Launcher kütüphanesi, hazır KCZ skinleri)
@@ -197,6 +199,7 @@ impl Default for Ayarlar {
             tema: "gri".into(),
             vurgu: "#a1a1aa".into(),
             saydamlik: 1,
+            maskot: true,
             secili_sunucu: String::new(),
             skinler: vec![],
             gizli_skinler: vec![],

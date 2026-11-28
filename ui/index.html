@@ -349,200 +349,280 @@
     <section class="sayfa" id="sayfa-ayarlar">
       <div class="sayfa-baslik surukle"><div><h2>Ayarlar</h2><p class="soluk">Değişiklikler hemen uygulanır ve kaydedilir.</p></div></div>
 
-      <div class="ayar-blok">
-        <h3>Tema</h3>
-        <div class="tema-izgara" id="temalar"></div>
-
-        <div class="ayar-kart dikey">
-          <div class="ayar-yazi"><b>Vurgu rengi</b><small>Butonlar, ışıklar ve çizgiler bu renkte olur.</small></div>
-          <div class="renkler" id="renkler"></div>
-          <label class="ozel-renk">
-            <input type="color" id="ozelRenk">
-            <span>İstediğin renk</span>
-            <code id="renkKodu">#a1a1aa</code>
+      <div class="ayar-duzen">
+        <!-- Sol: kategoriler ve arama -->
+        <nav class="ayar-menu" id="ayarMenu" aria-label="Ayar kategorileri">
+          <label class="ayar-ara">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="ayarAra" type="search" placeholder="Ayar ara" spellcheck="false" autocomplete="off" aria-label="Ayar ara">
           </label>
-        </div>
+          <button type="button" class="ayar-kategori aktif" data-bolum="gorunum">
+            <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1a1.5 1.5 0 0 1 1.1-2.5H16a5 5 0 0 0 5-5c0-4.4-4-7.9-9-7.9z"/><circle cx="7.5" cy="11" r=".6"/><circle cx="11" cy="7" r=".6"/><circle cx="16" cy="9" r=".6"/></svg>Görünüm</button>
+          <button type="button" class="ayar-kategori" data-bolum="performans">
+            <svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Performans</button>
+          <button type="button" class="ayar-kategori" data-bolum="istemci">
+            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M7 10v4M5 12h4M15.5 11h.01M18 13h.01"/></svg>KCZ Client</button>
+          <button type="button" class="ayar-kategori" data-bolum="oyun">
+            <svg viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>Oyun</button>
+          <button type="button" class="ayar-kategori" data-bolum="launcher">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></svg>Launcher</button>
+          <button type="button" class="ayar-kategori" data-bolum="gizlilik">
+            <svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v6c0 4.6 3.2 8 7.5 9 4.3-1 7.5-4.4 7.5-9V6z"/><path d="m9 12 2 2 4-4"/></svg>Gizlilik</button>
+          <button type="button" class="ayar-kategori" data-bolum="yardim">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.5M12 17h.01"/></svg>Yardım</button>
+        </nav>
 
-        <div class="ayar-kart dikey">
-          <div class="ayar-yazi"><b>Saydamlık</b><small id="saydamAciklama"></small></div>
-          <div class="saydamlar" id="saydamlar"></div>
-        </div>
-      </div>
+        <!-- Sağ: seçili kategori (aramada hepsi süzülerek görünür) -->
+        <div class="ayar-icerik" id="ayarIcerik">
 
-      <div class="ayar-blok">
-        <h3>Performans</h3>
-        <div class="ayar-kart dikey">
-          <div class="tarama-ust">
-            <div class="ayar-yazi"><b>Sistemi tara</b><small id="taramaAciklama">İşlemcini, ekran kartını ve belleğini okur, bilgisayarına en uygun ayarı önerir.</small></div>
-            <button type="button" class="ikincil" id="taraBtn">Sistemi tara</button>
+          <div class="ayar-bolum aktif" data-bolum="gorunum">
+            <h3 class="bolum-baslik">Görünüm</h3>
+            <div class="tema-izgara" id="temalar" data-ara="tema end nether dünya siyah gri performans enderman ghast creeper yarasa kedi"></div>
+            <div class="ayar-grup">
+              <div class="ayar-kart dikey">
+                <div class="ayar-yazi"><b>Vurgu rengi</b><small>Düğmeler, ışıklar ve çizgiler bu renkte olur.</small></div>
+                <div class="renk-satir">
+                  <div class="renkler" id="renkler"></div>
+                  <label class="ozel-renk" title="İstediğin renk">
+                    <input type="color" id="ozelRenk">
+                    <code id="renkKodu">#a1a1aa</code>
+                  </label>
+                </div>
+              </div>
+              <div class="ayar-kart dikey">
+                <div class="ayar-yazi"><b>Saydamlık</b><small id="saydamAciklama"></small></div>
+                <div class="saydamlar" id="saydamlar"></div>
+              </div>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Tema maskotu</b><small>Sol üstte temanın küçük yaratığı. Üstüne gelince kendi numarasını yapar.</small></div>
+                <input id="maskotSec" type="checkbox" class="anahtar">
+              </label>
+            </div>
           </div>
-          <div class="tarama-sonuc" id="taramaSonuc" hidden></div>
-        </div>
 
-        <div class="ayar-kart dikey">
-          <div class="ayar-yazi"><b>Hazır ayar</b><small>Görüş mesafesi, parçacıklar, uzak blok detayı ve RAM'i tek tıkla ayarlar. Oyunun içinden yine değiştirebilirsin.</small></div>
-          <div class="seviyeler" id="seviyeler">
-            <button type="button" class="seviye" data-seviye="cokdusuk"><b>Çok düşük</b><small>Çok zayıf bilgisayarlar · görüş 8</small></button>
-            <button type="button" class="seviye" data-seviye="dusuk"><b>Düşük</b><small>Zayıf bilgisayarlar · en yüksek FPS</small></button>
-            <button type="button" class="seviye" data-seviye="orta"><b>Orta</b><small>Görüntü ve FPS dengeli</small></button>
-            <button type="button" class="seviye" data-seviye="yuksek"><b>Yüksek</b><small>Güçlü bilgisayarlar · uzak görüş</small></button>
+          <div class="ayar-bolum" data-bolum="performans">
+            <h3 class="bolum-baslik">Performans</h3>
+            <div class="ayar-grup">
+              <div class="ayar-kart dikey">
+                <div class="tarama-ust">
+                  <div class="ayar-yazi"><b>Sistemi tara</b><small id="taramaAciklama">Bilgisayarını tanır, en uygun ayarı önerir.</small></div>
+                  <button type="button" class="ikincil kucuk" id="taraBtn">Sistemi tara</button>
+                </div>
+                <div class="tarama-sonuc" id="taramaSonuc" hidden></div>
+              </div>
+              <div class="ayar-kart dikey">
+                <div class="ayar-yazi"><b>Hazır ayar</b><small>Görüş mesafesi, parçacıklar ve RAM tek tıkla. Oyunda yine değiştirebilirsin.</small></div>
+                <div class="seviyeler" id="seviyeler">
+                  <button type="button" class="seviye" data-seviye="cokdusuk"><b>Çok düşük</b><small>Çok zayıf · görüş 8</small></button>
+                  <button type="button" class="seviye" data-seviye="dusuk"><b>Düşük</b><small>En yüksek FPS</small></button>
+                  <button type="button" class="seviye" data-seviye="orta"><b>Orta</b><small>Dengeli</small></button>
+                  <button type="button" class="seviye" data-seviye="yuksek"><b>Yüksek</b><small>Uzak görüş</small></button>
+                </div>
+              </div>
+            </div>
+            <div class="ayar-grup">
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>KCZ Optimizasyon</b><small>Görünmeyeni çizmez, daha fazla FPS. Oynanış değişmez.</small></div>
+                <input id="hafifSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Güçlü ekran kartını kullan</b><small>İki ekran kartlı bilgisayarda oyun güçlüsüyle açılır.</small></div>
+                <input id="ekranKartiSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Java bellek ayarları</b><small>Ani takılmaları azaltan bellek temizleme.</small></div>
+                <input id="javaSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyuna öncelik ver</b><small>Windows oyuna daha çok işlemci zamanı ayırır.</small></div>
+                <input id="oncelikSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Yüksek performans güç planı</b><small>Oyun açıkken açık, kapanınca eski haline döner.</small></div>
+                <input id="gucSec" type="checkbox" class="anahtar">
+              </label>
+            </div>
+          </div>
+
+          <div class="ayar-bolum" data-bolum="istemci">
+            <h3 class="bolum-baslik">KCZ Client</h3>
+            <div class="ayar-grup vurgulu">
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyun içi KCZ menüsü</b><small id="istemciAciklama">Oyunda Esc > KCZ Menü. Buradaki ayarlar orada da aynı.</small></div>
+                <input id="istAcikSec" type="checkbox" class="anahtar">
+              </label>
+            </div>
+            <div id="istAyarlar" class="ist-bolumler">
+              <h4 class="alt-baslik">Göstergeler</h4>
+              <div class="ayar-grup iki">
+                <label class="ayar-kart"><div class="ayar-yazi"><b>FPS</b><small>Saniyedeki kare</small></div><input data-ist="fps" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Ping</b><small>Sunucuya gecikme</small></div><input data-ist="ping" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Tuşlar</b><small>W A S D, fare, zıplama</small></div><input data-ist="tuslar" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>CPS</b><small>Saniyedeki tıklama</small></div><input data-ist="cps" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Koordinat ve yön</b><small>X Y Z ve baktığın yön</small></div><input data-ist="koordinat" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Zırh</b><small>Parçaların dayanıklılığı</small></div><input data-ist="zirh" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>İksirler</b><small>Etkiler ve kalan süre</small></div><input data-ist="iksir" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Eldeki eşya</b><small>Kalan dayanıklılık</small></div><input data-ist="eldeki" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Ok sayısı</b><small>Envanterdeki oklar</small></div><input data-ist="okSayisi" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Totem sayısı</b><small>Ölümsüzlük totemleri</small></div><input data-ist="totem" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Hız</b><small>Saniyede kaç blok</small></div><input data-ist="hiz" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Gerçek saat</b><small>Bilgisayarın saati</small></div><input data-ist="saat" type="checkbox" class="anahtar"></label>
+                <div class="ayar-kart"><div class="ayar-yazi"><b>Konum</b><small>Göstergeler nerede dursun</small></div>
+                  <select class="secim kucuk-secim" id="istKonum"><option value="sol-ust">Sol üst</option><option value="sag-ust">Sağ üst</option></select></div>
+              </div>
+
+              <h4 class="alt-baslik">Yakınlaştırma</h4>
+              <div class="ayar-grup">
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Yakınlaştırma</b><small><kbd>C</kbd> basılı tut, tekerlekle yaklaş ya da uzaklaş</small></div><input data-ist="zoom" type="checkbox" class="anahtar"></label>
+                <div class="ayar-kart"><div class="ayar-yazi"><b>İlk zoom</b><small>C'ye basınca ilk bu kadar yaklaşır</small></div>
+                  <select class="secim kucuk-secim" id="istZoomBas"><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="6">6x</option><option value="8">8x</option></select></div>
+                <div class="ayar-kart"><div class="ayar-yazi"><b>En fazla zoom</b><small>Tekerlekle en çok buraya kadar</small></div>
+                  <select class="secim kucuk-secim" id="istZoomKat"><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="6">6x</option><option value="8">8x</option><option value="16">16x</option><option value="32">32x</option><option value="64">64x</option><option value="128">128x</option></select></div>
+              </div>
+
+              <h4 class="alt-baslik">Oynanış</h4>
+              <div class="ayar-grup">
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Koşmayı açık tut</b><small>İleri gidince Ctrl'e basmadan koşarsın</small></div><input data-ist="surekliKos" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Eğilmeyi açık tut</b><small>Shift'e bir kere bas, tekrar basana kadar eğil</small></div><input data-ist="egilmeTut" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Arkadaşım oyuna girince bildir</b><small>Launcher'da ve oyunda küçük bir bildirim</small></div><input data-ist="arkadasBildirim" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Ekran görüntüsünü panoya kopyala</b><small>F2 ile aldığını Discord'a Ctrl+V ile yapıştır</small></div><input data-ist="ssPanoya" type="checkbox" class="anahtar"></label>
+              </div>
+
+              <h4 class="alt-baslik">Ekran ve pencere</h4>
+              <div class="ayar-grup">
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Kenarlıksız tam ekran</b><small>F11 çerçevesiz pencere olur; Alt-Tab'da kararma yok</small></div><input data-ist="kenarliksiz" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Alt-Tab'da oyunu durdurma</b><small>Pencereden çıkınca Esc menüsü açılmaz, donma olmaz</small></div><input data-ist="alttabDurdurmaKapali" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Arka planda FPS düşür</b><small>Oyun arkadayken 15 FPS: daha az ısı ve pil</small></div><input data-ist="arkaplanFps" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Esc menüsünde bulanıklık kapalı</b><small>Menü açılırken olan takılmayı azaltır</small></div><input data-ist="bulaniklikKapali" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Düşük sistem</b><small>Zayıf bilgisayar için kısılır. Ayrıntısı oyunda KCZ Menü'de</small></div><input data-ist="dusukSistem" type="checkbox" class="anahtar"></label>
+                <label class="ayar-kart"><div class="ayar-yazi"><b>Güçlü sistem</b><small>Kenar yumuşatma ve keskinlik. Ayrıntısı oyunda KCZ Menü'de</small></div><input data-ist="gucluSistem" type="checkbox" class="anahtar"></label>
+              </div>
+            </div>
+
+            <h4 class="alt-baslik">Eklentiler</h4>
+            <div class="ayar-grup">
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>KCZ sesli sohbet</b><small>Yakındaki KCZ oyuncularıyla konuş, sunucuya kurulum gerekmez. Bas-konuş: B</small></div>
+                <input data-ist="yakinSes" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Sesli sohbette sadece arkadaşlarım</b><small>Arkadaşın olmayanlar seni duyamaz ve IP adresini göremez</small></div>
+                <input data-ist="sesSadeceArkadas" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Simple Voice Chat</b><small>Sunucuda da kuruluysa çalışır (tuş: V)</small></div>
+                <input data-ist="sesliSohbet" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Uzak görüş</b><small>Sunucu kıssa bile daha uzağı görürsün (Bobby). Güçlü bilgisayar önerilir</small></div>
+                <input data-ist="uzakGorus" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyun kaydı</b><small>Flashback: kaydet, serbest kamerayla izle, video çıkar. Sadece Fabric</small></div>
+                <input data-ist="kayit" type="checkbox" class="anahtar">
+              </label>
+            </div>
+          </div>
+
+          <div class="ayar-bolum" data-bolum="oyun">
+            <h3 class="bolum-baslik">Oyun</h3>
+            <div class="ayar-grup">
+              <div class="ayar-kart">
+                <div class="ayar-yazi"><b>Mod yükleyici</b><small>Forge ve NeoForge ilk açılışta biraz uzun hazırlanır.</small></div>
+                <select class="secim" id="yukleyiciSec" aria-label="Mod yükleyici">
+                  <option value="vanilla">Yok (Vanilla)</option>
+                  <option value="fabric">Fabric</option>
+                  <option value="quilt">Quilt</option>
+                  <option value="forge">Forge</option>
+                  <option value="neoforge">NeoForge (deneysel)</option>
+                </select>
+              </div>
+              <div class="ayar-kart">
+                <div class="ayar-yazi"><b>Bellek (RAM)</b><small>Oyuna ayrılan bellek. Çoğu bilgisayara 4 GB yeter.</small></div>
+                <div class="ram-kap"><input id="ramSec" type="range" min="2" max="16" step="1"><b id="ramDeger">4 GB</b></div>
+              </div>
+              <div class="ayar-kart">
+                <div class="ayar-yazi"><b>Otomatik dünya yedeği</b><small>Başka sürümle açmadan önce dünyalar yedeklenir, son 5 saklanır.</small></div>
+                <div class="satir-dugme"><button type="button" class="ikincil kucuk" id="yedekBtn">Yedekler</button><input id="yedekSec" type="checkbox" class="anahtar" aria-label="Otomatik dünya yedeği"></div>
+              </div>
+              <div class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyun klasörü</b><small>Dünyalar, ekran görüntüleri ve ayarlar.</small></div>
+                <button type="button" class="ikincil kucuk" id="klasorBtn">Klasörü aç</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ayar-bolum" data-bolum="launcher">
+            <h3 class="bolum-baslik">Launcher</h3>
+            <div class="ayar-grup">
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyun açılınca küçült</b><small>Oyun kapanınca launcher geri gelir.</small></div>
+                <input id="gizleSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyun açıkken launcher uyusun</b><small>Pencere tamamen kapanır, belleği oyuna kalır. Oyun bitince geri açılır.</small></div>
+                <input id="uyuSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Kapatınca tepsiye küçült</b><small>Saatin yanındaki simgede bekler, tek tıkla açılır.</small></div>
+                <input id="tepsiSec" type="checkbox" class="anahtar">
+              </label>
+              <div class="ayar-kart dikey">
+                <div class="ayar-yazi"><b>Klavye kısayolları</b></div>
+                <div class="kisayollar">
+                  <span><kbd>Enter</kbd> Oyna</span><span><kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>4</kbd> Sayfalar</span>
+                  <span><kbd>Ctrl</kbd>+<kbd>,</kbd> Ayarlar</span><span><kbd>F5</kbd> Sunucuları yenile</span><span><kbd>Esc</kbd> Pencereyi kapat</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ayar-bolum" data-bolum="gizlilik">
+            <h3 class="bolum-baslik">Gizlilik</h3>
+            <div class="ayar-grup">
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Arkadaşlarım durumumu görsün</b><small>Çevrimiçi olduğunu ve hangi sunucuda olduğunu görürler.</small></div>
+                <input id="durumPaylasSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>Discord'da durum göster</b><small>Oyundayken arkadaşların Discord'da "KCZ oynuyor" görür.</small></div>
+                <input id="discordSec" type="checkbox" class="anahtar">
+              </label>
+              <label class="ayar-kart">
+                <div class="ayar-yazi"><b>İsimsiz kullanım sayımı</b><small>Sadece rastgele bir kimlik, sürüm ve işletim sistemi gider; hesabın gitmez.</small></div>
+                <input id="istatistikSec" type="checkbox" class="anahtar">
+              </label>
+            </div>
+          </div>
+
+          <div class="ayar-bolum" data-bolum="yardim">
+            <h3 class="bolum-baslik">Yardım</h3>
+            <div class="ayar-grup">
+              <div class="ayar-kart">
+                <div class="ayar-yazi"><b>KCZ Launcher <span id="uygSurum"></span></b><small id="guncelleDurum">Güncellemeler otomatik denetlenir.</small></div>
+                <button type="button" class="ikincil kucuk" id="denetleBtn">Güncellemeleri denetle</button>
+              </div>
+              <div class="ayar-kart dikey">
+                <div class="ayar-yazi"><b>Oyun açılmıyor ya da çöküyor mu?</b><small>Önce Onar: önbelleği temizler, bozuk dosyaları yeniden indirir. Olmazsa modsuz dene.</small></div>
+                <div class="satir-dugme">
+                  <button type="button" class="ikincil kucuk" id="onarBtn">Onar</button>
+                  <button type="button" class="ikincil kucuk" id="modsuzBtn">Modsuz dene</button>
+                  <button type="button" class="ikincil kucuk" id="ayarSifirlaBtn">Oyun ayarlarını sıfırla</button>
+                </div>
+                <small class="soluk" id="onarSonuc"></small>
+              </div>
+            </div>
+            <details class="kayit">
+              <summary>Oyun kaydı (sorun olursa buraya bak)</summary>
+              <pre id="log"></pre>
+            </details>
+          </div>
+
+          <div class="ayar-bos" id="ayarBos" hidden>
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <b>Bu aramaya uyan ayar yok</b><small>Başka bir kelime dene.</small>
           </div>
         </div>
-
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>KCZ Optimizasyon</b><small>Görünmeyen yerleri (duvar arkası, mağaralar, gizli yaratıklar) çizmez, dünya ve bellek işlerini hızlandırır. Launcher'la birlikte gelir, arka planda kendini hazırlar ve günceller. Oynanış değişmez.</small></div>
-          <input id="hafifSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Güçlü ekran kartını kullan</b><small>İki ekran kartlı bilgisayarlarda oyun güçlü olanla açılır.</small></div>
-          <input id="ekranKartiSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Java bellek ayarları</b><small>Ani takılmaları azaltan bellek temizleme ayarlarıyla açar.</small></div>
-          <input id="javaSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Oyuna öncelik ver</b><small>Windows oyuna diğer programlardan biraz daha fazla işlemci zamanı ayırır.</small></div>
-          <input id="oncelikSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Yüksek performans güç planı</b><small>Oyun açıkken Windows'u Yüksek performansa alır, oyun kapanınca eski haline döner.</small></div>
-          <input id="gucSec" type="checkbox" class="anahtar">
-        </label>
-      </div>
-
-      <div class="ayar-blok">
-        <h3>KCZ Client</h3>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Oyun içi KCZ menüsü</b><small id="istemciAciklama">Oyunda <kbd>Esc</kbd> menüsündeki <b>KCZ Menü</b> düğmesiyle açılır; bu sayfadaki ayarların aynısı orada da var ve launcher temasıyla aynı görünür.</small></div>
-          <input id="istAcikSec" type="checkbox" class="anahtar">
-        </label>
-        <div class="ist-izgara" id="istAyarlar">
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Yakınlaştırma</b><small><kbd>C</kbd> basılı tut, tekerlekle ayarla</small></div><input data-ist="zoom" type="checkbox" class="anahtar"></label>
-          <div class="ayar-kart"><div class="ayar-yazi"><b>En fazla zoom</b><small>Tekerlekle en çok buraya kadar yaklaşılır</small></div>
-            <select class="secim kucuk-secim" id="istZoomKat"><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="6">6x</option><option value="8">8x</option><option value="16">16x</option><option value="32">32x</option><option value="64">64x</option><option value="128">128x</option></select></div>
-          <div class="ayar-kart"><div class="ayar-yazi"><b>İlk zoom</b><small>C'ye basınca ilk bu kadar yaklaşır, sonra tekerlekle ayarla</small></div>
-            <select class="secim kucuk-secim" id="istZoomBas"><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option><option value="6">6x</option><option value="8">8x</option></select></div>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>FPS göstergesi</b><small>Köşede saniyedeki kare</small></div><input data-ist="fps" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Ping göstergesi</b><small>Sunucuya gecikme</small></div><input data-ist="ping" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Tuş göstergesi</b><small>W A S D, fare ve zıplama</small></div><input data-ist="tuslar" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>CPS göstergesi</b><small>Saniyedeki sol | sağ tık</small></div><input data-ist="cps" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Koordinat ve yön</b><small>X Y Z ve baktığın yön</small></div><input data-ist="koordinat" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Zırh dayanıklılığı</b><small>Her parçanın kalan dayanıklılığı (%)</small></div><input data-ist="zirh" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>İksir süreleri</b><small>Etkideki iksirler ve kalan süre</small></div><input data-ist="iksir" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Eldeki eşyanın dayanıklılığı</b><small>Kılıç, kazma gibi elindeki eşyanın kalan dayanıklılığı</small></div><input data-ist="eldeki" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Ok sayısı</b><small>Envanterindeki toplam ok</small></div><input data-ist="okSayisi" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Totem sayısı</b><small>Envanterindeki ölümsüzlük totemleri</small></div><input data-ist="totem" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Hız göstergesi</b><small>Saniyede kaç blok gidiyorsun</small></div><input data-ist="hiz" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Gerçek saat</b><small>Oyundayken bilgisayarın saati</small></div><input data-ist="saat" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Arkadaşım oyuna girince bildir</b><small>Launcher'da ve oyunda küçük bir bildirim çıkar</small></div><input data-ist="arkadasBildirim" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Koşmayı açık tut</b><small>İleri gidince Ctrl'e basmadan koşarsın</small></div><input data-ist="surekliKos" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Eğilmeyi açık tut</b><small>Shift'e bir kere bas, tekrar basana kadar eğilirsin</small></div><input data-ist="egilmeTut" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Ekran görüntüsünü panoya kopyala</b><small>Oyunda F2'ye basınca görüntü panoya da gider; Discord'a Ctrl+V ile yapıştır</small></div><input data-ist="ssPanoya" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Esc menüsünde bulanıklık kapalı</b><small>Menü açılırken olan takılmayı azaltır</small></div><input data-ist="bulaniklikKapali" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Düşük sistem</b><small>Zayıf bilgisayar: FPS için kısılır. Ayrıntılar oyunda KCZ Menü'de ⋮</small></div><input data-ist="dusukSistem" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Güçlü sistem</b><small>Kenar yumuşatma, keskinlik, Hz'e göre FPS. Ayrıntılar KCZ Menü'de ⋮</small></div><input data-ist="gucluSistem" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Alt-Tab yapınca oyunu durdurma</b><small>Pencereden çıkınca Esc menüsü açılmaz, tek oyunculuda dünya kaydı başlamaz; geri dönünce donma olmaz</small></div><input data-ist="alttabDurdurmaKapali" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Kenarlıksız tam ekran</b><small>F11 tam ekranı çerçevesiz pencere yapar; Alt-Tab'da ekran kararmaz, oyun donmaz</small></div><input data-ist="kenarliksiz" type="checkbox" class="anahtar"></label>
-          <label class="ayar-kart"><div class="ayar-yazi"><b>Arka planda FPS düşür</b><small>Oyun penceresi arkadayken 15 FPS: daha az ısı ve pil</small></div><input data-ist="arkaplanFps" type="checkbox" class="anahtar"></label>
-          <div class="ayar-kart"><div class="ayar-yazi"><b>Konum</b><small>Göstergeler nerede dursun</small></div>
-            <select class="secim kucuk-secim" id="istKonum"><option value="sol-ust">Sol üst</option><option value="sag-ust">Sağ üst</option></select></div>
-        </div>
-        <h4 class="alt-baslik">Eklentiler</h4>
-                <label class="ayar-kart">
-          <div class="ayar-yazi"><b>KCZ sesli sohbet</b><small>Sunucuya hiçbir şey kurmadan yakındaki oyuncularla konuş: yaklaştıkça ses açılır, uzaklaşınca kısılır. Sadece KCZ Launcher kullananlar birbirini duyar. Oyunda konuşmak için B'yi basılı tut (Ayarlar > Kontroller'den değişir). Windows ve Linux'ta çalışır.</small></div>
-          <input data-ist="yakinSes" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Sesli sohbette sadece arkadaşlarım</b><small>Açıkken sadece arkadaşlarınla ses bağlantısı kurulur; arkadaşın olmayanlar seni duyamaz ve IP adresini göremez. Herkesle konuşmak için kapat.</small></div>
-          <input data-ist="sesSadeceArkadas" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Simple Voice Chat</b><small>Simple Voice Chat: sadece sunucuda da Simple Voice Chat kuruluysa çalışır (varsayılan tuş: V).</small></div>
-          <input data-ist="sesliSohbet" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Uzak görüş</b><small>Bobby: sunucu görüş mesafesini kıssa bile daha uzağı görürsün. Gezdiğin yerler hatırlanır, görüş mesafesini oyunda KCZ Menü > Performans'tan ayarla. Güçlü bilgisayar önerilir.</small></div>
-          <input data-ist="uzakGorus" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Oyun kaydı (Flashback)</b><small>Oyunu kaydeder, sonra serbest kamerayla izleyip video çıkarırsın. Sadece Fabric.</small></div>
-          <input data-ist="kayit" type="checkbox" class="anahtar">
-        </label>
-      </div>
-
-      <div class="ayar-blok">
-        <h3>Oyun</h3>
-        <div class="ayar-kart">
-          <div class="ayar-yazi"><b>Mod yükleyici</b><small>Modlar için. Forge ve NeoForge ilk açılışta biraz daha uzun hazırlanır.</small></div>
-          <select class="secim" id="yukleyiciSec" aria-label="Mod yükleyici">
-            <option value="vanilla">Yok (Vanilla)</option>
-            <option value="fabric">Fabric</option>
-            <option value="quilt">Quilt</option>
-            <option value="forge">Forge</option>
-            <option value="neoforge">NeoForge (deneysel)</option>
-          </select>
-        </div>
-        <div class="ayar-kart">
-          <div class="ayar-yazi"><b>Bellek (RAM)</b><small>Oyuna ayrılacak bellek. Çoğu bilgisayar için 4 GB yeterli.</small></div>
-          <div class="ram-kap"><input id="ramSec" type="range" min="2" max="16" step="1"><b id="ramDeger">4 GB</b></div>
-        </div>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Oyun açılınca launcher'ı küçült</b><small>Oyun kapanınca launcher geri gelir.</small></div>
-          <input id="gizleSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Oyun açıkken launcher uyusun</b><small>Launcher penceresi tamamen kapanır, belleği oyuna kalır (daha çok FPS). Oyun kapanınca kendiliğinden geri açılır. Çok düşük, Düşük ve Orta ayar bunu açar.</small></div>
-          <input id="uyuSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Kapatınca sistem tepsisine küçült</b><small>Launcher saatin yanındaki simgede bekler; oradan tek tıkla açılır ya da oyun başlatılır.</small></div>
-          <input id="tepsiSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>İsimsiz kullanım sayımı</b><small>Kaç kişinin launcher'ı kullandığını saymamıza yardım eder. Sadece rastgele bir kimlik, sürüm ve işletim sistemi gider; hesabın gönderilmez.</small></div>
-          <input id="istatistikSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Arkadaşlarım durumumu görsün</b><small>Seni arkadaş olarak ekleyenler çevrimiçi olduğunu ve hangi sunucuda oynadığını görür.</small></div>
-          <input id="durumPaylasSec" type="checkbox" class="anahtar">
-        </label>
-        <label class="ayar-kart">
-          <div class="ayar-yazi"><b>Discord'da durum göster</b><small>Oyun açıkken arkadaşların Discord'da "KCZ oynuyor" görür. Discord açık olmalı.</small></div>
-          <input id="discordSec" type="checkbox" class="anahtar">
-        </label>
-        <div class="ayar-kart">
-          <div class="ayar-yazi"><b>Otomatik dünya yedeği</b><small>Başka bir sürüm ya da yükleyiciyle açmadan önce dünyaların yedeklenir. Son 5 yedek saklanır.</small></div>
-          <div class="satir-dugme"><button type="button" class="ikincil kucuk" id="yedekBtn">Yedekler</button><input id="yedekSec" type="checkbox" class="anahtar" aria-label="Otomatik dünya yedeği"></div>
-        </div>
-        <div class="ayar-kart dikey">
-          <div class="ayar-yazi"><b>Klavye kısayolları</b></div>
-          <div class="kisayollar">
-            <span><kbd>Enter</kbd> Oyna</span><span><kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>4</kbd> Sayfalar</span>
-            <span><kbd>Ctrl</kbd>+<kbd>,</kbd> Ayarlar</span><span><kbd>F5</kbd> Sunucuları yenile</span><span><kbd>Esc</kbd> Açık pencereyi kapat</span>
-          </div>
-        </div>
-        <div class="ayar-kart">
-          <div class="ayar-yazi"><b>Oyun klasörü</b><small>Dünyalar, ekran görüntüleri ve ayarlar burada.</small></div>
-          <button type="button" class="ikincil" id="klasorBtn">Klasörü aç</button>
-        </div>
-        <div class="ayar-kart">
-          <div class="ayar-yazi"><b>KCZ Launcher <span id="uygSurum"></span></b><small id="guncelleDurum">Güncellemeler otomatik denetlenir.</small></div>
-          <button type="button" class="ikincil" id="denetleBtn">Güncellemeleri denetle</button>
-        </div>
-        <div class="ayar-kart dikey">
-          <div class="ayar-yazi"><b>Oyun açılmıyor ya da çöküyor mu?</b><small>Onar: mod yükleyici önbelleğini temizler, oyun dosyalarını doğrulayıp bozukları yeniden indirir, Java'yı dener. Düzelmezse oyunu modsuz dene ya da oyun ayarlarını sıfırla (eski ayarların yedeklenir).</small></div>
-          <div class="satir-dugme">
-            <button type="button" class="ikincil" id="onarBtn">Onar</button>
-            <button type="button" class="ikincil" id="modsuzBtn">Modsuz dene</button>
-            <button type="button" class="ikincil" id="ayarSifirlaBtn">Oyun ayarlarını sıfırla</button>
-          </div>
-          <small class="soluk" id="onarSonuc"></small>
-        </div>
-        <details class="kayit">
-          <summary>Oyun kaydı (sorun olursa buraya bak)</summary>
-          <pre id="log"></pre>
-        </details>
       </div>
     </section>
 
@@ -866,6 +946,7 @@
 <script src="kopru.js"></script>
 <script src="ikonlar.js"></script>
 <script src="skin3d.js"></script>
+<script src="maskot.js"></script>
 <script src="app.js"></script>
 <script src="ses.js"></script>
 </body>

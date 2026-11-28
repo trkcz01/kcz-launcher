@@ -40,7 +40,7 @@ public class KczEkrani extends Screen {
 
 	private static final float[] BASLANGIC = { 1.5f, 2f, 3f, 4f, 6f, 8f };
 	private static final float[] EN_FAZLA = { 4f, 8f, 16f, 32f, 64f, 128f };
-	private static final int SATIR_H = 20, ARA_H = 3, PAD = 10, SEKME_W = 104, DETAY_W = 20, BASLIK_H = 36;
+	private static final int SATIR_H = 20, ARA_H = 3, PAD = 10, SEKME_W = 112, DETAY_W = 20, BASLIK_H = 40;
 
 	private final List<Satir> satirlar = new ArrayList<>();
 	/** Arkadaşlar sekmesinde her satırın ne olduğu (Arkadas, Davet ya da null) */
@@ -232,8 +232,8 @@ public class KczEkrani extends Screen {
 	private static final int KART_H = 30, TAM_H = 24, BOSLUK = 6;
 
 	private void yerlesim() {
-		pw = Math.min(500, this.width - 16);
-		ph = Math.min(this.height - 12, 290);
+		pw = Math.min(520, this.width - 16);
+		ph = Math.min(this.height - 12, 300);
 		px = (this.width - pw) / 2;
 		py = Math.max(6, (this.height - ph) / 2);
 		icX = px + SEKME_W + PAD;
@@ -318,38 +318,151 @@ public class KczEkrani extends Screen {
 		g.pose().popMatrix();
 	}
 
+	/** Başlıktaki tema maskotu (menü kapanıp açılınca da hangi tarafta olduğunu hatırlar) */
+	private static Maskot maskot;
+	/** Anahtarların kayma animasyonu: satır adı -> 0 (kapalı) .. 1 (açık) */
+	private final java.util.Map<String, Float> anim = new java.util.HashMap<>();
+	private long sonKare = 0;
+	private final long acilis = System.currentTimeMillis();
+
+	/** Sekme simgeleri (8 piksel genişlik, 'o' dolu): SEKMELER ile aynı sırada */
+	private static final String[][] IKON = {
+			{ "oooooooo", "o......o", "o......o", "o......o", "oooooooo", "...oo...", "..oooo.." },
+			{ "......oo", ".....ooo", "....ooo.", "o..ooo..", ".oooo...", "..oo....", ".o.oo...", "o......." },
+			{ "...o....", "...o....", "........", "oo...oo.", "........", "...o....", "...o...." },
+			{ "..ooo...", "..ooo...", "..ooo...", "..oooo..", "..ooooo.", "oooooooo", "oooooooo" },
+			{ ".oooo...", "o....o..", "o....o..", "o....o..", ".oooo...", ".....oo.", "......oo" },
+			{ "....ooo.", "...ooo..", "..ooo...", ".oooooo.", "...ooo..", "..ooo...", ".ooo....", "oo......" },
+			{ "ooo.ooo.", "ooo.ooo.", "ooo.ooo.", "........", "ooo.ooo.", "ooo.ooo.", "ooo.ooo." },
+			{ ".oo..oo.", ".oo..oo.", "........", "oooooooo", "oooooooo", "oooooooo" } };
+
+	private static void ikon(GuiGraphicsExtractor g, String[] s, int x, int y, int renk) {
+		for (int j = 0; j < s.length; j++) {
+			for (int i = 0; i < s[j].length(); i++) {
+				if (s[j].charAt(i) == 'o') g.fill(x + i, y + j, x + i + 1, y + j + 1, renk);
+			}
+		}
+	}
+
+	/** İki rengi karıştırır (t: 0 = a, 1 = b) */
+	private static int karistir(int a, int b, float t) {
+		t = Math.max(0, Math.min(1, t));
+		int aa = a >>> 24, ar = a >> 16 & 0xFF, ag = a >> 8 & 0xFF, ab = a & 0xFF;
+		int ba = b >>> 24, br = b >> 16 & 0xFF, bg = b >> 8 & 0xFF, bb = b & 0xFF;
+		return (int) (aa + (ba - aa) * t) << 24 | (int) (ar + (br - ar) * t) << 16 | (int) (ag + (bg - ag) * t) << 8 | (int) (ab + (bb - ab) * t);
+	}
+
+	/** Rengin saydamlığını ayarlar (0..1) */
+	private static int alfa(int renk, float a) {
+		return ((int) (255 * Math.max(0, Math.min(1, a))) & 0xFF) << 24 | (renk & 0xFFFFFF);
+	}
+
+	private static String temaAdi(String t) {
+		return switch (t == null ? "" : t) {
+			case "end" -> "End teması";
+			case "nether" -> "Nether teması";
+			case "dunya" -> "Dünya teması";
+			case "siyah" -> "Siyah tema";
+			case "performans" -> "Performans teması";
+			default -> "Gri tema";
+		};
+	}
+
+	private static float sabitRastgele(int i, double tohum) {
+		double v = Math.sin(i * 12.9898 + tohum * 78.233) * 43758.5453;
+		return (float) (v - Math.floor(v));
+	}
+
+	/** Temaya göre panelin zemininde hafif süs: End yıldızları, Nether korları, Dünya bulutları */
+	private void temaSusu(GuiGraphicsExtractor g, String tema, long simdi) {
+		if (tema == null) return;
+		switch (tema) {
+			case "end" -> {
+				for (int i = 0; i < 22; i++) {
+					int x = px + 4 + (int) (sabitRastgele(i, 1) * (pw - 8));
+					int y = py + 3 + (int) (sabitRastgele(i, 2) * (ph - 6));
+					float p = (float) (0.5 + 0.5 * Math.sin(simdi / (900.0 + i * 140) + i));
+					g.fill(x, y, x + 1, y + 1, alfa(i % 3 == 0 ? 0xD8B4FE : 0xF5E9FF, 0.12f + 0.55f * p));
+				}
+			}
+			case "nether" -> {
+				for (int i = 0; i < 12; i++) {
+					long sure = 7000 + i * 530L;
+					float k = ((simdi + i * 1730L) % sure) / (float) sure;
+					int x = px + 4 + (int) (sabitRastgele(i, 3) * (pw - 8)) + (int) (Math.sin(k * 6 + i) * 3);
+					int y = py + ph - 4 - (int) (k * (ph - 8));
+					float a = k < 0.15f ? k / 0.15f : 1 - (k - 0.15f) / 0.85f;
+					g.fill(x, y, x + 1, y + 1, alfa(i % 2 == 0 ? 0xFB923C : 0xFDBA74, 0.6f * a));
+				}
+			}
+			case "dunya" -> {
+				g.enableScissor(px + 1, py + 1, px + pw - 1, py + BASLIK_H);
+				for (int i = 0; i < 3; i++) {
+					long sure = 60000 + i * 23000L;
+					float k = ((simdi + i * 21000L) % sure) / (float) sure;
+					int b = 5 - i;
+					int x = px - b * 6 + (int) (k * (pw + b * 12)), y = py + 6 + i * 10;
+					int renk = alfa(0xFFFFFF, 0.09f);
+					g.fill(x + b, y, x + b * 3, y + b / 2 + 1, renk);
+					g.fill(x, y + b / 2 + 1, x + b * 5, y + b + 2, renk);
+				}
+				g.disableScissor();
+			}
+			default -> {
+			}
+		}
+	}
+
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
 		// Önce oyunun kendi çizimi (arka plan ve düğmeler), sonra üstüne tamamen örten bizim panelimiz
 		super.extractRenderState(g, mx, my, delta);
 		Ayar a = Ayar.get();
+		long simdi = System.currentTimeMillis();
+		float dt = sonKare == 0 ? 0 : Math.min(0.1f, (simdi - sonKare) / 1000f);
+		sonKare = simdi;
 
 		int zemin = Ayar.renk(a.tema.zemin, 0xFF, 0xFF232328);
-		int zemin2 = Ayar.renk(a.tema.zemin2, 0xFF, 0xFF0D0D10);
 		int vurgu = Ayar.renk(a.tema.vurgu, 0xFF, 0xFFA1A1AA);
 		int kart = Ayar.ac(zemin, 0.05f);
-		int kartUstu = Ayar.ac(zemin, 0.11f);
+		int kartUstu = Ayar.ac(zemin, 0.10f);
 		int yazi = 0xFFF1F5F9;
 		int soluk = 0xFF9CA3AF;
 		int cokSoluk = 0xFF6B7280;
-
 		int cizgi = Ayar.ac(zemin, 0.07f);
 		int yesil = 0xFF4ADE80, sari = 0xFFFACC15, gri = 0xFF6B7280;
 
-		// Arka planı karart, panel: ince kenarlı, köşeleri yumuşak
-		g.fill(0, 0, this.width, this.height, 0x66000000);
-		kutu(g, px - 1, py - 1, pw + 2, ph + 2, Ayar.ac(zemin, 0.09f));
+		// Arka planı karart (açılırken yumuşakça), gölge ve panel
+		float acil = Math.min(1, (simdi - acilis) / 160f);
+		g.fill(0, 0, this.width, this.height, alfa(0, 0.42f * acil));
+		for (int i = 3; i >= 1; i--) kutu(g, px - i, py - i + 2, pw + i * 2, ph + i * 2, alfa(0, 0.10f));
+		kutu(g, px - 1, py - 1, pw + 2, ph + 2, karistir(Ayar.ac(zemin, 0.10f), vurgu, 0.18f));
 		kutu(g, px, py, pw, ph, zemin);
-		// Üst çubuk
+		// Başlık bandı: vurgu rengine doğru hafif geçiş
+		g.fillGradient(px + 1, py + 1, px + pw - 1, py + BASLIK_H, karistir(zemin, vurgu, 0.16f), zemin);
+		temaSusu(g, a.tema.ad, simdi);
 		g.fill(px + 1, py + BASLIK_H, px + pw - 1, py + BASLIK_H + 1, cizgi);
-		int lx = px + 12, ly = py + (BASLIK_H - 16) / 2;
-		kutu(g, lx, ly, 16, 16, vurgu);
-		g.text(this.font, "K", lx + 5, ly + 4, Ayar.ustYazi(vurgu), false);
-		g.text(this.font, "KCZ Client", lx + 24, ly + 4, yazi, false);
-		String esc = "Esc ile kapat";
-		kucukYazi(g, esc, px + pw - 12 - this.font.width(esc) * 0.75f, py + (BASLIK_H - 6) / 2f, cokSoluk);
+		g.fill(px + 1, py + BASLIK_H, px + SEKME_W, py + BASLIK_H + 1, alfa(vurgu, 0.5f));
 
-		// Sol menü
+		// Logo, başlık ve tema adı
+		int lx = px + 12, ly = py + (BASLIK_H - 18) / 2;
+		kutu(g, lx, ly, 18, 18, vurgu);
+		g.text(this.font, "K", lx + 6, ly + 5, Ayar.ustYazi(vurgu), false);
+		g.text(this.font, "KCZ Client", lx + 26, ly + 1, yazi, false);
+		String temaYazi = temaAdi(a.tema.ad);
+		kucukYazi(g, temaYazi, lx + 26, ly + 12, soluk);
+
+		// Sağda Esc tuşu ve "kapat"
+		String kapat = "kapat";
+		int escW = this.font.width("Esc") + 8;
+		int ex = (int) (px + pw - 12 - this.font.width(kapat) * 0.75f - 5 - escW), ey = py + (BASLIK_H - 14) / 2;
+		kutu(g, ex, ey, escW, 14, Ayar.ac(zemin, 0.16f));
+		kutu(g, ex + 1, ey + 1, escW - 2, 11, Ayar.ac(zemin, 0.07f));
+		g.text(this.font, "Esc", ex + 4, ey + 3, soluk, false);
+		kucukYazi(g, kapat, ex + escW + 5, ey + 4, cokSoluk);
+
+		// Sol menü (zemini biraz koyu)
+		g.fill(px + 1, py + BASLIK_H + 1, px + SEKME_W, py + ph - 1, alfa(0, 0.14f));
 		g.fill(px + SEKME_W, py + BASLIK_H + 1, px + SEKME_W + 1, py + ph - 1, cizgi);
 		for (int i = 0; i < SEKMELER.length; i++) {
 			if (i == NISANGAH_SEKMESI) continue;
@@ -357,10 +470,13 @@ public class KczEkrani extends Screen {
 			Button b = i < sekmeDugmeleri.size() ? sekmeDugmeleri.get(i) : null;
 			boolean secili = i == sekme;
 			boolean ust = (mx >= x && mx < x + w && my >= y && my < y + SATIR_H) || (b != null && b.isFocused());
-			if (secili) kutu(g, x, y, w, SATIR_H, Ayar.ac(zemin, 0.08f));
-			else if (ust) kutu(g, x, y, w, SATIR_H, Ayar.ac(zemin, 0.04f));
-			if (secili) g.fill(x + 1, y + 6, x + 3, y + SATIR_H - 6, vurgu);
-			g.text(this.font, SEKMELER[i], x + 10, y + (SATIR_H - 8) / 2, secili ? yazi : ust ? 0xFFD1D5DB : soluk, false);
+			if (secili) kutu(g, x, y, w, SATIR_H, karistir(Ayar.ac(zemin, 0.08f), vurgu, 0.14f));
+			else if (ust) kutu(g, x, y, w, SATIR_H, Ayar.ac(zemin, 0.05f));
+			if (secili) g.fill(x, y + 5, x + 2, y + SATIR_H - 5, vurgu);
+			int renk = secili ? yazi : ust ? 0xFFD1D5DB : soluk;
+			String[] ik = IKON[i];
+			ikon(g, ik, x + 8, y + (SATIR_H - ik.length) / 2, secili ? vurgu : renk);
+			g.text(this.font, SEKMELER[i], x + 21, y + (SATIR_H - 8) / 2, renk, false);
 			if (i == ARKADAS_SEKMESI) {
 				g.fill(x + 4, y + SATIR_H + 4, x + w - 4, y + SATIR_H + 5, cizgi);
 				int n = Arkadaslar.davetler().size() + Arkadaslar.okunmamisToplam();
@@ -372,14 +488,17 @@ public class KczEkrani extends Screen {
 				}
 			}
 		}
-		kucukYazi(g, "kcz-launcher", px + 12, py + ph - 12, cokSoluk);
+		kucukYazi(g, "Launcher ile eşitlenir", px + 10, py + ph - 12, cokSoluk);
 
 		// İçerik başlığı
 		g.text(this.font, SEKMELER[sekme], icX, py + BASLIK_H + 10, yazi, false);
 		kucukYazi(g, SEKME_ACIKLAMA[sekme], icX, py + BASLIK_H + 22, soluk);
 		String not = sekme == EKLENTI_SEKMESI ? "Oyunu yeniden açınca uygulanır"
-				: sekme == ARKADAS_SEKMESI ? arkadasOzet() : "Launcher ile eşitlenir";
-		kucukYazi(g, not, px + pw - 12 - this.font.width(not) * 0.75f, py + BASLIK_H + 12, cokSoluk);
+				: sekme == ARKADAS_SEKMESI ? arkadasOzet() : "Hemen uygulanır";
+		float nw = this.font.width(not) * 0.75f;
+		int nx = (int) (px + pw - 12 - nw - 8), ny = py + BASLIK_H + 9;
+		kutu(g, nx, ny, (int) nw + 8, 11, Ayar.ac(zemin, 0.06f));
+		kucukYazi(g, not, nx + 4, ny + 3, cokSoluk);
 
 		for (int i = 0; i < satirlar.size() && i < kutular.size(); i++) {
 			Satir s = satirlar.get(i);
@@ -389,7 +508,7 @@ public class KczEkrani extends Screen {
 			int genis = s.detay() != null ? w - DETAY_W - 3 : w;
 			boolean ust = (mx >= x && mx < x + genis && my >= y && my < y + h) || (b != null && b.isFocused());
 			boolean acik = s.acik() != null && s.acik().getAsBoolean();
-			kutu(g, x, y, genis, h, ust ? Ayar.ac(zemin, 0.10f) : cizgi);
+			kutu(g, x, y, genis, h, ust ? karistir(Ayar.ac(zemin, 0.12f), vurgu, 0.45f) : cizgi);
 			kutu(g, x + 1, y + 1, genis - 2, h - 2, ust ? kartUstu : kart);
 
 			Object tur = i < arkTur.size() ? arkTur.get(i) : null;
@@ -412,16 +531,23 @@ public class KczEkrani extends Screen {
 			}
 
 			if (s.acik() != null) {
-				// Başlık + açıklama, sağda anahtar
+				// Başlık + açıklama, sağda kayan anahtar
 				boolean ikiSatir = s.aciklama() != null && h >= 28;
 				int ty = ikiSatir ? y + 6 : y + (h - 8) / 2;
 				g.text(this.font, s.ad(), x + 9, ty, acik ? yazi : 0xFFD1D5DB, false);
 				if (ikiSatir) kucukYazi(g, s.aciklama(), x + 9, y + 18, soluk);
+				float hedef = acik ? 1 : 0;
+				float m = anim.getOrDefault(s.ad(), hedef);
+				m += (hedef - m) * Math.min(1, dt * 16);
+				anim.put(s.ad(), m);
 				int tw = 20, th = 10;
 				int tx = x + genis - tw - 9, tyy = y + (h - th) / 2;
-				kutu(g, tx, tyy, tw, th, acik ? vurgu : 0xFF3A3F48);
-				int dx = acik ? tx + tw - 9 : tx + 1;
-				kutu(g, dx, tyy + 1, 8, th - 2, acik ? Ayar.ustYazi(vurgu) : 0xFFD1D5DB);
+				kutu(g, tx, tyy, tw, th, karistir(0xFF3A3F48, vurgu, m));
+				var p = g.pose();
+				p.pushMatrix();
+				p.translate(tx + 1 + (tw - 10) * m, tyy + 1);
+				kutu(g, 0, 0, 8, th - 2, karistir(0xFFD1D5DB, Ayar.ustYazi(vurgu), m));
+				p.popMatrix();
 			} else if (s.deger() != null) {
 				g.text(this.font, s.ad(), x + 9, y + (h - 8) / 2, yazi, false);
 				String d = "‹ " + s.deger().get() + " ›";
@@ -437,14 +563,23 @@ public class KczEkrani extends Screen {
 			if (s.detay() != null) {
 				int dx0 = x + w - DETAY_W;
 				boolean dUst = mx >= dx0 && mx < x + w && my >= y && my < y + h;
-				kutu(g, dx0, y, DETAY_W, h, dUst ? Ayar.ac(zemin, 0.10f) : cizgi);
+				kutu(g, dx0, y, DETAY_W, h, dUst ? karistir(Ayar.ac(zemin, 0.12f), vurgu, 0.45f) : cizgi);
 				kutu(g, dx0 + 1, y + 1, DETAY_W - 2, h - 2, dUst ? kartUstu : kart);
-				int nx = dx0 + DETAY_W / 2 - 1;
+				int nx2 = dx0 + DETAY_W / 2 - 1;
 				int ny0 = y + (h - 10) / 2;
 				for (int n = 0; n < 3; n++) {
-					g.fill(nx, ny0 + n * 4, nx + 2, ny0 + n * 4 + 2, dUst ? yazi : soluk);
+					g.fill(nx2, ny0 + n * 4, nx2 + 2, ny0 + n * 4 + 2, dUst ? yazi : soluk);
 				}
 			}
+		}
+
+		// Tema maskotu: başlıkta, yazı ile Esc arasında durur; üstüne gelince numarasını yapar
+		String mt = a.tema.maskot ? Maskot.turu(a.tema.ad) : null;
+		if (mt == null) maskot = null;
+		else if (maskot == null || !maskot.tur().equals(mt)) maskot = new Maskot(mt);
+		if (maskot != null) {
+			float sol = lx + 26 + Math.max(this.font.width("KCZ Client"), this.font.width(temaYazi) * 0.75f) + 14;
+			maskot.ciz(g, sol, ex - 14, py + BASLIK_H, py + 1, mx, my);
 		}
 	}
 

@@ -51,11 +51,11 @@ function bildirim(metin, hata = false) {
    TEMA, RENK, SAYDAMLIK
    ========================================================= */
 const TEMALAR = {
-  gri: { ad: 'Gri', alt: 'Ana tema', v: '#a1a1aa', v2: '#e4e4e7' },
-  siyah: { ad: 'Siyah', alt: 'Tam karanlık', v: '#fafafa', v2: '#737373' },
-  end: { ad: 'End', alt: 'Yıldızlar ve boşluk', v: '#c084fc', v2: '#fde68a' },
-  nether: { ad: 'Nether', alt: 'Lav ve ateş', v: '#f97316', v2: '#ef4444' },
-  dunya: { ad: 'Normal Dünya', alt: 'Çimen ve gökyüzü', v: '#4ade80', v2: '#38bdf8' },
+  gri: { ad: 'Gri', alt: 'Sade · Kedi', v: '#a1a1aa', v2: '#e4e4e7' },
+  siyah: { ad: 'Siyah', alt: 'Tam karanlık · Yarasa', v: '#fafafa', v2: '#737373' },
+  end: { ad: 'End', alt: 'Yıldızlar ve adalar · Enderman', v: '#c084fc', v2: '#fde68a' },
+  nether: { ad: 'Nether', alt: 'Lav ve kül · Ghast', v: '#f97316', v2: '#ef4444' },
+  dunya: { ad: 'Normal Dünya', alt: 'Gökyüzü ve bulutlar · Creeper', v: '#4ade80', v2: '#38bdf8' },
   performans: { ad: 'Performans', alt: 'Animasyonsuz, en hafif', v: '#22c55e', v2: '#a3e635' }
 };
 const RENKLER = [['Gri', '#a1a1aa'], ['Beyaz', '#fafafa'], ['Mor', '#8b5cf6'], ['Mavi', '#3b82f6'], ['Turkuaz', '#06b6d4'],
@@ -124,6 +124,8 @@ function hafifUygula() {
       : 'Hafif mod kapandı. Saydam pencere launcher yeniden açılınca geri gelir.');
   }
   hafifOnceki = h;
+  // Tema maskotu (sol üst) ve sahne süsleri: hafif modda ve "Tema maskotu" kapalıyken yok
+  if (window.kczMaskot) window.kczMaskot.uygula(ayarlar.tema || 'gri', ayarlar.maskot !== false, h);
   if (h) { try { vitrinGuncelle(); } catch { /* vitrin henüz kurulmadı */ } }
   if (h) document.querySelectorAll('.model3d').forEach((m) => {
     m.classList.remove('takip'); delete m.dataset.emote;
@@ -168,6 +170,12 @@ function temaPaneliCiz() {
       b.dataset.tema = id;
       const on = el('span', 'tema-onizleme');
       on.append(el('i'), el('u'));
+      const m = window.kczMaskot && window.kczMaskot.onizleme(id);
+      if (m) {
+        const s = el('span', 'tema-maskot');
+        s.innerHTML = m;
+        on.append(s);
+      }
       b.append(on, el('b', '', t.ad), el('small', '', t.alt));
       b.addEventListener('click', () => temaKaydet({ tema: id, vurgu: t.v }));
       tk.append(b);
@@ -189,7 +197,9 @@ function temaPaneliCiz() {
       $('saydamlar').append(b);
     });
     $('ozelRenk').addEventListener('input', (e) => temaKaydet({ vurgu: e.target.value }));
+    $('maskotSec').addEventListener('change', (e) => temaKaydet({ maskot: e.target.checked }));
   }
+  $('maskotSec').checked = ayarlar.maskot !== false;
   document.querySelectorAll('.tema').forEach((b) => b.classList.toggle('aktif', b.dataset.tema === ayarlar.tema));
   document.querySelectorAll('.renk').forEach((b) => b.classList.toggle('secili', b.dataset.renk === ayarlar.vurgu));
   document.querySelectorAll('.saydam-btn').forEach((b) => b.classList.toggle('aktif', Number(b.dataset.s) === ayarlar.saydamlik));
@@ -197,6 +207,68 @@ function temaPaneliCiz() {
   yaz('renkKodu', ayarlar.vurgu || '');
   yaz('saydamAciklama', (SAYDAMLIK[ayarlar.saydamlik] || SAYDAMLIK[1])[1]);
 }
+
+/* =========================================================
+   AYARLAR: soldaki kategoriler ve arama
+   ========================================================= */
+let ayarBolumu = 'gorunum';
+function ayarBolumAc(ad) {
+  ayarBolumu = ad;
+  document.querySelectorAll('.ayar-kategori').forEach((b) => b.classList.toggle('aktif', b.dataset.bolum === ad));
+  document.querySelectorAll('.ayar-bolum').forEach((b) => b.classList.toggle('aktif', b.dataset.bolum === ad));
+  $('ayarIcerik').scrollTop = 0;
+}
+// Türkçe harflere duyarsız arama: "kosma" yazınca "Koşmayı" da bulunur
+const aramaSade = (s) => String(s || '').toLocaleLowerCase('tr-TR')
+  .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c')
+  .replace(/\s+/g, ' ');
+function ayarAra(metin) {
+  const q = aramaSade(metin).trim();
+  const ic = $('ayarIcerik');
+  ic.classList.toggle('araniyor', !!q);
+  $('ayarMenu').classList.toggle('araniyor', !!q);
+  let toplam = 0;
+  document.querySelectorAll('.ayar-bolum').forEach((bolum) => {
+    let say = 0;
+    bolum.querySelectorAll('.ayar-kart, [data-ara], details.kayit').forEach((k) => {
+      if (k.parentElement.closest('.ayar-kart')) return;
+      const uy = !q || q.split(' ').every((p) => aramaSade((k.dataset.ara || '') + ' ' + k.textContent).includes(p));
+      k.classList.toggle('ara-gizli', !uy);
+      if (uy && !k.hidden) say++;
+    });
+    bolum.querySelectorAll('.ayar-grup').forEach((g) => {
+      g.classList.toggle('ara-gizli', ![...g.children].some((c) => !c.classList.contains('ara-gizli') && !c.hidden));
+    });
+    bolum.querySelectorAll('.alt-baslik').forEach((h) => {
+      const sonraki = h.nextElementSibling;
+      h.classList.toggle('ara-gizli', !!q && !(sonraki && !sonraki.classList.contains('ara-gizli')));
+    });
+    bolum.classList.toggle('ara-gizli', !!q && say === 0);
+    const kat = document.querySelector(`.ayar-kategori[data-bolum="${bolum.dataset.bolum}"]`);
+    if (kat) kat.classList.toggle('eslesti', !!q && say > 0);
+    toplam += say;
+  });
+  $('ayarBos').hidden = !q || toplam > 0;
+  if (!q) ayarBolumAc(ayarBolumu);
+  else ic.scrollTop = 0;
+}
+document.querySelectorAll('.ayar-kategori').forEach((b) => b.addEventListener('click', () => {
+  if ($('ayarAra').value) { $('ayarAra').value = ''; ayarAra(''); }
+  ayarBolumAc(b.dataset.bolum);
+}));
+$('ayarAra').addEventListener('input', (e) => ayarAra(e.target.value));
+$('ayarAra').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && e.target.value) { e.stopPropagation(); e.target.value = ''; ayarAra(''); }
+});
+// Ayarlar açıkken Ctrl+F ya da / aramaya götürür
+document.addEventListener('keydown', (e) => {
+  if (!$('sayfa-ayarlar').classList.contains('aktif')) return;
+  if ((e.ctrlKey && e.key.toLowerCase() === 'f') || (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) {
+    e.preventDefault();
+    $('ayarAra').focus();
+    $('ayarAra').select();
+  }
+});
 
 /* =========================================================
    SEKMELER
@@ -2821,9 +2893,9 @@ function istemciDoldur() {
   $('istKonum').value = i.konum === 'sag-ust' ? 'sag-ust' : 'sol-ust';
   $('istAyarlar').classList.toggle('kapali', !i.acik);
   const destek = istemciSurumleri.length
-    ? `Minecraft ${istemciSurumleri.join(', ')} ve Fabric/Quilt (Vanilla dahil) ile çalışır.`
+    ? `Minecraft ${istemciSurumleri.join(', ')} · Fabric/Quilt (Vanilla dahil).`
     : 'Bu derlemede oyun içi menü yok (derleme kaydına bak).';
-  $('istemciAciklama').textContent = `Oyunda Esc menüsündeki KCZ Menü düğmesiyle açılır; buradaki ayarların aynısı orada da var ve launcher temasıyla aynı görünür. ${destek}`;
+  $('istemciAciklama').textContent = `Oyunda Esc > KCZ Menü. Buradaki ayarlar orada da aynı, tema da. ${destek}`;
 }
 
 async function istemciKaydet(degisim) {

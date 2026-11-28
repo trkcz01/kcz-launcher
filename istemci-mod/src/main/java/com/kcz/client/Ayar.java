@@ -98,6 +98,10 @@ public class Ayar {
 		public String zemin = "#232328";
 		public String zemin2 = "#0d0d10";
 		public String vurgu = "#a1a1aa";
+		/** Launcher teması (gri, siyah, end, nether, dunya, performans): menüdeki maskot ve süsler */
+		public String ad = "gri";
+		/** Launcher'da "Tema maskotu" açık mı */
+		public boolean maskot = true;
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
