@@ -465,8 +465,9 @@ pub async fn uygula(seviye: &str) -> Value {
         yeni["hafifMod"] = json!(true);
         yeni["javaAyar"] = json!(true);
     }
-    // Oyun açıkken launcher'ın arayüzü kapansın, belleği oyuna kalsın
+    // Oyun açıkken: zayıf/orta sistemde launcher kapansın (belleği oyuna kalsın), Yüksek'te açık kalsın
     yeni["launcherUyusun"] = json!(seviye != "yuksek");
+    yeni["oyunAcilincaGizle"] = json!(false);
     // KCZ Client: zayıfa Düşük sistem, güçlüye Güçlü sistem (oyuncu KCZ Menü'den değiştirebilir)
     let mut ist = ayarlar::getir().istemci;
     ist.dusuk_sistem = seviye == "cokdusuk" || seviye == "dusuk";

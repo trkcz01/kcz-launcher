@@ -2755,8 +2755,7 @@ $('configMetin').addEventListener('keydown', (e) => {
 function oyunAyarlariniDoldur() {
   $('ramSec').value = ayarlar.ram;
   yaz('ramDeger', `${ayarlar.ram} GB`);
-  $('gizleSec').checked = !!ayarlar.oyunAcilincaGizle;
-  $('uyuSec').checked = !!ayarlar.launcherUyusun;
+  oyunAcilincaDoldur();
   $('yukleyiciSec').value = ayarlar.yukleyici;
   performansDoldur();
   istemciDoldur();
@@ -2772,8 +2771,24 @@ $('ramSec').addEventListener('input', (e) => {
   clearTimeout(ramZaman);
   ramZaman = setTimeout(async () => { ayarlar = await api.ayarlariKaydet({ ram: e.target.value }); bildirim('Ayarlar kaydedildi ✓'); }, 350);
 });
-$('uyuSec').addEventListener('change', async (e) => { ayarlar = await api.ayarlariKaydet({ launcherUyusun: e.target.checked }); bildirim('Ayarlar kaydedildi ✓'); });
-$('gizleSec').addEventListener('change', async (e) => { ayarlar = await api.ayarlariKaydet({ oyunAcilincaGizle: e.target.checked }); bildirim('Ayarlar kaydedildi ✓'); });
+/* Oyun açılınca launcher: açık kalsın / küçülsün / kapansın (uyku: oyun kapanınca kendiliğinden açılır) */
+const OYUN_ACILINCA_YAZI = {
+  acik: 'Launcher görünür kalır: güncellemeler, arkadaşlar ve sohbet oyundayken de çalışır. Güçlü bilgisayarlar için.',
+  kucult: 'Görev çubuğuna küçülür, oyun kapanınca geri gelir.',
+  kapat: 'Tamamen kapanır, belleği oyuna kalır (en çok FPS). Oyun kapanınca kendiliğinden açılır.',
+};
+function oyunAcilincaDeger() { return ayarlar.launcherUyusun ? 'kapat' : ayarlar.oyunAcilincaGizle ? 'kucult' : 'acik'; }
+function oyunAcilincaDoldur() {
+  const v = oyunAcilincaDeger();
+  $('oyunAcilincaSec').value = v;
+  yaz('oyunAcilincaAciklama', OYUN_ACILINCA_YAZI[v]);
+}
+$('oyunAcilincaSec').addEventListener('change', async (e) => {
+  const v = e.target.value;
+  ayarlar = await api.ayarlariKaydet({ launcherUyusun: v === 'kapat', oyunAcilincaGizle: v === 'kucult' });
+  oyunAcilincaDoldur();
+  bildirim('Ayarlar kaydedildi ✓');
+});
 $('yukleyiciSec').addEventListener('change', (e) => yukleyiciSec(e.target.value));
 $('klasorBtn').addEventListener('click', () => api.klasoruAc());
 

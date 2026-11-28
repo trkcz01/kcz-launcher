@@ -257,6 +257,7 @@ final class Maskot {
 		float sallan = (float) Math.sin(simdi / 4500.0 * Math.PI * 2) * 1.2f;
 		float kol = (float) Math.sin(simdi / 4500.0 * Math.PI * 2) * 4f;
 		bas(g, kx(taraf) + dx, ky() + dy, sx, sy, t < 0 ? sallan : 0, 5, 27);
+		parca(g, sp, "kafa", 0, alfa);
 		parca(g, sp, "govde", 0, alfa);
 		donukParca(g, sp, "kolS", 1, 8, -kol, alfa);
 		donukParca(g, sp, "kolD", 9, 8, kol, alfa);
@@ -329,14 +330,16 @@ final class Maskot {
 		parca(g, sp, "kafa", 0, alfa);
 		p.popMatrix();
 		parca(g, sp, "govde", 0, alfa);
-		parca(g, sp, "bacaklar", 0, alfa);
+		parca(g, sp, "bacakS", 0, alfa);
+		parca(g, sp, "bacakD", 0, alfa);
 		if (beyaz > 0) {
 			p.pushMatrix();
 			p.translate(bak, 0);
 			parca(g, sp, "kafa", 0xFFFFFFFF, beyaz);
 			p.popMatrix();
 			parca(g, sp, "govde", 0xFFFFFFFF, beyaz);
-			parca(g, sp, "bacaklar", 0xFFFFFFFF, beyaz);
+			parca(g, sp, "bacakS", 0xFFFFFFFF, beyaz);
+			parca(g, sp, "bacakD", 0xFFFFFFFF, beyaz);
 		}
 		bitir(g);
 	}
@@ -422,7 +425,7 @@ final class Maskot {
 			p.pushMatrix();
 			p.translate(x, y);
 			p.scale(o, o);
-			parca(g, ucan, (simdi / 80) % 2 == 0 ? "kanatA" : "kanatB", 0, 1);
+			parca(g, ucan, new String[] { "kanatA", "kanatB", "kanatC", "kanatB" }[(int) ((simdi / 75) % 4)], 0, 1);
 			p.popMatrix();
 			return;
 		}
@@ -438,6 +441,7 @@ final class Maskot {
 		}
 		bas(g, kx(taraf), ky(), 1, 1, salla, 4, 0);
 		parca(g, sp, "asili", 0, 1);
+		parca(g, sp, "gozKapali", 0, 1);
 		bitir(g);
 	}
 
@@ -480,6 +484,8 @@ final class Maskot {
 		bas(g, x + dx, ky() + dy, sx, sy, 0, 5.5f, 13);
 		donukParca(g, sp, "kuyruk", 7, 12, kuyruk, 1);
 		parca(g, sp, "govde", 0, 1);
+		parca(g, sp, "patiS", 0, 1);
+		parca(g, sp, "patiD", 0, 1);
 		boolean kirp = simdi % 5000 > 4700 && simdi % 5000 < 4850;
 		parca(g, sp, kirp ? "gozKapali" : "gozAcik", 0, 1);
 		bitir(g);

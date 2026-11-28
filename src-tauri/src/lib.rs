@@ -173,12 +173,13 @@ pub fn oyun_durumu(mut veri: Value) {
             }
             let a = ayarlar::getir();
             // Düşük sistemde launcher hiç bellek/işlemci kullanmasın: tamamen kapanır, oyun kapanınca geri gelir
-            if (a.launcher_uyusun || a.istemci.dusuk_sistem) && a.istemci.yakin_ses && cfg!(not(target_os = "linux")) {
+            // Karar Ayarlar > Performans > "Oyun açılınca launcher" seçiminde (açık / küçül / kapan)
+            if a.launcher_uyusun && a.istemci.yakin_ses && cfg!(not(target_os = "linux")) {
                 // Sesli sohbet launcher'ın içinde çalışıyor: kapatma, sadece küçült
                 if let Some(w) = ana_pencere() {
                     let _ = w.minimize();
                 }
-            } else if a.launcher_uyusun || a.istemci.dusuk_sistem {
+            } else if a.launcher_uyusun {
                 *SON_DURUM.lock().unwrap() = Some(veri.clone());
                 uyut();
             } else if a.oyun_acilinca_gizle {
@@ -880,9 +881,7 @@ fn pencere_olaylari(w: &tauri::WebviewWindow) {
         }
         // Pencereye geri dönüldüğünde: son denetimden 5 dk geçtiyse sessizce bak
         WindowEvent::Focused(true) => {
-            if !oyun::mesgul_mu() {
-                tauri::async_runtime::spawn(guncelleme_gerekirse(w2.app_handle().clone(), 5 * 60));
-            }
+            tauri::async_runtime::spawn(guncelleme_gerekirse(w2.app_handle().clone(), 5 * 60));
         }
         WindowEvent::CloseRequested { api, .. } => {
             pencere_boyutunu_kaydet();
@@ -1075,10 +1074,7 @@ pub fn run() {
                 guncelleme_bak(h.clone()).await;
                 loop {
                     tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-                    // Oyun açıkken güncelleme denetimi yok (işlemci ve ağ oyuna kalsın)
-                    if oyun::mesgul_mu() {
-                        continue;
-                    }
+                    // Oyun açıkken de denetlenir (tek küçük istek); kurulum oyun kapanınca yapılır
                     guncelleme_gerekirse(h.clone(), 10 * 60).await;
                 }
             });

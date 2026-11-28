@@ -187,6 +187,9 @@ pub struct Ayarlar {
     /// Oyun açıkken Discord'da "Minecraft oynuyor" durumu
     pub discord_durum: bool,
     pub dunya_yedek: bool,
+    /// Bir kerelik geçişler: 1 = "Yüksek ayarda launcher oyun açıkken görünür" (11-28) uygulandı
+    #[serde(default)]
+    pub launcher_gecis: u32,
 }
 
 impl Default for Ayarlar {
@@ -224,6 +227,8 @@ impl Default for Ayarlar {
             durum_paylas: true,
             discord_durum: true,
             dunya_yedek: true,
+            // 0: ilk yüklemede duzelt() geçişi uygular ve 1 yapar (yeni kurulumda hiçbir şey değişmez)
+            launcher_gecis: 0,
         }
     }
 }
@@ -249,6 +254,14 @@ pub fn surum_gecerli(s: &str) -> bool {
 
 fn duzelt(mut t: Ayarlar) -> Ayarlar {
     let v = Ayarlar::default();
+    // 11-28: Yüksek hazır ayarda launcher oyun açıkken görünür kalsın (eskiden elle açılmış uyku modu kapanır, bir kere)
+    if t.launcher_gecis < 1 {
+        if t.performans_seviye == "yuksek" {
+            t.launcher_uyusun = false;
+            t.oyun_acilinca_gizle = false;
+        }
+        t.launcher_gecis = 1;
+    }
     t.mc_surum = t.mc_surum.trim().to_string();
     if t.mc_surum.is_empty() {
         t.mc_surum = v.mc_surum.clone();

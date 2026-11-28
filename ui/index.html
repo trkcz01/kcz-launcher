@@ -421,6 +421,14 @@
               </div>
             </div>
             <div class="ayar-grup">
+              <div class="ayar-kart">
+                <div class="ayar-yazi"><b>Oyun açılınca launcher</b><small id="oyunAcilincaAciklama">Oyun kapanınca launcher geri gelir.</small></div>
+                <select class="secim kucuk-secim" id="oyunAcilincaSec" aria-label="Oyun açılınca launcher">
+                  <option value="acik">Açık kalsın</option>
+                  <option value="kucult">Küçülsün</option>
+                  <option value="kapat">Kapansın (uyku)</option>
+                </select>
+              </div>
               <label class="ayar-kart">
                 <div class="ayar-yazi"><b>KCZ Optimizasyon</b><small>Görünmeyeni çizmez, daha fazla FPS. Oynanış değişmez.</small></div>
                 <input id="hafifSec" type="checkbox" class="anahtar">
@@ -555,14 +563,6 @@
           <div class="ayar-bolum" data-bolum="launcher">
             <h3 class="bolum-baslik">Launcher</h3>
             <div class="ayar-grup">
-              <label class="ayar-kart">
-                <div class="ayar-yazi"><b>Oyun açılınca küçült</b><small>Oyun kapanınca launcher geri gelir.</small></div>
-                <input id="gizleSec" type="checkbox" class="anahtar">
-              </label>
-              <label class="ayar-kart">
-                <div class="ayar-yazi"><b>Oyun açıkken launcher uyusun</b><small>Pencere tamamen kapanır, belleği oyuna kalır. Oyun bitince geri açılır.</small></div>
-                <input id="uyuSec" type="checkbox" class="anahtar">
-              </label>
               <label class="ayar-kart">
                 <div class="ayar-yazi"><b>Kapatınca tepsiye küçült</b><small>Saatin yanındaki simgede bekler, tek tıkla açılır.</small></div>
                 <input id="tepsiSec" type="checkbox" class="anahtar">
@@ -948,6 +948,7 @@
 <script src="skin3d.js"></script>
 <script src="maskot.js"></script>
 <script src="tema-sus.js"></script>
+<script src="oyna-efekt.js"></script>
 <script src="app.js"></script>
 <script src="ses.js"></script>
 </body>

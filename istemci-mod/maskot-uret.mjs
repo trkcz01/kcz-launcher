@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 
 const kok = path.dirname(fileURLToPath(import.meta.url));
 globalThis.window = {};
-globalThis.document = {};
+globalThis.document = { addEventListener() {} };
 await import(new URL('file:///' + path.join(kok, '..', 'ui', 'maskot.js').replace(/\\/g, '/')));
 const S = globalThis.window.kczMaskot.SPRITE;
 

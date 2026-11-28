@@ -2004,3 +2004,129 @@ body.sade-liste[data-tema="sade"][data-sayfa="ana"] .sunucular:not([hidden]) {
 #sayfa-ayarlar .tema-izgara { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 body[data-tema="sade"] .yan.cam { backdrop-filter: none; -webkit-backdrop-filter: none; }
 body[data-tema="sade"] .yan > .maskot-alan { display: none; pointer-events: none; }
+
+/* ---------- Maskot halleri (boştaki davranışlar) ---------- */
+.maskot-suzulen { position: absolute; pointer-events: none; z-index: 2; }
+.maskot-suzulen svg { display: block; }
+/* Enderman: etrafa bakar; fare yaklaşınca gözleri parlar ve titrer */
+.maskot[data-tur="enderman"] .p-kafa, .maskot[data-tur="enderman"] .p-gozler, .maskot[data-tur="enderman"] .p-gozAlt { transition: transform .35s ease; }
+.maskot[data-tur="enderman"].bak-sol .p-kafa, .maskot[data-tur="enderman"].bak-sol .p-gozler, .maskot[data-tur="enderman"].bak-sol .p-gozAlt { transform: translateX(-.7px); }
+.maskot[data-tur="enderman"].bak-sag .p-kafa, .maskot[data-tur="enderman"].bak-sag .p-gozler, .maskot[data-tur="enderman"].bak-sag .p-gozAlt { transform: translateX(.7px); }
+.maskot[data-tur="enderman"].bakiliyor .maskot-govde { animation: em-titre .09s linear infinite; }
+.maskot[data-tur="enderman"].bakiliyor .p-gozler { animation: none; filter: drop-shadow(0 0 1.4px #f0abfc) drop-shadow(0 0 3px #e879f9); }
+/* Creeper: yürürken adım atar */
+.maskot[data-tur="creeper"].yuruyor .p-bacakS { animation: cr-adim .36s steps(1) infinite; }
+.maskot[data-tur="creeper"].yuruyor .p-bacakD { animation: cr-adim .36s steps(1) infinite; animation-delay: -.18s; }
+.maskot[data-tur="creeper"].yuruyor .p-kafa { animation: none; }
+@keyframes cr-adim { 0% { transform: translateY(-1px); } 50% { transform: translateY(0); } }
+/* Yarasa: gözlerini açar, silkelenir; uçarken 3 kareli kanat çırpar */
+.maskot[data-tur="yarasa"] .p-gozAcik { opacity: 0; }
+.maskot[data-tur="yarasa"].uyanik .p-gozAcik { opacity: 1; }
+.maskot[data-tur="yarasa"].uyanik .p-gozKapali { opacity: 0; }
+.maskot[data-tur="yarasa"].uyanik .maskot-govde > svg { filter: drop-shadow(0 0 1px rgba(255, 255, 255, .35)) drop-shadow(0 0 3px rgba(248, 113, 113, .35)); }
+.maskot[data-tur="yarasa"].titre .maskot-govde { animation: em-titre .07s linear infinite; }
+.maskot[data-tur="yarasa"] .p-kanatA { animation: ya-a .3s steps(1) infinite; }
+.maskot[data-tur="yarasa"] .p-kanatB { animation: ya-b .3s steps(1) infinite; }
+.maskot[data-tur="yarasa"] .p-kanatC { animation: ya-c .3s steps(1) infinite; }
+@keyframes ya-a { 0% { opacity: 1; } 25% { opacity: 0; } }
+@keyframes ya-b { 0% { opacity: 0; } 25% { opacity: 1; } 50% { opacity: 0; } 75% { opacity: 1; } }
+@keyframes ya-c { 0% { opacity: 0; } 50% { opacity: 1; } 75% { opacity: 0; } }
+/* Kedi: patisini yalar, uyuklar, kuyruğunu hızlı sallar */
+.maskot[data-tur="kedi"] .p-patiYala { opacity: 0; }
+.maskot[data-tur="kedi"].yaliyor .p-patiYala { opacity: 1; animation: ke-yala .45s ease-in-out infinite alternate; }
+.maskot[data-tur="kedi"].yaliyor .p-patiS { opacity: 0; }
+.maskot[data-tur="kedi"].yaliyor .p-gozAcik, .maskot[data-tur="kedi"].uyuyor .p-gozAcik { animation: none; opacity: 0; }
+.maskot[data-tur="kedi"].yaliyor .p-gozKapali, .maskot[data-tur="kedi"].uyuyor .p-gozKapali { animation: none; opacity: 1; }
+.maskot[data-tur="kedi"].uyuyor .maskot-govde { animation: ke-nefes 2.4s ease-in-out infinite; }
+.maskot[data-tur="kedi"].uyuyor .p-kuyruk { animation-duration: 6s; }
+.maskot[data-tur="kedi"].kuyruk-hizli .p-kuyruk { animation-duration: .7s; }
+@keyframes ke-yala { from { transform: translateY(0); } to { transform: translateY(-1px); } }
+@keyframes ke-nefes { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.95); } }
+
+/* ---------- Sahne süsleri (11-28 b): her temada daha canlı arka plan ---------- */
+.dunya-sus .ev-temel, .dunya-sus .ev-isik { display: block; }
+.dunya-sus .ev-isik { position: absolute; left: 0; top: 0; filter: drop-shadow(0 0 3px rgba(251, 191, 36, .9)) drop-shadow(0 0 10px rgba(251, 191, 36, .5)); animation: pencere-titre 7s steps(1) infinite; }
+@keyframes pencere-titre { 0%, 61%, 66%, 100% { opacity: 1; } 62%, 64% { opacity: .55; } 63% { opacity: .85; } }
+/* End */
+.dunya-sus.aurora { left: -10%; right: -10%; top: -30px; height: 190px; filter: blur(12px); opacity: .9;
+  background: radial-gradient(40% 60% at 30% 40%, rgba(168, 85, 247, .24), transparent 70%), radial-gradient(35% 55% at 72% 30%, rgba(45, 212, 191, .15), transparent 70%);
+  animation: aurora 12s ease-in-out infinite alternate; }
+@keyframes aurora { from { transform: translateX(-4%) scaleY(1); } to { transform: translateX(4%) scaleY(1.18); } }
+.dunya-sus.chorus-sahne { opacity: .7; }
+.dunya-sus.chorus-sahne svg { filter: drop-shadow(0 0 4px rgba(192, 132, 252, .5)); }
+.dunya-sus.end-cubugu-sahne { opacity: .85; animation: end-cubugu 3s ease-in-out infinite; filter: drop-shadow(0 0 4px #f5d0fe) drop-shadow(0 0 12px rgba(216, 180, 254, .7)); }
+/* Nether */
+.dunya-sus.kale { right: 16%; bottom: 36px; opacity: .8; }
+.dunya-sus.kabarcik { bottom: 20px; width: 5px; height: 5px; background: #fde047; box-shadow: 0 0 6px #f97316; opacity: 0; animation: kabarcik var(--sure, 2.4s) ease-in infinite; animation-delay: var(--gecikme, 0s); }
+@keyframes kabarcik { 0% { transform: translateY(8px) scale(.3); opacity: 0; } 30% { opacity: 1; } 80% { transform: translateY(-6px) scale(1); opacity: 1; } 100% { transform: translateY(-9px) scale(1.7); opacity: 0; } }
+.dunya-sus.kor { bottom: 30px; width: 2px; height: 2px; background: #fdba74; box-shadow: 0 0 4px #f97316; opacity: 0; animation: kor var(--sure, 8s) linear infinite; animation-delay: var(--gecikme, 0s); }
+@keyframes kor { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(var(--dx, 0), -380px); opacity: 0; } }
+/* Dünya */
+.dunya-sus.gok { inset: 0 0 35% 0; background: linear-gradient(180deg, rgba(125, 211, 252, .34), rgba(186, 230, 253, .12) 50%, transparent); }
+.dunya-sus.cicek-tepe { transform-origin: 50% 100%; animation: sallan-ot 3.4s ease-in-out infinite; }
+.dunya-sus.ari { left: 9%; bottom: 190px; animation: ari 7s ease-in-out infinite; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .3)); }
+@keyframes ari { 0% { transform: translate(0, 0); } 25% { transform: translate(46px, -14px) scaleX(1); } 26% { transform: translate(46px, -14px) scaleX(-1); } 50% { transform: translate(10px, 8px) scaleX(-1); } 75% { transform: translate(-30px, -10px) scaleX(-1); } 76% { transform: translate(-30px, -10px) scaleX(1); } 100% { transform: translate(0, 0); } }
+.dunya-sus.kuslar { top: 16%; left: 105%; display: flex; animation: kuslar 30s linear infinite; animation-delay: -8s; opacity: .7; }
+.dunya-sus.kuslar .kus { position: relative; display: block; }
+.dunya-sus.kuslar .kus svg + svg { position: absolute; left: 0; top: 0; }
+.dunya-sus.kuslar .kus svg:first-child { animation: ates-kare .5s steps(1) infinite; animation-delay: var(--g); }
+.dunya-sus.kuslar .kus svg + svg { animation: ates-kare .5s steps(1) infinite reverse; animation-delay: var(--g); }
+@keyframes kuslar { 0% { left: 105%; transform: translateY(0); } 50% { transform: translateY(14px); } 100% { left: -15%; transform: translateY(-4px); } }
+/* Siyah: gece */
+.dunya-sus.kayan { left: 72%; top: 10%; width: 90px; height: 1.5px; background: linear-gradient(90deg, #fff, transparent); opacity: 0; transform: rotate(-20deg); animation: kayan 11s linear infinite; }
+@keyframes kayan { 0%, 88% { opacity: 0; transform: translate(0, 0) rotate(-20deg); } 89% { opacity: 1; } 96% { opacity: 0; transform: translate(-260px, 95px) rotate(-20deg); } 100% { opacity: 0; } }
+.dunya-sus.atesbocegi { width: 3px; height: 3px; border-radius: 50%; background: #ecfccb; box-shadow: 0 0 6px 2px rgba(190, 242, 100, .65);
+  animation: ab-uc var(--sure, 6s) ease-in-out infinite alternate, ab-yan 2.4s ease-in-out infinite; animation-delay: var(--gecikme, 0s); }
+@keyframes ab-uc { from { transform: translate(0, 0); } to { transform: translate(var(--dx, 20px), var(--dy, -10px)); } }
+@keyframes ab-yan { 0%, 100% { opacity: .12; } 50% { opacity: 1; } }
+/* Gri: yağmurlu köy */
+.dunya-sus.sis { left: 0; right: 0; bottom: 0; height: 120px; background: linear-gradient(0deg, rgba(148, 163, 184, .16), transparent); }
+.dunya-sus.ev { bottom: 0; opacity: .95; }
+.dunya-sus.su-halka { bottom: 6px; width: 18px; height: 5px; border: 1px solid rgba(203, 213, 225, .55); border-radius: 50%; opacity: 0; animation: halka var(--sure, 1.6s) ease-out infinite; animation-delay: var(--gecikme, 0s); }
+@keyframes halka { 0% { transform: scale(.2); opacity: .85; } 100% { transform: scale(1.7); opacity: 0; } }
+.dunya-sus.yagmur.uzak { background: linear-gradient(transparent, rgba(226, 232, 240, .28)); }
+.dunya-sus.simsek-isik { inset: 0; animation: simsek 17s linear infinite; animation-delay: -4s; }
+@keyframes simsek { 0%, 92% { background: rgba(226, 232, 240, 0); } 92.4% { background: rgba(226, 232, 240, .32); } 93% { background: rgba(226, 232, 240, .04); } 93.6% { background: rgba(226, 232, 240, .25); } 95%, 100% { background: rgba(226, 232, 240, 0); } }
+.dunya-sus.simsek { top: 0; left: 62%; opacity: 0; filter: drop-shadow(0 0 6px #e0f2fe) drop-shadow(0 0 16px #bae6fd); animation: simsek-cizgi 17s linear infinite; animation-delay: -4s; }
+@keyframes simsek-cizgi { 0%, 92% { opacity: 0; } 92.4%, 93.8% { opacity: 1; } 95%, 100% { opacity: 0; } }
+
+/* =========================================================
+   OYNA EFEKTLERİ (oyna-efekt.js): büyüme, temaya göre süs ve parçacıklar
+   Performans temasında ve hafif modda yok.
+   ========================================================= */
+.oyna-blok { position: relative; }
+.oyna-efekt { position: absolute; pointer-events: none; z-index: 3; transition: transform .28s var(--egri); }
+.oyna-efekt svg { display: block; }
+.oyna-p { position: absolute; pointer-events: none; }
+.oyna-halka { position: absolute; width: 26px; height: 26px; border-radius: 50%; border: 2px solid; pointer-events: none; }
+body[data-tema="performans"] .oyna-efekt, body.hafif .oyna-efekt { display: none; }
+/* Üstüne gelince büyür (düğme ve süsleri birlikte) */
+body:not([data-tema="performans"]):not(.hafif) .oyna:not(:disabled) { transition: transform .28s var(--egri), box-shadow .28s, filter .28s, background .4s; }
+body:not([data-tema="performans"]):not(.hafif) .oyna-blok.ustunde .oyna:not(:disabled) { transform: translateY(-2px) scale(1.045); filter: brightness(1.08) saturate(1.12); }
+body:not([data-tema="performans"]):not(.hafif) .oyna-blok.ustunde .oyna-efekt { transform: translateY(-2px) scale(1.045); }
+body:not([data-tema="performans"]):not(.hafif) .oyna-blok .oyna:active:not(:disabled) { transform: translateY(0) scale(.97); transition-duration: .08s; }
+body:not([data-tema="performans"]):not(.hafif) .oyna-blok.ustunde .oyna-parlama { animation-duration: 1.4s; }
+/* End: portal hızlanır, mor ışık */
+body[data-dunya="end"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) { animation-duration: 2.5s; box-shadow: inset 0 0 0 1px rgba(196, 181, 253, .8), inset 0 0 24px rgba(94, 234, 212, .25), 0 0 0 3px rgba(168, 85, 247, .25), 0 12px 40px rgba(126, 34, 206, .75); }
+/* Nether: lav hızlanır, alevler yükselir */
+body[data-dunya="nether"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) { animation-duration: 4s; box-shadow: inset 0 2px 0 rgba(255, 247, 174, .7), inset 0 -3px 0 rgba(124, 45, 18, .45), 0 0 0 3px rgba(249, 115, 22, .25), 0 12px 40px rgba(249, 115, 22, .85); }
+.oyna-efekt .alev-serit { position: absolute; left: 12px; right: 12px; top: -14px; display: flex; justify-content: space-between; opacity: 0; transform: translateY(8px) scaleY(.4); transform-origin: bottom; transition: opacity .25s, transform .3s var(--egri); filter: drop-shadow(0 0 6px rgba(249, 115, 22, .9)); }
+.oyna-blok.ustunde .oyna-efekt .alev-serit { opacity: 1; transform: none; }
+.oyna-efekt .alev { position: relative; display: block; }
+.oyna-efekt .alev svg + svg { position: absolute; left: 0; top: 0; }
+.oyna-efekt .alev svg:first-child { animation: ates-kare .28s steps(1) infinite; animation-delay: inherit; }
+.oyna-efekt .alev svg + svg { animation: ates-kare .28s steps(1) infinite reverse; animation-delay: inherit; }
+/* Dünya: üst kenarda otlar, üstüne gelince çiçekler */
+.oyna-efekt .ot-serit { position: absolute; left: 8px; right: 8px; top: -7px; display: flex; justify-content: space-between; }
+.oyna-efekt .ot-serit span { display: block; transform-origin: 50% 100%; animation: sallan-ot 2.6s ease-in-out infinite; }
+.oyna-blok.ustunde .oyna-efekt .ot-serit span { animation-duration: .9s; }
+.oyna-efekt .cicekler span { position: absolute; top: -13px; display: block; transform: translateX(-50%) scale(0); transform-origin: 50% 100%; transition: transform .4s var(--egri); }
+.oyna-blok.ustunde .oyna-efekt .cicekler span { transform: translateX(-50%) scale(1); }
+body[data-dunya="dunya"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) { box-shadow: inset 0 2px 0 rgba(187, 247, 208, .7), inset 0 -6px 0 #7c4a24, inset 0 -8px 0 #15803d, 0 0 0 3px rgba(74, 222, 128, .22), 0 12px 34px rgba(34, 197, 94, .65); }
+/* Siyah: köşelerde parıltı */
+.oyna-efekt .parilti-yildiz { position: absolute; display: block; transform: translate(-50%, -50%) scale(0); opacity: 0; filter: drop-shadow(0 0 4px #fff); }
+.oyna-blok.ustunde .oyna-efekt .parilti-yildiz { animation: parilti-yildiz 1.4s ease-in-out infinite; }
+@keyframes parilti-yildiz { 0%, 100% { transform: translate(-50%, -50%) scale(.3) rotate(0); opacity: 0; } 50% { transform: translate(-50%, -50%) scale(1) rotate(45deg); opacity: 1; } }
+body[data-dunya="siyah"] .oyna-blok.ustunde .oyna:not(.acik):not(.yukleniyor):not(.giris) { box-shadow: 0 0 0 1px rgba(255, 255, 255, .9), 0 0 36px rgba(255, 255, 255, .45), 0 10px 30px rgba(0, 0, 0, .5); }
+/* Sade: hafif ışıltı */
+body[data-tema="sade"] .oyna-blok.ustunde .oyna:not(:disabled) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--v) 14%, transparent), 0 20px 54px color-mix(in srgb, var(--v) 34%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3) !important; }

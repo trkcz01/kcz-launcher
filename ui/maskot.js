@@ -20,12 +20,12 @@
       w: 10, h: 27, olcek: 1.6,
       palet: { k: '#0b0a10', d: '#211c2b', s: '#15121c', a: '#17131e', p: '#9d2fc0', e: '#e57cf6', E: '#fde7ff', q: '#4a1660' },
       parcalar: {
-        govde: [
-          '.ddddddds.', '.dkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.',
+        kafa: ['.ddddddds.', '.dkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.', '.kkkkkkks.'],
+        govde: { x: 0, y: 8, s: [
           '..dkkkks..', '..kkkkks..', '..kkkkks..', '..kkkkks..', '..kkkkks..', '..kkkkks..', '..kkkkks..',
           '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..',
           '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..', '..kk..kk..', '..dk..kd..',
-        ],
+        ] },
         kolS: { x: 0, y: 8, s: ['aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'da'] },
         kolD: { x: 8, y: 8, s: ['aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'ad'] },
         gozler: { x: 1, y: 4, s: ['peE..Eep'] },
@@ -38,7 +38,8 @@
       parcalar: {
         kafa: ['glgGglGg', 'GglggGgl', 'gkkggkkg', 'lkkGlkkg', 'gGgkkgGg', 'Ggkkkkgl', 'glkkkkGg', 'ggkGgkgG'],
         govde: { x: 1, y: 8, s: ['gGgglG', 'lggGgg', 'GgsgGl', 'gglgGg', 'gGggsg', 'sgGlgg', 'ggGgsG'] },
-        bacaklar: { x: 0, y: 15, s: ['gGg..gGg', 'ggs..sgg', 'Gsg..gsG', 'sss..sss'] },
+        bacakS: { x: 0, y: 15, s: ['gGg', 'ggs', 'Gsg', 'sss'] },
+        bacakD: { x: 5, y: 15, s: ['gGg', 'sgg', 'gsG', 'sss'] },
       },
     },
     ghast: {
@@ -57,18 +58,22 @@
       },
     },
     yarasa: {
-      w: 8, h: 10, olcek: 2,
-      palet: { b: '#8a6a52', B: '#4f3b2d', k: '#1f1712' },
+      w: 10, h: 13, olcek: 1.8,
+      palet: { k: '#1f1611', b: '#7a5a44', B: '#3f2e22', l: '#a07f63', e: '#f87171', E: '#fecaca' },
       parcalar: {
-        asili: ['...kk...', '..BbbB..', '.BBbbBB.', 'BBBbbBBB', 'BBBbbBBB', '.BBbbBB.', '..BbbB..', '..bbbb..', '.bkbbkb.', '.b....b.'],
+        asili: ['....kk....', '....bb....', '..BBbbBB..', '.BBBbbBBB.', 'BBBBlbBBBB', 'BBBBllBBBB', 'BBBBllBBBB', '.BBBllBBB.',
+          '..BBbbBB..', '...bbbb...', '...bbbb...', '..b.bb.b..', '..b....b..'],
+        gozKapali: { x: 4, y: 10, s: ['kk'] },
+        gozAcik: { x: 4, y: 10, s: ['eE'] },
       },
     },
     yarasaUcan: {
-      w: 15, h: 7, olcek: 2,
-      palet: { b: '#8a6a52', B: '#5c4535', e: '#fca5a5' },
+      w: 17, h: 8, olcek: 1.8,
+      palet: { b: '#7a5a44', B: '#3f2e22', l: '#a07f63', e: '#f87171' },
       parcalar: {
-        kanatA: ['B.....b.b.....B', 'BB....bbb....BB', 'BBB..bebeb..BBB', '.BBBBbbbbbBBBB.', '..BBBbbbbbBBB..', '......bbb......', '.......b.......'],
-        kanatB: ['......b.b......', '......bbb......', '.....bebeb.....', '.BBBBbbbbbBBBB.', 'BBB..bbbbb..BBB', 'BB....bbb....BB', 'B......b......B'],
+        kanatA: ['B......b.b......B', 'BB.....bbb.....BB', 'BBB...bebeb...BBB', '.BBBB.blllb.BBBB.', '..BBBBblllbBBBB..', '....BBbbbbbBB....', '.......b.b.......', '.................'],
+        kanatB: ['.......b.b.......', '.......bbb.......', '......bebeb......', 'BBBBBBblllbBBBBBB', '.BBBBBblllbBBBBB.', '..B.B.bbbbb.B.B..', '.......b.b.......', '.................'],
+        kanatC: ['.......b.b.......', '.......bbb.......', '......bebeb......', '....BBblllbBB....', '..BBBBblllbBBBB..', '.BBBB.bbbbb.BBBB.', 'BBB....b.b....BBB', 'BB.............BB'],
       },
     },
     kedi: {
@@ -77,11 +82,17 @@
       parcalar: {
         kuyruk: { x: 7, y: 5, s: ['...G', '..gg', '..g.', '.gg.', '.g..', 'gg..', 'g...'] },
         govde: ['G.....G....', 'gp...pg....', 'ggGgGgg....', 'ggggggg....', 'ggwpwgg....', '.gwwwg.....', '.gGgGg.....',
-          'gggwggg....', 'gGgwgGg....', 'ggwwwgg....', 'gGgwgGg....', 'gggwggg....', '.ww.ww.....'],
+          'gggwggg....', 'gGgwgGg....', 'ggwwwgg....', 'gGgwgGg....', 'gggwggg....', '...........'],
+        patiS: { x: 1, y: 12, s: ['ww'] },
+        patiD: { x: 4, y: 12, s: ['ww'] },
+        patiYala: { x: 2, y: 5, s: ['ww', 'ww'] },
         gozAcik: { x: 1, y: 3, s: ['ek.ke'] },
         gozKapali: { x: 1, y: 3, s: ['GG.GG'] },
       },
     },
+    kalp: { w: 5, h: 4, olcek: 1.6, palet: { p: '#f472b6', P: '#fbcfe8' }, parcalar: { k: ['.p.p.', 'pPppp', '.ppp.', '..p..'] } },
+    zz: { w: 4, h: 4, olcek: 1.5, palet: { z: '#e4e4e7' }, parcalar: { z: ['zzzz', '..z.', '.z..', 'zzzz'] } },
+    gozyasi: { w: 1, h: 2, olcek: 1.6, palet: { d: '#bae6fd', D: '#7dd3fc' }, parcalar: { d: ['d', 'D'] } },
     adaBuyuk: {
       w: 26, h: 22, olcek: 3,
       palet: { E: '#e8e4a9', e: '#cfca8e', d: '#b3ad74', D: '#7f7a4f', o: '#1b1426', O: '#2e2342', c: '#a855f7', C: '#d8b4fe', x: '#f5d0fe', X: '#ffffff' },
@@ -148,7 +159,7 @@
       p.className = 'maskot-p';
       const b = rast(s.boyut?.[0] ?? 1.5, s.boyut?.[1] ?? 3);
       const px = x + rast(-(s.yayX || 0), s.yayX || 0), py = y + rast(-(s.yayY || 0), s.yayY || 0);
-      p.style.cssText = `left:${px}px;top:${py}px;width:${b}px;height:${b}px;background:${sec(s.renkler)}`;
+      p.style.cssText = `left:${px}px;top:${py}px;width:${b}px;height:${s.uzun ? b * rast(3, 6) : b}px;background:${sec(s.renkler)}`;
       alan.append(p);
       const aci = rast(0, Math.PI * 2), uz = rast(s.uzak?.[0] ?? 6, s.uzak?.[1] ?? 18);
       const dx = Math.cos(aci) * uz, dy = Math.sin(aci) * uz + (s.yukari || 0);
@@ -159,6 +170,20 @@
       ], { duration: sure, delay: rast(0, s.gecikme || 0), easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'backwards' })
         .finished.then(() => p.remove(), () => p.remove());
     }
+  }
+
+  /** Küçük çizimin (kalp, z, gözyaşı) süzülüp kaybolması */
+  function suzulen(alan, ad, x, y, dx, dy, sure) {
+    const e = document.createElement('div');
+    e.className = 'maskot-suzulen';
+    e.innerHTML = svgYap(ad);
+    e.style.cssText = 'left:' + x + 'px;top:' + y + 'px';
+    alan.append(e);
+    e.animate([
+      { transform: 'translate(0,0) scale(.6)', opacity: 0 },
+      { transform: 'translate(' + dx * 0.3 + 'px,' + dy * 0.3 + 'px) scale(1)', opacity: 1, offset: 0.2 },
+      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.9)', opacity: 0 },
+    ], { duration: sure, easing: 'ease-out' }).finished.then(() => e.remove(), () => e.remove());
   }
 
   const bekle = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -245,7 +270,76 @@
         sayi: 1, renkler: ['#c084fc', '#e9d5ff', '#a855f7'], boyut: [1.5, 2.5], uzak: [3, 8], yukari: -10, sure: [1400, 2000], buyu: 0.2,
       });
     }, 900);
+    bosPlanla();
   }
+
+  /* ---------- Boştaki küçük davranışlar (birkaç saniyede bir, rastgele) ---------- */
+  let bosSayac = null;
+  function bosPlanla() {
+    clearTimeout(bosSayac);
+    bosSayac = setTimeout(async () => {
+      if (maskot && maskot.isConnected && !mesgul && !document.hidden) {
+        try { await bosDavranis(); } catch { /* sorun değil */ }
+      }
+      if (maskot) bosPlanla();
+    }, rast(5500, 9500));
+  }
+  const sinifla = async (ad, ms) => { maskot.classList.add(ad); await bekle(ms); if (maskot) maskot.classList.remove(ad); };
+  async function bosDavranis() {
+    const k = konum(taraf), b = boyut(tur === 'yarasa' ? 'yarasa' : tur);
+    if (tur === 'enderman') {
+      // etrafa bakar
+      await sinifla(Math.random() < 0.5 ? 'bak-sol' : 'bak-sag', 1300);
+      if (Math.random() < 0.5) await sinifla('bak-sag', 900);
+    } else if (tur === 'creeper') {
+      // birkaç adım yürür, geri döner
+      const yon = taraf === 'sol' ? 1 : -1;
+      maskot.classList.add('yuruyor');
+      const git = govde.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + yon * 9 + 'px)' }], { duration: 1400, easing: 'ease-in-out', fill: 'forwards' });
+      await git.finished.catch(() => {});
+      await bekle(900);
+      const don = govde.animate([{ transform: 'translateX(' + yon * 9 + 'px)' }, { transform: 'translateX(0)' }], { duration: 1400, easing: 'ease-in-out', fill: 'forwards' });
+      await don.finished.catch(() => {});
+      git.cancel();
+      don.cancel();
+      if (maskot) maskot.classList.remove('yuruyor');
+    } else if (tur === 'ghast') {
+      // ağlar: gözlerinden yaşlar süzülür
+      for (let i = 0; i < 3; i++) {
+        suzulen(alan, 'gozyasi', k.x + b.w * 0.2, k.y + b.h * 0.3, rast(-1, 1), 16, 1100);
+        suzulen(alan, 'gozyasi', k.x + b.w * 0.72, k.y + b.h * 0.3, rast(-1, 1), 16, 1100);
+        await bekle(380);
+      }
+    } else if (tur === 'yarasa') {
+      if (Math.random() < 0.6) await sinifla('uyanik', 1700); // gözlerini açıp bakar
+      else await sinifla('titre', 520); // kanatlarını silkeler
+    } else if (tur === 'kedi') {
+      const r = Math.random();
+      if (r < 0.45) await sinifla('yaliyor', 2200); // patisini yalar
+      else if (r < 0.8) {
+        maskot.classList.add('uyuyor'); // uyuklar: zZ
+        for (let i = 0; i < 3; i++) {
+          suzulen(alan, 'zz', k.x + b.w * 0.6, k.y + 2, rast(6, 10), -16, 1500);
+          await bekle(800);
+        }
+        await bekle(600);
+        if (maskot) maskot.classList.remove('uyuyor');
+      } else await sinifla('kuyruk-hizli', 1800);
+    }
+  }
+
+  // Enderman'a bakınca (fare yakındayken) gözleri parlar, titrer
+  let bakisKare = 0;
+  document.addEventListener('mousemove', (e) => {
+    if (tur !== 'enderman' || !maskot || bakisKare) return;
+    bakisKare = requestAnimationFrame(() => {
+      bakisKare = 0;
+      if (!maskot) return;
+      const r = maskot.getBoundingClientRect();
+      const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 3));
+      maskot.classList.toggle('bakiliyor', d < 110 && !mesgul);
+    });
+  });
 
   async function hareket() {
     if (mesgul || !maskot) return;
@@ -280,9 +374,11 @@
     await bekle(260);
     const k1 = konum(taraf);
     parcacik(alan, k1.x + b.w / 2, k1.y + b.h / 2, { sayi: 22, renkler: MOR, yayX: b.w / 2, yayY: b.h / 2, uzak: [4, 16], sure: [500, 900], gecikme: 120 });
+    parcacik(alan, k1.x + b.w / 2, k1.y + b.h / 2, { sayi: 8, renkler: MOR, yayX: b.w / 2, yayY: b.h / 2, uzak: [2, 6], yukari: -14, sure: [500, 800], boyut: [1, 1.5], uzun: true });
     await oynat(govde, [{ transform: 'scale(1,1)', opacity: 1 }, { transform: 'scale(.15,1.25)', opacity: 0 }], { duration: 150, easing: 'ease-in', fill: 'forwards' });
     const k2 = tasi(hedef);
     parcacik(alan, k2.x + b.w / 2, k2.y + b.h / 2, { sayi: 22, renkler: MOR, yayX: b.w / 2, yayY: b.h / 2, uzak: [4, 16], sure: [500, 900], gecikme: 80 });
+    parcacik(alan, k2.x + b.w / 2, k2.y + b.h / 2, { sayi: 8, renkler: MOR, yayX: b.w / 2, yayY: b.h / 2, uzak: [2, 6], yukari: 14, sure: [500, 800], boyut: [1, 1.5], uzun: true });
     await bekle(90);
     await oynat(govde, [{ transform: 'scale(.15,1.25)', opacity: 0 }, { transform: 'scale(1,1)', opacity: 1 }], { duration: 170, easing: 'ease-out', fill: 'forwards' });
     govde.getAnimations().forEach((a) => a.cancel());
@@ -350,34 +446,54 @@
     maskot.style.transition = '';
   }
 
-  /* Yarasa: uyanır, kanat çırparak dalgalı bir yolla öbür tarafa uçar, yine asılır */
+  /* Yarasa: uyanır (gözleri açılır), tavandan bırakır, 3 kareli kanat çırpışla dalgalı ve
+     yöne göre eğilerek öbür tarafa uçar, varınca dönüp yine baş aşağı asılır */
   async function uc(hedef) {
     const k1 = konum(taraf), k2 = konum(hedef);
     const ba = boyut('yarasa'), bu = boyut('yarasaUcan');
+    maskot.classList.add('uyanik');
+    await oynat(govde, [{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(0)' }], { duration: 380, easing: 'ease-in-out' });
     maskot.classList.add('ucuyor');
     const ox = (bu.w - ba.w) / 2;
     const dx = k2.x - k1.x;
     const kareler = [];
-    for (let i = 0; i <= 10; i++) {
-      const t = i / 10;
-      const y = Math.sin(t * Math.PI) * 22 + Math.sin(t * Math.PI * 4) * 4;
-      kareler.push({ transform: `translate(${dx * t - ox}px, ${y}px)` });
+    const N = 24;
+    let onceY = 0;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const y = Math.sin(t * Math.PI) * 26 + Math.sin(t * Math.PI * 3) * 6 + (t < 0.12 ? t * 40 : 0);
+      const egim = Math.max(-18, Math.min(18, (y - onceY) * 2.2)) * (dx >= 0 ? 1 : -1);
+      onceY = y;
+      kareler.push({ transform: 'translate(' + (dx * e - ox) + 'px, ' + y + 'px) rotate(' + egim + 'deg)' });
     }
-    await oynat(maskot, kareler, { duration: 1300, easing: 'ease-in-out' });
+    const TOZ = ['#a8a29e', '#d6d3d1'];
+    const iz = setInterval(() => {
+      const r = maskot.getBoundingClientRect(), a = alan.getBoundingClientRect();
+      parcacik(alan, r.left - a.left + r.width / 2, r.top - a.top + r.height / 2, { sayi: 1, renkler: TOZ, boyut: [1, 1.5], uzak: [1, 3], sure: [300, 500] });
+    }, 90);
+    await oynat(maskot, kareler, { duration: 1500, easing: 'linear' });
+    clearInterval(iz);
     tasi(hedef);
     maskot.classList.remove('ucuyor');
-    await oynat(govde, [{ transform: 'rotate(10deg)' }, { transform: 'rotate(-6deg)' }, { transform: 'none' }], { duration: 500, easing: 'ease-out' });
+    await oynat(govde, [{ transform: 'scaleY(-.2) rotate(0)' }, { transform: 'scaleY(1.1) rotate(14deg)' }, { transform: 'rotate(-8deg)' }, { transform: 'none' }], { duration: 520, easing: 'ease-out' });
+    await bekle(500);
+    if (maskot) maskot.classList.remove('uyanik');
   }
 
   /* Kedi: çömelir, kavisle zıplar, yere konunca biraz ezilir */
   async function zipla(hedef) {
     const k1 = konum(taraf), k2 = konum(hedef), b = boyut('kedi');
-    await oynat(govde, [{ transform: 'none' }, { transform: 'scale(1.08,.82)' }], { duration: 160, easing: 'ease-out', fill: 'forwards' });
+    // av öncesi: çömelip kıçını sallar
+    await oynat(govde, [{ transform: 'none' }, { transform: 'scale(1.06,.86)' }], { duration: 140, easing: 'ease-out', fill: 'forwards' });
+    await oynat(govde, [{ transform: 'scale(1.06,.86) translateX(0)' }, { transform: 'scale(1.06,.86) translateX(-1.2px)' }, { transform: 'scale(1.06,.86) translateX(1.2px)' },
+      { transform: 'scale(1.06,.86) translateX(-1.2px)' }, { transform: 'scale(1.1,.8) translateX(0)' }], { duration: 360, easing: 'linear', fill: 'forwards' });
     const dx = k2.x - k1.x;
     const kareler = [];
     for (let i = 0; i <= 12; i++) {
       const t = i / 12;
-      kareler.push({ transform: `translate(${dx * t}px, ${-4 * 26 * t * (1 - t)}px)` });
+      const uz = 1 + 0.16 * Math.sin(t * Math.PI);
+      kareler.push({ transform: 'translate(' + dx * t + 'px, ' + (-4 * 28 * t * (1 - t)) + 'px) scale(' + uz + ', ' + (2 - uz) + ')' });
     }
     govde.getAnimations().forEach((a) => a.cancel());
     maskot.classList.add('havada');
@@ -386,6 +502,7 @@
     maskot.classList.remove('havada');
     parcacik(alan, k2.x + b.w / 2, k2.y + b.h, { sayi: 5, renkler: ['#a1a1aa', '#d4d4d8'], boyut: [1, 2], yayX: b.w / 3, uzak: [2, 6], yukari: -2, sure: [250, 400] });
     await oynat(govde, [{ transform: 'scale(1.12,.85)' }, { transform: 'scale(.96,1.05)' }, { transform: 'none' }], { duration: 300, easing: 'ease-out' });
+    if (Math.random() < 0.6) for (let i = 0; i < 2; i++) { suzulen(alan, 'kalp', k2.x + b.w / 2 + rast(-6, 2), k2.y - 2, rast(-6, 6), -18, 1300); await bekle(220); }
   }
 
   /* ---------- Sahne süsleri (ana sayfadaki büyük alan) ---------- */
@@ -421,6 +538,8 @@
 
   window.kczMaskot = {
     yerler: () => yerler(),
+    /** Boştaki davranışlardan birini hemen yap (deneme/önizleme için) */
+    bosDene: () => (maskot && !mesgul ? bosDavranis() : null),
     /** Temaya göre maskotu kur/kaldır. acik: Ayarlar'daki "Tema maskotu", hafif: hafif mod */
     uygula(tema, acik, hafif) {
       const yeni = acik && !hafif ? TEMA_MASKOT[tema] || null : null;
